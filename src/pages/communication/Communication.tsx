@@ -4,11 +4,17 @@ import {
   useRef,
   useState,
 } from "react";
-import { useSearchParams } from "react-router-dom";
 import {
+  Link,
+  useLocation,
+  useSearchParams,
+} from "react-router-dom";
+import {
+  LoaderCircle,
   Mail,
   Search,
   SendHorizontal,
+  TextQuote,
   Users2,
 } from "lucide-react";
 import { TiptapEmailEditor } from "@/components/communication/TiptapEmailEditor";
@@ -86,6 +92,74 @@ type EmailEditorValue = {
   text: string;
 };
 
+type EmailTemplateId =
+  | "executive_brief"
+  | "event_spotlight"
+  | "minimal_notice";
+
+type EmailPreviewResponse = {
+  templateId: EmailTemplateId;
+  templateName: string;
+  previewText: string;
+  subject: string;
+  html: string;
+  text: string;
+  from: {
+    name: string;
+    email: string;
+  };
+  sampleRecipient: {
+    name: string;
+    email: string;
+  };
+  event: {
+    id: string | null;
+    title: string | null;
+    eventDate: string | null;
+  };
+};
+
+type CommunicationDraftSummary = {
+  id: string;
+  status: "draft";
+  subject: string;
+  previewText: string | null;
+  templateId: EmailTemplateId;
+  updatedAt: string;
+  recipientCount: number;
+  event: {
+    id: string | null;
+    title: string | null;
+    eventDate: string | null;
+  };
+};
+
+const EMAIL_TEMPLATE_OPTIONS = [
+  {
+    value: "executive_brief",
+    label: "Executive Brief",
+    description: "Formal update layout for logistics, approvals, and event ops.",
+    accentClass: "from-[#e7efff] to-white",
+  },
+  {
+    value: "event_spotlight",
+    label: "Event Spotlight",
+    description: "Warmer, campaign-style presentation for announcements and invites.",
+    accentClass: "from-amber-100 to-white",
+  },
+  {
+    value: "minimal_notice",
+    label: "Minimal Notice",
+    description: "Compact template for direct, low-friction informational blasts.",
+    accentClass: "from-slate-200 to-white",
+  },
+] as const satisfies ReadonlyArray<{
+  value: EmailTemplateId;
+  label: string;
+  description: string;
+  accentClass: string;
+}>;
+
 const STATUS_OPTIONS = [
   { value: "all", label: "All Registered" },
   { value: "approved", label: "Approved" },
@@ -102,6 +176,26 @@ const PARTICIPANT_TYPE_OPTIONS = [
 
 type StatusValue = (typeof STATUS_OPTIONS)[number]["value"];
 type ParticipantTypeValue = (typeof PARTICIPANT_TYPE_OPTIONS)[number]["value"];
+
+type CommunicationDraftFiltersPayload = Partial<{
+  eventId: string;
+  status: StatusValue;
+  participantType: ParticipantTypeValue;
+  companyId: string;
+  industryId: string;
+  jobTitleId: string;
+  cityId: string;
+  sourceChannelCode: string;
+  search: string;
+}>;
+
+type CommunicationDraftDetail = CommunicationDraftSummary & {
+  bodyHtml: string;
+  bodyText: string | null;
+  bodyJson: Record<string, unknown> | null;
+  filters: CommunicationDraftFiltersPayload;
+  recipientRegistrationIds: string[];
+};
 
 type AudienceFiltersState = {
   eventId: string;
@@ -120,6 +214,7 @@ type FeedbackState = {
 };
 
 type ComposerErrors = Partial<Record<"recipients" | "subject" | "body", string>>;
+type ComposerStep = "compose" | "review";
 type LeftPanelTab = "segment" | "recipients" | "review";
 
 function readOptionValue<T extends string>(
@@ -132,6 +227,10 @@ function readOptionValue<T extends string>(
 
 function readLeftPanelTab(value: string | null): LeftPanelTab {
   return value === "recipients" || value === "review" ? value : "segment";
+}
+
+function readComposerStep(value: string | null): ComposerStep {
+  return value === "review" ? "review" : "compose";
 }
 
 function createFiltersFromSearchParams(
@@ -287,6 +386,67 @@ function summarizeActiveFilters(
   return badges;
 }
 
+function formatDraftUpdatedAt(value: string) {
+  return new Date(value).toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function createEmptyEditorValue(): EmailEditorValue {
+  return {
+    html: "<p></p>",
+    json: null,
+    text: "",
+  };
+}
+
+function createFiltersStateFromDraft(
+  input: CommunicationDraftFiltersPayload | undefined,
+): AudienceFiltersState {
+  return {
+    eventId: input?.eventId ?? "",
+    status:
+      input?.status && STATUS_OPTIONS.some((option) => option.value === input.status)
+        ? input.status
+        : "all",
+    participantType:
+      input?.participantType &&
+      PARTICIPANT_TYPE_OPTIONS.some(
+        (option) => option.value === input.participantType,
+      )
+        ? input.participantType
+        : "all",
+    companyId: input?.companyId ?? "",
+    industryId: input?.industryId ?? "",
+    jobTitleId: input?.jobTitleId ?? "",
+    cityId: input?.cityId ?? "",
+    sourceChannelCode: input?.sourceChannelCode ?? "",
+  };
+}
+
+function buildDraftSignature(params: {
+  filters: AudienceFiltersState;
+  search: string;
+  selectedRegistrationIds: string[];
+  templateId: EmailTemplateId;
+  previewText: string;
+  subject: string;
+  bodyHtml: string;
+}) {
+  return JSON.stringify({
+    filters: params.filters,
+    search: params.search.trim(),
+    selectedRegistrationIds: params.selectedRegistrationIds.toSorted(),
+    templateId: params.templateId,
+    previewText: params.previewText.trim(),
+    subject: params.subject.trim(),
+    bodyHtml: params.bodyHtml.trim(),
+  });
+}
+
 function validateComposer(params: {
   recipientCount: number;
   subject: string;
@@ -349,7 +509,11 @@ function FilterSelect({
 }
 
 export function Communication() {
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [composerStep, setComposerStep] = useState<ComposerStep>(() =>
+    readComposerStep(searchParams.get("step")),
+  );
   const [leftPanelTab, setLeftPanelTab] = useState<LeftPanelTab>(() =>
     readLeftPanelTab(searchParams.get("panel")),
   );
@@ -365,31 +529,140 @@ export function Communication() {
   const [selectedRegistrationIds, setSelectedRegistrationIds] = useState<string[]>(
     [],
   );
+  const [templateId, setTemplateId] = useState<EmailTemplateId>(
+    "executive_brief",
+  );
+  const [previewText, setPreviewText] = useState("");
   const [subject, setSubject] = useState("");
-  const [editorValue, setEditorValue] = useState<EmailEditorValue>({
-    html: "<p></p>",
-    json: null,
-    text: "",
-  });
+  const [editorValue, setEditorValue] = useState<EmailEditorValue>(
+    createEmptyEditorValue,
+  );
+  const [emailPreview, setEmailPreview] = useState<EmailPreviewResponse | null>(
+    null,
+  );
+  const [drafts, setDrafts] = useState<CommunicationDraftSummary[]>([]);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+  const [draftsError, setDraftsError] = useState("");
+  const [isDraftsLoading, setIsDraftsLoading] = useState(true);
+  const [loadingDraftId, setLoadingDraftId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [loadError, setLoadError] = useState("");
+  const [previewError, setPreviewError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const [submissionMode, setSubmissionMode] = useState<"draft" | "send" | null>(
     null,
   );
-  const [isReviewingSend, setIsReviewingSend] = useState(false);
   const [composerErrors, setComposerErrors] = useState<ComposerErrors>({});
   const [lastCommittedSignature, setLastCommittedSignature] = useState("");
   const deferredSearch = useDeferredValue(searchInput);
   const latestRequestRef = useRef(0);
+  const previewRequestRef = useRef(0);
   const hasUserAdjustedSelectionRef = useRef(false);
   const subjectInputRef = useRef<HTMLInputElement | null>(null);
   const bodyFieldRef = useRef<HTMLDivElement | null>(null);
+  const loadedDraftFromNavigationRef = useRef<string | null>(null);
+  const normalizedSearchInput = searchInput.trim();
+  const draftIdFromNavigation =
+    location.state &&
+    typeof location.state === "object" &&
+    "draftId" in location.state &&
+    typeof location.state.draftId === "string"
+      ? location.state.draftId
+      : null;
+
+  const loadDrafts = async () => {
+    setIsDraftsLoading(true);
+    setDraftsError("");
+
+    const result = await api.get<CommunicationDraftSummary[]>(
+      "/api/communications/drafts",
+    );
+
+    if (!result.data) {
+      setDrafts([]);
+      setDraftsError(result.error ?? "Failed to load saved drafts.");
+      setIsDraftsLoading(false);
+      return;
+    }
+
+    setDrafts(result.data);
+    setDraftsError("");
+    setIsDraftsLoading(false);
+  };
+
+  const handleLoadDraft = async (draftId: string) => {
+    setLoadingDraftId(draftId);
+    setFeedback(null);
+
+    const result = await api.get<CommunicationDraftDetail>(
+      `/api/communications/drafts/${draftId}`,
+    );
+
+    setLoadingDraftId(null);
+
+    if (!result.data) {
+      setFeedback({
+        tone: "error",
+        message: result.error ?? "Failed to load the selected draft.",
+      });
+      return;
+    }
+
+    const draftFilters = createFiltersStateFromDraft(result.data.filters);
+    const draftSearch = result.data.filters.search ?? "";
+    const nextEditorValue: EmailEditorValue = {
+      html: result.data.bodyHtml || "<p></p>",
+      json: result.data.bodyJson ?? null,
+      text: result.data.bodyText ?? "",
+    };
+    const nextSelectedIds = result.data.recipientRegistrationIds;
+    const committedSignature = buildDraftSignature({
+      filters: draftFilters,
+      search: draftSearch,
+      selectedRegistrationIds: nextSelectedIds,
+      templateId: result.data.templateId,
+      previewText: result.data.previewText ?? "",
+      subject: result.data.subject,
+      bodyHtml: result.data.bodyHtml,
+    });
+
+    hasUserAdjustedSelectionRef.current = true;
+    setCurrentDraftId(result.data.id);
+    setFilters(draftFilters);
+    setSearchInput(draftSearch);
+    setSelectedRegistrationIds(nextSelectedIds);
+    setTemplateId(result.data.templateId);
+    setPreviewText(result.data.previewText ?? "");
+    setSubject(result.data.subject);
+    setEditorValue(nextEditorValue);
+    setComposerErrors({});
+    setComposerStep("compose");
+    setLeftPanelTab("segment");
+    setEmailPreview(null);
+    setPreviewError("");
+    setLastCommittedSignature(committedSignature);
+    setFeedback({
+      tone: "success",
+      message: "Draft loaded. You can continue editing or go to review.",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDetachDraft = () => {
+    setCurrentDraftId(null);
+    setLastCommittedSignature("");
+    setFeedback({
+      tone: "success",
+      message: "The current content is now detached. The next Save Draft will create a new draft copy.",
+    });
+  };
 
   useEffect(() => {
     const nextFilters = createFiltersFromSearchParams(searchParams);
     const nextSearch = searchParams.get("search") ?? "";
     const nextPanel = readLeftPanelTab(searchParams.get("panel"));
+    const nextStep = readComposerStep(searchParams.get("step"));
 
     setFilters((currentValue) =>
       areFiltersEqual(currentValue, nextFilters) ? currentValue : nextFilters,
@@ -400,7 +673,28 @@ export function Communication() {
     setLeftPanelTab((currentValue) =>
       currentValue === nextPanel ? currentValue : nextPanel,
     );
+    setComposerStep((currentValue) =>
+      currentValue === nextStep ? currentValue : nextStep,
+    );
   }, [searchParams]);
+
+  useEffect(() => {
+    void loadDrafts();
+  }, []);
+
+  useEffect(() => {
+    if (
+      !draftIdFromNavigation ||
+      currentDraftId === draftIdFromNavigation ||
+      loadingDraftId === draftIdFromNavigation ||
+      loadedDraftFromNavigationRef.current === draftIdFromNavigation
+    ) {
+      return;
+    }
+
+    loadedDraftFromNavigationRef.current = draftIdFromNavigation;
+    void handleLoadDraft(draftIdFromNavigation);
+  }, [currentDraftId, draftIdFromNavigation, loadingDraftId]);
 
   useEffect(() => {
     const nextParams = new URLSearchParams();
@@ -447,10 +741,21 @@ export function Communication() {
       nextParams.set("panel", leftPanelTab);
     }
 
+    if (composerStep === "review") {
+      nextParams.set("step", "review");
+    }
+
     if (nextParams.toString() !== searchParams.toString()) {
       setSearchParams(nextParams, { replace: true });
     }
-  }, [deferredSearch, filters, leftPanelTab, searchParams, setSearchParams]);
+  }, [
+    composerStep,
+    deferredSearch,
+    filters,
+    leftPanelTab,
+    searchParams,
+    setSearchParams,
+  ]);
 
   useEffect(() => {
     const query = buildAudienceQuery(filters, deferredSearch);
@@ -513,25 +818,21 @@ export function Communication() {
     });
   }, [audience?.recipients]);
 
-  useEffect(() => {
-    if (!isReviewingSend) {
-      return;
-    }
-
-    setIsReviewingSend(false);
-  }, [filters, deferredSearch, selectedRegistrationIds, isReviewingSend]);
-
   const visibleRecipients = audience?.recipients ?? [];
   const selectedRecipientIdSet = new Set(selectedRegistrationIds);
   const selectedRecipients = visibleRecipients.filter((recipient) =>
     selectedRecipientIdSet.has(recipient.registrationId),
   );
+  const selectedRecipientCount = selectedRegistrationIds.length;
+  const isReviewingSend = composerStep === "review";
+  const samplePreviewRecipient = selectedRecipients[0] ?? null;
+  const samplePreviewRegistrationId = samplePreviewRecipient?.registrationId ?? "";
   const currentEvent =
     audience?.events.find((event) => event.id === filters.eventId) ?? null;
   const activeFilterBadges = summarizeActiveFilters(
     filters,
     audience,
-    deferredSearch,
+    normalizedSearchInput,
   );
   const allVisibleSelected =
     visibleRecipients.length > 0 &&
@@ -541,17 +842,87 @@ export function Communication() {
   ).length;
   const hasComposeContent =
     Boolean(subject.trim()) ||
+    Boolean(previewText.trim()) ||
     Boolean(editorValue.text.trim()) ||
-    selectedRecipients.length > 0;
-  const draftSignature = JSON.stringify({
+    selectedRegistrationIds.length > 0;
+  const draftSignature = buildDraftSignature({
     filters,
-    search: deferredSearch.trim(),
-    selectedRegistrationIds: selectedRegistrationIds.toSorted(),
-    subject: subject.trim(),
-    bodyHtml: editorValue.html.trim(),
+    search: normalizedSearchInput,
+    selectedRegistrationIds,
+    templateId,
+    previewText,
+    subject,
+    bodyHtml: editorValue.html,
   });
   const hasUnsavedChanges =
     hasComposeContent && draftSignature !== lastCommittedSignature;
+  const currentDraftSummary =
+    drafts.find((draft) => draft.id === currentDraftId) ?? null;
+
+  useEffect(() => {
+    if (composerStep !== "review") {
+      return;
+    }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [composerStep]);
+
+  useEffect(() => {
+    if (!isReviewingSend) {
+      setIsPreviewLoading(false);
+      return;
+    }
+
+    if (
+      !samplePreviewRecipient ||
+      !subject.trim() ||
+      !editorValue.text.trim()
+    ) {
+      setEmailPreview(null);
+      setIsPreviewLoading(false);
+      return;
+    }
+
+    const requestId = previewRequestRef.current + 1;
+    previewRequestRef.current = requestId;
+    setIsPreviewLoading(true);
+    setPreviewError("");
+
+    void api
+      .post<EmailPreviewResponse>("/api/communications/preview", {
+        eventId: filters.eventId || null,
+        templateId,
+        previewText,
+        subject,
+        bodyHtml: editorValue.html,
+        bodyText: editorValue.text,
+        sampleRegistrationId: samplePreviewRegistrationId,
+      })
+      .then((result) => {
+        if (previewRequestRef.current !== requestId) {
+          return;
+        }
+
+        if (!result.data) {
+          setPreviewError(result.error ?? "Failed to generate email preview.");
+          setEmailPreview(null);
+          setIsPreviewLoading(false);
+          return;
+        }
+
+        setEmailPreview(result.data);
+        setIsPreviewLoading(false);
+      });
+  }, [
+    editorValue.html,
+    editorValue.text,
+    filters.eventId,
+    isReviewingSend,
+    previewText,
+    samplePreviewRegistrationId,
+    subject,
+    templateId,
+  ]);
 
   useEffect(() => {
     if (!hasUnsavedChanges) {
@@ -615,7 +986,7 @@ export function Communication() {
 
   const handleOpenReview = () => {
     const nextErrors = validateComposer({
-      recipientCount: selectedRecipients.length,
+      recipientCount: selectedRegistrationIds.length,
       subject,
       bodyText: editorValue.text,
     });
@@ -644,11 +1015,21 @@ export function Communication() {
     }
 
     setFeedback(null);
+    setEmailPreview(null);
+    setPreviewError("");
     setLeftPanelTab("review");
-    setIsReviewingSend(true);
+    setComposerStep("review");
   };
 
   const handleSubmitCampaign = async (mode: "draft" | "send") => {
+    if (mode === "send" && (!emailPreview || isPreviewLoading)) {
+      setFeedback({
+        tone: "error",
+        message: "Wait for the inbox preview to finish loading before sending.",
+      });
+      return;
+    }
+
     const signatureAtSubmit = draftSignature;
 
     setSubmissionMode(mode);
@@ -658,14 +1039,17 @@ export function Communication() {
       "/api/communications/campaigns",
       {
         mode,
+        draftId: currentDraftId,
         eventId: filters.eventId || null,
+        templateId,
+        previewText,
         subject,
         bodyHtml: editorValue.html,
         bodyText: editorValue.text,
         bodyJson: editorValue.json,
         filters: {
           ...filters,
-          search: deferredSearch,
+          search: normalizedSearchInput,
         },
         recipientRegistrationIds: selectedRegistrationIds,
       },
@@ -686,13 +1070,394 @@ export function Communication() {
       message: result.message,
     });
     setLastCommittedSignature(signatureAtSubmit);
+    await loadDrafts();
 
+    if (mode === "draft") {
+      setCurrentDraftId(result.data?.id ?? currentDraftId);
+      return;
+    }
+
+    setCurrentDraftId(null);
     if (mode === "send") {
-      setIsReviewingSend(false);
+      setComposerStep("compose");
+      setEmailPreview(null);
+      setPreviewError("");
     }
   };
 
   const selectedRecipientPreview = selectedRecipients.slice(0, 5);
+
+  if (isReviewingSend) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-8">
+          <div className="flex flex-col gap-4 border-b border-dashed border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
+                Communication Review
+              </p>
+              <h1 className="text-pretty text-3xl font-bold text-[#1d376b]">
+                Review Template & Queue Broadcast
+              </h1>
+              <p className="max-w-2xl text-sm leading-6 text-slate-500">
+                Template email, inbox preview, dan konfirmasi RabbitMQ sekarang ada
+                di screen terpisah supaya admin benar-benar tahu apa yang akan
+                dikirim.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                asChild
+                className="h-12 border-dashed"
+              >
+                <Link to="/communication/history">Campaign History</Link>
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                disabled={submissionMode !== null}
+                onClick={() => {
+                  setComposerStep("compose");
+                  setIsPreviewLoading(false);
+                  setPreviewError("");
+                }}
+                className="h-12 self-start border-dashed"
+              >
+                Back to Editing
+              </Button>
+            </div>
+          </div>
+
+          {feedback ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className={`rounded-2xl border px-4 py-3 text-sm ${
+                feedback.tone === "success"
+                  ? "border-dashed border-emerald-300 bg-emerald-50 text-emerald-700"
+                  : "border-dashed border-rose-300 bg-rose-50 text-rose-600"
+              }`}
+            >
+              {feedback.message}
+            </div>
+          ) : null}
+
+          <div className="grid gap-6 xl:grid-cols-[minmax(320px,360px)_minmax(0,1fr)]">
+            <section className="space-y-5 rounded-[28px] border border-dashed border-slate-300 bg-slate-50/80 p-5 sm:p-6">
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                    Final Audience
+                  </p>
+                  <p className="mt-2 text-2xl font-bold text-[#1d376b] tabular-nums">
+                    {selectedRecipientCount}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Recipient terpilih yang akan masuk queue.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                    Risk Check
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-800">
+                    {selectedNonApprovedCount > 0
+                      ? `${selectedNonApprovedCount} non-approved recipients included`
+                      : "Approved-safe segment"}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    Pastikan audience memang sesuai sebelum mengirim.
+                  </p>
+                </div>
+              </div>
+
+              <div className="rounded-[24px] border border-dashed border-slate-300 bg-white p-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                  Current Event
+                </p>
+                <p className="mt-2 text-sm font-semibold text-slate-800">
+                  {currentEvent?.title ?? "All events"}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {currentEvent
+                    ? formatEventDate(currentEvent.eventDate)
+                    : "No specific event selected."}
+                </p>
+              </div>
+
+              <div className="rounded-[24px] border border-dashed border-slate-300 bg-white p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                      Selected Recipients
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-slate-800">
+                      {selectedRecipientCount} selected for delivery
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setComposerStep("compose");
+                      setLeftPanelTab("recipients");
+                    }}
+                    className="border-dashed"
+                  >
+                    Open List
+                  </Button>
+                </div>
+
+                <div className="mt-3 space-y-2">
+                  {selectedRecipientPreview.length ? (
+                    selectedRecipientPreview.map((recipient) => (
+                      <div
+                        key={recipient.registrationId}
+                        className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2"
+                      >
+                        <p className="truncate text-sm font-semibold text-slate-800">
+                          {recipient.fullName}
+                        </p>
+                        <p className="truncate text-xs text-slate-500">
+                          {recipient.email}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-sm text-slate-500">
+                      No recipients selected yet.
+                    </p>
+                  )}
+
+                  {selectedRecipientCount > selectedRecipientPreview.length ? (
+                    <p className="text-xs text-slate-500">
+                      +{selectedRecipientCount - selectedRecipientPreview.length} more recipients
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="rounded-[24px] border border-dashed border-slate-300 bg-white p-4">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                  Active Filters
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {activeFilterBadges.length ? (
+                    activeFilterBadges.map((badge) => (
+                      <span
+                        key={badge}
+                        className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700"
+                      >
+                        {badge}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-sm text-slate-500">
+                      No extra segment rules beyond the current event.
+                    </span>
+                  )}
+                </div>
+              </div>
+            </section>
+
+            <section className="space-y-5 rounded-[28px] border border-dashed border-slate-300 bg-white p-5 sm:p-6">
+              <div className="space-y-1">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                  Final Preview
+                </p>
+                <h2 className="text-pretty text-2xl font-bold text-[#1d376b]">
+                  Choose the Email Template
+                </h2>
+                <p className="text-sm leading-6 text-slate-500">
+                  Ini adalah screen review final sebelum campaign masuk ke worker
+                  RabbitMQ.
+                </p>
+              </div>
+
+              <div className="grid gap-3 xl:grid-cols-3">
+                {EMAIL_TEMPLATE_OPTIONS.map((option) => {
+                  const isActive = templateId === option.value;
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setTemplateId(option.value)}
+                      className={`rounded-2xl border p-4 text-left transition ${
+                        isActive
+                          ? "border-amber-400 bg-amber-50/40 shadow-sm"
+                          : "border-dashed border-slate-300 bg-slate-50 hover:border-slate-400"
+                      } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300`}
+                    >
+                      <div
+                        className={`h-16 rounded-2xl bg-gradient-to-br ${option.accentClass}`}
+                      />
+                      <p className="mt-3 text-sm font-semibold text-slate-800">
+                        {option.label}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        {option.description}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                    From
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-800">
+                    {emailPreview?.from.name ?? "Yorindo EMS"}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {emailPreview?.from.email ?? "Loading sender…"}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                    To
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-800">
+                    {samplePreviewRecipient?.fullName ?? "No sample recipient"}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {samplePreviewRecipient?.email ?? "Choose at least one recipient"}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                    Subject
+                  </p>
+                  <p className="mt-2 line-clamp-2 text-sm font-semibold text-slate-800">
+                    {emailPreview?.subject ?? subject}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                    Preheader
+                  </p>
+                  <p className="mt-2 line-clamp-3 text-sm text-slate-700">
+                    {emailPreview?.previewText ??
+                      (previewText ||
+                        "Will auto-generate from the email body if left empty.")}
+                  </p>
+                </div>
+              </div>
+
+              {previewError ? (
+                <div
+                  role="alert"
+                  className="rounded-2xl border border-dashed border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-600"
+                >
+                  {previewError}
+                </div>
+              ) : null}
+
+              <Tabs defaultValue="visual" className="space-y-4">
+                <TabsList className="grid grid-cols-2">
+                  <TabsTrigger value="visual">Visual Preview</TabsTrigger>
+                  <TabsTrigger value="text">Plain Text</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="visual">
+                  <div className="overflow-hidden rounded-[24px] border border-dashed border-slate-300 bg-slate-100">
+                    {isPreviewLoading ? (
+                      <div className="flex min-h-[40rem] items-center justify-center gap-3 text-sm text-slate-500">
+                        <LoaderCircle
+                          className="h-4 w-4 animate-spin"
+                          aria-hidden="true"
+                        />
+                        Building the inbox preview…
+                      </div>
+                    ) : emailPreview ? (
+                      <iframe
+                        title="Email inbox preview"
+                        srcDoc={emailPreview.html}
+                        sandbox=""
+                        className="h-[40rem] w-full bg-white"
+                      />
+                    ) : (
+                      <div className="flex min-h-[40rem] items-center justify-center text-sm text-slate-500">
+                        The preview will appear here after the message is prepared.
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="text">
+                  <div className="rounded-[24px] border border-dashed border-slate-300 bg-slate-950 px-4 py-4">
+                    <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-100">
+                      <TextQuote className="h-4 w-4" aria-hidden="true" />
+                      Plain Text Fallback
+                    </div>
+                    <pre className="whitespace-pre-wrap text-sm leading-7 text-slate-300">
+                      {emailPreview?.text ||
+                        "The text fallback will appear here after the preview is generated."}
+                    </pre>
+                  </div>
+                </TabsContent>
+              </Tabs>
+
+              <div className="flex flex-col gap-3 border-t border-dashed border-slate-300 pt-5 sm:flex-row sm:justify-between">
+                <div className="space-y-1 text-xs leading-5 text-slate-500">
+                  <p>
+                    `Save Draft` menyimpan segment, subject, dan body tanpa
+                    mengirim email.
+                  </p>
+                  <p>
+                    `Confirm & Queue Send` membuat campaign berstatus `queued`,
+                    lalu worker RabbitMQ yang memproses pengiriman broadcast.
+                  </p>
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    disabled={submissionMode !== null}
+                    onClick={() => void handleSubmitCampaign("draft")}
+                    className="h-12 border-dashed"
+                  >
+                    {submissionMode === "draft" ? "Saving…" : "Save Draft"}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    size="lg"
+                    disabled={
+                      submissionMode !== null ||
+                      isPreviewLoading ||
+                      Boolean(previewError) ||
+                      !emailPreview
+                    }
+                    onClick={() => void handleSubmitCampaign("send")}
+                    className="h-12 bg-[#0f2f78] px-6 text-white hover:bg-[#11265c]"
+                  >
+                    <SendHorizontal className="mr-2 h-4 w-4" aria-hidden="true" />
+                    {submissionMode === "send"
+                      ? "Queueing…"
+                      : "Confirm & Queue Send"}
+                  </Button>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -707,11 +1472,22 @@ export function Communication() {
               review everything once before sending.
             </p>
           </div>
-          <div className="inline-flex items-center gap-2 self-start rounded-full border border-dashed border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700">
-            <Users2 className="h-4 w-4" aria-hidden="true" />
-            <span className="tabular-nums">
-              {audience?.summary.totalRecipients ?? 0} eligible recipients
-            </span>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="inline-flex items-center gap-2 self-start rounded-full border border-dashed border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700">
+              <Users2 className="h-4 w-4" aria-hidden="true" />
+              <span className="tabular-nums">
+                {audience?.summary.totalRecipients ?? 0} eligible recipients
+              </span>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              asChild
+              className="h-11 border-dashed"
+            >
+              <Link to="/communication/history">Campaign History</Link>
+            </Button>
           </div>
         </div>
 
@@ -743,7 +1519,7 @@ export function Communication() {
                     Selected
                   </p>
                   <p className="mt-2 text-2xl font-bold text-[#1d376b] tabular-nums">
-                    {selectedRecipients.length}
+                    {selectedRecipientCount}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
                     These recipients will be included in the draft or send review.
@@ -1060,7 +1836,7 @@ export function Communication() {
                           Selected Recipients
                         </p>
                         <p className="mt-2 text-sm font-semibold text-slate-800">
-                          {selectedRecipients.length} selected for delivery
+                          {selectedRecipientCount} selected for delivery
                         </p>
                       </div>
                       <Button
@@ -1095,9 +1871,9 @@ export function Communication() {
                         </p>
                       )}
 
-                      {selectedRecipients.length > selectedRecipientPreview.length ? (
+                      {selectedRecipientCount > selectedRecipientPreview.length ? (
                         <p className="text-xs text-slate-500">
-                          +{selectedRecipients.length - selectedRecipientPreview.length} more recipients
+                          +{selectedRecipientCount - selectedRecipientPreview.length} more recipients
                         </p>
                       ) : null}
                     </div>
@@ -1114,6 +1890,100 @@ export function Communication() {
                   </div>
                 </TabsContent>
               </Tabs>
+
+              <div className="rounded-[24px] border border-dashed border-slate-300 bg-white p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                      Saved Drafts
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-slate-800">
+                      Reopen a saved draft without rebuilding the audience.
+                    </p>
+                  </div>
+                  {currentDraftId ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDetachDraft}
+                      className="border-dashed"
+                    >
+                      Save as New
+                    </Button>
+                  ) : null}
+                </div>
+
+                {draftsError ? (
+                  <div
+                    role="alert"
+                    className="mt-3 rounded-2xl border border-dashed border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-600"
+                  >
+                    {draftsError}
+                  </div>
+                ) : null}
+
+                <div className="mt-4 space-y-3">
+                  {isDraftsLoading ? (
+                    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                      Loading saved drafts…
+                    </div>
+                  ) : drafts.length ? (
+                    drafts.map((draft) => {
+                      const isCurrentDraft = draft.id === currentDraftId;
+
+                      return (
+                        <div
+                          key={draft.id}
+                          className={`rounded-2xl border px-4 py-4 ${
+                            isCurrentDraft
+                              ? "border-amber-300 bg-amber-50/50"
+                              : "border-dashed border-slate-300 bg-slate-50/70"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-slate-800">
+                                {draft.subject || "Untitled draft"}
+                              </p>
+                              <p className="mt-1 truncate text-xs text-slate-500">
+                                {draft.event.title ?? "All events"} ·{" "}
+                                {draft.recipientCount} recipient
+                                {draft.recipientCount === 1 ? "" : "s"}
+                              </p>
+                              <p className="mt-1 text-xs text-slate-400">
+                                Updated {formatDraftUpdatedAt(draft.updatedAt)}
+                              </p>
+                            </div>
+
+                            {isCurrentDraft ? (
+                              <span className="rounded-full bg-amber-100 px-3 py-1 text-[11px] font-semibold text-amber-800">
+                                Editing
+                              </span>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                disabled={loadingDraftId === draft.id}
+                                onClick={() => void handleLoadDraft(draft.id)}
+                                className="border-dashed"
+                              >
+                                {loadingDraftId === draft.id ? "Opening…" : "Open"}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                      No saved drafts yet. Save the current composer once to create
+                      your first reusable draft.
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </section>
 
@@ -1126,11 +1996,18 @@ export function Communication() {
                 <h2 className="text-pretty text-2xl font-bold text-[#1d376b]">
                   Draft the Message & Review Before Sending
                 </h2>
+                <p className="text-sm text-slate-500">
+                  {currentDraftSummary
+                    ? `Editing saved draft updated ${formatDraftUpdatedAt(
+                        currentDraftSummary.updatedAt,
+                      )}.`
+                    : "Save the current work as a draft any time before queueing the broadcast."}
+                </p>
               </div>
               <div className="inline-flex items-center gap-2 rounded-full border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-500">
                 <Mail className="h-4 w-4" aria-hidden="true" />
                 <span className="tabular-nums">
-                  {selectedRecipients.length} recipients selected
+                  {selectedRecipientCount} recipients selected
                 </span>
               </div>
             </div>
@@ -1156,7 +2033,7 @@ export function Communication() {
                     Audience Snapshot
                   </p>
                   <p className="mt-2 text-sm font-semibold text-slate-800">
-                    {selectedRecipients.length} selected
+                    {selectedRecipientCount} selected
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
                     {visibleRecipients.length} recipients visible in the current
@@ -1198,10 +2075,10 @@ export function Communication() {
                     Recipients
                   </Label>
                   <p className="text-xs text-slate-500">
-                    {selectedRecipients.length === 0
+                    {selectedRecipientCount === 0
                       ? "Select recipients from the left panel."
-                      : `${selectedRecipients.length} recipient${
-                          selectedRecipients.length === 1 ? "" : "s"
+                      : `${selectedRecipientCount} recipient${
+                          selectedRecipientCount === 1 ? "" : "s"
                         } ready for review.`}
                   </p>
                 </div>
@@ -1223,13 +2100,13 @@ export function Communication() {
                       </span>
                     ))}
 
-                    {selectedRecipients.length > 6 ? (
+                    {selectedRecipientCount > 6 ? (
                       <span className="rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
-                        +{selectedRecipients.length - 6} more
+                        +{selectedRecipientCount - 6} more
                       </span>
                     ) : null}
 
-                    {!selectedRecipients.length ? (
+                    {!selectedRecipientCount ? (
                       <span className="text-sm text-slate-400">
                         No recipients selected yet.
                       </span>
@@ -1274,6 +2151,33 @@ export function Communication() {
                 ) : null}
               </div>
 
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <Label
+                    htmlFor="communication-preview-text"
+                    className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400"
+                  >
+                    Inbox Preview Text
+                  </Label>
+                  <p className="text-xs text-slate-400">
+                    Optional preheader shown beside the subject in inbox previews.
+                  </p>
+                </div>
+                <Input
+                  id="communication-preview-text"
+                  name="previewText"
+                  value={previewText}
+                  autoComplete="off"
+                  maxLength={160}
+                  placeholder="Tambahkan ringkasan singkat yang muncul di inbox participant…"
+                  onChange={(event) => {
+                    setPreviewText(event.target.value);
+                    setFeedback(null);
+                  }}
+                  className="h-12 border-dashed bg-slate-50"
+                />
+              </div>
+
               <div ref={bodyFieldRef} className="space-y-2">
                 <Label
                   id="communication-message-body-label"
@@ -1314,139 +2218,38 @@ export function Communication() {
                 ) : null}
               </div>
 
-              {isReviewingSend ? (
-                <div className="rounded-[24px] border border-dashed border-amber-300 bg-amber-50/70 p-5">
-                  <div className="space-y-1">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-700">
-                      Review & Send
-                    </p>
-                    <p className="text-sm text-amber-900">
-                      Confirm the audience and message details one last time before
-                      sending the broadcast.
-                    </p>
-                  </div>
-
-                  <div className="mt-4 grid gap-3 xl:grid-cols-3">
-                    <div className="rounded-2xl border border-dashed border-amber-300 bg-white/80 px-4 py-3 xl:min-h-[118px]">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-700">
-                        Final Audience
-                      </p>
-                      <p className="mt-2 text-lg font-semibold text-slate-800">
-                        {selectedRecipients.length} recipients
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        Only the selected recipients will receive the email.
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-dashed border-amber-300 bg-white/80 px-4 py-3 xl:min-h-[118px]">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-700">
-                        Subject
-                      </p>
-                      <p className="mt-2 line-clamp-2 text-sm font-semibold text-slate-800">
-                        {subject}
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-dashed border-amber-300 bg-white/80 px-4 py-3 xl:min-h-[118px]">
-                      <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-700">
-                        Risk Check
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-slate-800">
-                        {selectedNonApprovedCount > 0
-                          ? `${selectedNonApprovedCount} non-approved recipients included`
-                          : "Approved-safe segment"}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        Review the audience if the segment is broader than expected.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 space-y-2">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-700">
-                      Active Audience Filters
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {activeFilterBadges.length ? (
-                        activeFilterBadges.map((badge) => (
-                          <span
-                            key={badge}
-                            className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-slate-700"
-                          >
-                            {badge}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="text-sm text-slate-600">
-                          No extra filters applied beyond the current event.
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
               <div className="mt-auto flex flex-col gap-4 border-t border-dashed border-slate-300 pt-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="max-w-md space-y-1 text-xs leading-5 text-slate-500">
                   <p>{hasUnsavedChanges ? "Unsaved changes pending." : "All changes saved."}</p>
                   <p>
-                    Save a draft anytime, then use Review &amp; Send for the final
-                    confirmation step.
+                    `Save Draft` hanya menyimpan composer. `Review &amp; Send`
+                    akan memindahkan Anda ke screen review template, inbox
+                    preview, dan konfirmasi queue RabbitMQ.
                   </p>
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row">
-                  {isReviewingSend ? (
-                    <>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="lg"
-                        disabled={submissionMode !== null}
-                        onClick={() => setIsReviewingSend(false)}
-                        className="h-12 border-dashed"
-                      >
-                        Back to Editing
-                      </Button>
-                      <Button
-                        type="button"
-                        size="lg"
-                        disabled={submissionMode !== null}
-                        onClick={() => void handleSubmitCampaign("send")}
-                        className="h-12 bg-[#0f2f78] px-6 text-white hover:bg-[#11265c]"
-                      >
-                        <SendHorizontal className="mr-2 h-4 w-4" aria-hidden="true" />
-                        {submissionMode === "send"
-                          ? "Sending…"
-                          : "Confirm & Send"}
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="lg"
-                        disabled={submissionMode !== null}
-                        onClick={() => void handleSubmitCampaign("draft")}
-                        className="h-12 border-dashed"
-                      >
-                        {submissionMode === "draft" ? "Saving…" : "Save Draft"}
-                      </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="lg"
+                    disabled={submissionMode !== null}
+                    onClick={() => void handleSubmitCampaign("draft")}
+                    className="h-12 border-dashed"
+                  >
+                    {submissionMode === "draft" ? "Saving…" : "Save Draft"}
+                  </Button>
 
-                      <Button
-                        type="button"
-                        size="lg"
-                        disabled={submissionMode !== null || isLoading}
-                        onClick={handleOpenReview}
-                        className="h-12 bg-[#0f2f78] px-6 text-white hover:bg-[#11265c]"
-                      >
-                        <SendHorizontal className="mr-2 h-4 w-4" aria-hidden="true" />
-                        Review &amp; Send
-                      </Button>
-                    </>
-                  )}
+                  <Button
+                    type="button"
+                    size="lg"
+                    disabled={submissionMode !== null || isLoading}
+                    onClick={handleOpenReview}
+                    className="h-12 bg-[#0f2f78] px-6 text-white hover:bg-[#11265c]"
+                  >
+                    <SendHorizontal className="mr-2 h-4 w-4" aria-hidden="true" />
+                    Review &amp; Send
+                  </Button>
                 </div>
               </div>
             </div>

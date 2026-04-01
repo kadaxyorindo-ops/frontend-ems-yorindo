@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
@@ -110,6 +110,22 @@ export function TiptapEmailEditor({
     setIsLinkInputOpen(false);
     setLinkValue("");
   };
+
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+
+    const nextHtml = value.html || "<p></p>";
+
+    if (editor.getHTML() === nextHtml) {
+      return;
+    }
+
+    editor.commands.setContent(nextHtml, {
+      emitUpdate: false,
+    });
+  }, [editor, value.html]);
 
   const handleLinkToggle = () => {
     if (!editor) {

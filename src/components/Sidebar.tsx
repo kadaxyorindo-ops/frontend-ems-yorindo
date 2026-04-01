@@ -8,6 +8,7 @@ interface SidebarProps {
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
+  const isActivePrefix = (path: string) => location.pathname.startsWith(path);
 
   return (
     <>
@@ -58,6 +59,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             }`}
           >
             [Nav: Communication]
+          </Link>
+          <Link 
+            to="/communication/history" 
+            onClick={onClose}
+            className={`h-12 border border-dashed rounded-lg flex items-center px-4 font-mono text-sm transition-colors ${
+              isActivePrefix('/communication/history') 
+                ? 'bg-slate-100 border-slate-400 text-slate-700' 
+                : 'border-slate-300 text-slate-400 hover:bg-slate-50'
+            }`}
+          >
+            [Nav: Campaign History]
           </Link>
           <Link 
             to="/settings" 
