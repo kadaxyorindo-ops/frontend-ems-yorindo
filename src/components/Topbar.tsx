@@ -46,11 +46,11 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
         
         <DropdownMenu>
           <DropdownMenuTrigger className="outline-none">
-            <div className="w-10 h-10 rounded-full bg-background border border-slate-200 flex items-center justify-center text-slate-500 font-mono text-xs hover:bg-slate-300 transition-colors cursor-pointer">
+            <div className="w-10 h-10 rounded-full bg-background border border-slate-200 flex items-center justify-center text-slate-500 font-mono text-xs hover:bg-[#eaedff] transition-colors cursor-pointer">
               U
             </div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-48 bg-background">
             <DropdownMenuItem className="cursor-pointer">
               Profile
             </DropdownMenuItem>
