@@ -1,6 +1,18 @@
 import {Sidebar} from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { useState } from "react";
+import {Search} from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table.tsx";
+import { Button } from "./ui/button.tsx";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select"
+
+import { Input } from "./ui/input.tsx";
 
 const dummyParticipants = [
   { id: 1, Name: "Alice Johnson", Email: "alice.johnson@example.com", Company: "Tech Innovators Inc.", Industry: "Technology", Role: "HR Manager", status: "Approved"},
@@ -16,6 +28,69 @@ const totalParticipants = dummyParticipants.length;
 
 export function Participants() {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [selectedParticipant, setSelectedParticipant] = useState(null);
+
+    const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState("");
+    const [industryFilter, setIndustryFilter] = useState("");
+
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+
+    const filteredParticipants = dummyParticipants.filter((p) => {
+        const matchesSearch = searchQuery === "" || p.Name.toLowerCase().includes(searchQuery.toLowerCase()) || p.Company.toLowerCase().includes(searchQuery.toLowerCase());
+
+        const matchesStatus = statusFilter === "" || statusFilter === "all" || p.status.toLowerCase() === statusFilter.toLowerCase();
+
+        const matchesIndustry = industryFilter === "" || industryFilter === "all" || p.Industry.toLowerCase() === industryFilter.toLowerCase();
+        
+        return matchesSearch && matchesStatus && matchesIndustry;
+    });
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
+
+    const totalPages = Math.ceil(filteredParticipants.length / rowsPerPage);
+    const indexOfLastItem = currentPage * rowsPerPage;
+    const indexOfFirstItem = indexOfLastItem - rowsPerPage;
+    const currentItems = filteredParticipants.slice(indexOfFirstItem, indexOfLastItem);
+    
+
+    const toggleSelectAll = () => {
+        if (selectedIds.length === currentItems.length && currentItems.length > 0) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(currentItems.map((p) => p.id));
+        }
+    };
+
+    const toggleSelectOne =(participant: any) =>{
+       const id = participant.id;
+    setSelectedIds(prev => {
+        const isCurrentlySelected = prev.includes(id);
+        
+        if (isCurrentlySelected) {
+            // Jika di-uncheck, hapus dari list ID
+            const newIds = prev.filter(item => item !== id);
+            
+            // LOGIKA TAMBAHAN: Jika partisipan yang di-uncheck adalah yang sedang tampil di sidebar, tutup sidebarnya
+            if (selectedParticipant?.id === id) {
+                setSelectedParticipant(null);
+            }
+            return newIds;
+        } else {
+            // Jika di-check, tambahkan ke list dan tampilkan di sidebar
+            setSelectedParticipant(participant);
+            return [...prev, id];
+        }
+    });
+    }
+
+    // Mengambil daftar status unik (Approved, Pending, Rejected, dll)
+    const uniqueStatuses = Array.from(new Set(dummyParticipants.map(p => p.status)));
+
+    // Mengambil daftar industri unik (Technology, Finance, Health, dll)
+    const uniqueIndustries = Array.from(new Set(dummyParticipants.map(p => p.Industry)));
+
     return(
         <div className="min-h-screen flex bg-background relative overflow-hidden">
             <Sidebar 
@@ -25,7 +100,7 @@ export function Participants() {
 
             <main className="flex-1 flex flex-col min-w-0 w-full">
                 <Topbar onToggleSidebar={() => setIsSidebarOpen(true)} />
-                <header className="flex flex-col p-4 md:p-8 md:flex-row md:items-end justify-between">
+                <header className="flex flex-col p-4 md:px-8 md:pt-8 md:flex-row md:items-end justify-between">
                     <div className="flex flex-col justify-between items-start mb-6 pb-2 ml-10 mr-10 gap-3">
                         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[#001a4e]">
                             {eventName}
@@ -48,7 +123,9 @@ export function Participants() {
                                 Approved Participants
                             </div>
                         </div>
-                        <button className="bg-[#e8e7ef] text-primary px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:shadow-xl transition-colors active:scale-95">
+                        <button 
+                        className="bg-[#e8e7ef] text-primary px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:shadow-xl transition-colors active:scale-95"
+                        >
                             Reject Selected
                         </button>
                         <button className="bg-[linear-gradient(135deg,#002d7a_0%,#15439f_100%)] text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:shadow-xl transition-all active:scale-95">
@@ -56,6 +133,173 @@ export function Participants() {
                         </button>
                     </div>
                 </header>
+
+                <div className="grid grid-cols-12 gap-6 px-10">
+                    <div className={`transition-all duration-300 ${selectedParticipant ? "col-span-12 lg:col-span-8":"col-span-12"}`}>
+                        <div className="bg-white p-6 rounded-2xl">
+                            {/* filter and search */}
+                            <div className="flex flex-col md:flex-row gap-4 mb-6">
+                                {/* search input */}
+                                <div className="relative flex-1">
+                                    <span className="absolute inset-y-0 left-3 flex items-center text-slate-400 z-10">
+                                        <Search className="h-4 w-4" />
+                                    </span>
+                                    
+                                    <Input 
+                                        type="text"
+                                        value={searchQuery}
+                                        onChange={(e) => {
+                                            setSearchQuery(e.target.value); 
+                                            setCurrentPage(1);
+                                        }} 
+                                        placeholder="Search participants or companies..."
+                                        // Tambahkan pl-10 agar teks tidak menabrak ikon Search
+                                        className="pl-10 bg-background border-slate-200 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
+                                    />
+                                </div>
+
+                                {/* Filter Status */}
+                                <Select 
+                                value={statusFilter} 
+                                onValueChange={(value) => {setStatusFilter(value === "all" ? "" : value);    setCurrentPage(1);}}
+                                >
+                                    <SelectTrigger className="w-[180px] rounded-xl border-slate-200 bg-background focus:ring-1 focus:ring-indigo-400 transition-all">
+                                        <SelectValue placeholder="All Status"/>
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                                        <SelectItem value="all">All Status</SelectItem>
+                                        {uniqueStatuses.map((status) => (
+                                        <SelectItem key={status} value={status.toLowerCase()}>
+                                            {status}
+                                        </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                
+                                {/* Filter Industry */}
+                                <Select
+                                value={industryFilter}
+                                onValueChange={(value) => {setIndustryFilter(value === "all" ? "" : value); setCurrentPage(1);}}
+                                >
+                                    <SelectTrigger className="w-[180px] rounded-xl border-slate-200 bg-background focus:ring-1 focus:ring-indigo-400 transition-all">
+                                        <SelectValue placeholder="All Industries" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                                        <SelectItem value="all">All Industries</SelectItem>
+                                        {uniqueIndustries.map((industry) => (
+                                        <SelectItem key={industry} value={industry.toLowerCase()}>
+                                            {industry}
+                                        </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {/* Tabel Participants */}
+                            <div className="overflow-x-auto">
+                                <Table className="w-full border border-sm">
+                                    <TableHeader className="bg-slate-50">
+                                        <TableRow>
+                                            <TableHead className="w-[50px] text-center">
+                                                <input 
+                                                type="checkbox" 
+                                                checked={currentItems.length > 0 && selectedIds.length === currentItems.length}
+                                                onChange={toggleSelectAll}
+                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                                />
+                                            </TableHead>
+                                            <TableHead className="font-bold text-primary pl-10">Name</TableHead>
+                                            <TableHead className="font-bold text-primary text-center">Company</TableHead>
+                                            <TableHead className="font-bold text-primary text-center">Industry</TableHead>
+                                            <TableHead className="font-bold text-primary text-center">Role</TableHead>
+                                            <TableHead className="font-bold text-primary text-center">Status</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {currentItems.map((participant) => (
+                                            <TableRow 
+                                            key={participant.id}
+                                            className={selectedIds.includes(participant.id) ? "bg-blue-50/50" : ""}
+                                            >
+                                                <TableCell className="w-[50px] text-center">
+                                                    <input 
+                                                    type="checkbox" 
+                                                    checked={selectedIds.includes(participant.id)}
+                                                    onChange={() => {toggleSelectOne(participant)}}
+                                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                                    />
+                                                </TableCell>
+                                                <TableCell className="font-medium pl-10">{participant.Name}</TableCell>
+                                                <TableCell className="text-center">{participant.Company}</TableCell>
+                                                <TableCell className="text-center">{participant.Industry}</TableCell>
+                                                <TableCell className="text-center">{participant.Role}</TableCell>
+                                                <TableCell className="text-center">{participant.status}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+
+                        {/* pagination */}
+                        <div className="flex items-center justify-between px-6 py-3 bg-background">
+                            <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium text-slate-500">Rows per page</p>
+                                <Select
+                                    value={rowsPerPage.toString()}
+                                    onValueChange={(value) => {
+                                    setRowsPerPage(Number(value));
+                                    setCurrentPage(1);
+                                    }}
+                                >
+                                    <SelectTrigger className="h-8 w-[70px] rounded-lg border-slate-200 bg-white">
+                                    <SelectValue placeholder={rowsPerPage} />
+                                    </SelectTrigger>
+                                    <SelectContent side="top">
+                                    {[5, 10, 20, 50].map((pageSize) => (
+                                        <SelectItem key={pageSize} value={`${pageSize}`}>
+                                        {pageSize}
+                                        </SelectItem>
+                                    ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="text-sm text-slate-500">
+                                Showing <span className="font-medium text-slate-700"> {filteredParticipants.length > 0 ? indexOfFirstItem + 1 : 0} </span> to{" "}
+                                <span className="font-medium text-slate-700">{Math.min(indexOfLastItem, filteredParticipants.length)}</span> of{" "} 
+                                <span className="font-medium text-slate-700">{filteredParticipants.length}</span> results
+                            </div>
+                            
+                            <div className="flex items-center gap-4">
+                                <div className="text-sm font-medium text-slate-600">
+                                    Page {currentPage} of {totalPages || 1}
+                                </div>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={()=> setCurrentPage(prev => Math.max(prev-1, 1))}
+                                        disabled={currentPage === 1}
+                                        className="border border-md border-slate-500"
+                                    >
+                                        Previous
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={()=> setCurrentPage(prev => Math.min(prev+1, totalPages))}
+                                        disabled={currentPage === totalPages || totalPages === 0}
+                                        className="border border-md border-slate-500"
+                                    >
+                                        Next
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>  
+                    </div>
+                </div>
+                
             </main>
         </div>
     )
