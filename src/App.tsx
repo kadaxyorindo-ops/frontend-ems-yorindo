@@ -117,6 +117,14 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route 
+          path="/participants"
+          element={
+            <ProtectedRoute>
+              <Participants />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/settings"
           element={
