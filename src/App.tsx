@@ -9,6 +9,7 @@ import { Login } from "@/pages/auth/Login";
 import { Events } from "@/pages/events/Events";
 import { Users } from "@/pages/users/Users";
 import { Communication } from "@/pages/communication/Communication";
+import { CampaignHistory } from "@/pages/communication/CampaignHistory";
 import { Settings } from "@/pages/settings/Settings";
 import { NotFound } from "@/pages/NotFound";
 import {Participants} from "@/components/Participant";
@@ -106,6 +107,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Communication />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/communication/history"
+          element={
+            <ProtectedRoute>
+              <CampaignHistory />
             </ProtectedRoute>
           }
         />
