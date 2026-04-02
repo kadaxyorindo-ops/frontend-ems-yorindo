@@ -13,6 +13,7 @@ import { CampaignHistory } from "@/pages/communication/CampaignHistory";
 import { Settings } from "@/pages/settings/Settings";
 import { NotFound } from "@/pages/NotFound";
 import { useAuth } from "@/hooks/useAuth";
+import { Participants } from "@/components/Participant";
 
 function FullPageStatus({ label }: { label: string }) {
   return (
