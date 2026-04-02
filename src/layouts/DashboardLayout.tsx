@@ -16,7 +16,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 w-full">
+      <div className="flex min-w-0 flex-1 flex-col w-full">
         
         {/* Isolated Topbar Component */}
         <Topbar onToggleSidebar={() => setIsSidebarOpen(true)} />
