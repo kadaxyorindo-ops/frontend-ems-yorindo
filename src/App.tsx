@@ -12,7 +12,6 @@ import { Communication } from "@/pages/communication/Communication";
 import { CampaignHistory } from "@/pages/communication/CampaignHistory";
 import { Settings } from "@/pages/settings/Settings";
 import { NotFound } from "@/pages/NotFound";
-import {Participants} from "@/components/Participant";
 import { useAuth } from "@/hooks/useAuth";
 
 function FullPageStatus({ label }: { label: string }) {

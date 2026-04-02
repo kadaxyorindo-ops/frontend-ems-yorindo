@@ -23,7 +23,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 
         {/* Dynamic Page Content */}
         <main className="flex-1 p-4 md:p-8 overflow-x-hidden">
-          <div className="max-w-6xl mx-auto bg-white min-h-[500px] rounded-3xl p-6">
+          <div className="max-w-6xl mx-auto min-h-[500px] rounded-3xl p-6">
             {children}
           </div>
         </main>
