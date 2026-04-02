@@ -28,7 +28,10 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
-import { api } from "@/services/api";
+import {
+  api,
+  apiPaths,
+} from "@/services/api";
 
 type FilterOption = {
   id: string;
@@ -576,7 +579,7 @@ export function Communication() {
     setDraftsError("");
 
     const result = await api.get<CommunicationDraftSummary[]>(
-      "/api/communications/drafts",
+      `${apiPaths.communications}/drafts`,
     );
 
     if (!result.data) {
@@ -596,7 +599,7 @@ export function Communication() {
     setFeedback(null);
 
     const result = await api.get<CommunicationDraftDetail>(
-      `/api/communications/drafts/${draftId}`,
+      `${apiPaths.communications}/drafts/${draftId}`,
     );
 
     setLoadingDraftId(null);
@@ -766,7 +769,7 @@ export function Communication() {
 
     void api
       .get<CommunicationAudienceResponse>(
-        `/api/communications/audience${query ? `?${query}` : ""}`,
+        `${apiPaths.communications}/audience${query ? `?${query}` : ""}`,
       )
       .then((result) => {
         if (latestRequestRef.current !== requestId) {
@@ -889,7 +892,7 @@ export function Communication() {
     setPreviewError("");
 
     void api
-      .post<EmailPreviewResponse>("/api/communications/preview", {
+      .post<EmailPreviewResponse>(`${apiPaths.communications}/preview`, {
         eventId: filters.eventId || null,
         templateId,
         previewText,
@@ -1036,7 +1039,7 @@ export function Communication() {
     setFeedback(null);
 
     const result = await api.post<CampaignResponse>(
-      "/api/communications/campaigns",
+      `${apiPaths.communications}/campaigns`,
       {
         mode,
         draftId: currentDraftId,

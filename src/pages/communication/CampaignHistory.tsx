@@ -16,7 +16,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
-import { api } from "@/services/api";
+import {
+  api,
+  apiPaths,
+} from "@/services/api";
 import {
   Table,
   TableBody,
@@ -213,7 +216,7 @@ export function CampaignHistory() {
 
     void api
       .get<CampaignHistoryResponse>(
-        `/api/communications/campaigns${params.toString() ? `?${params.toString()}` : ""}`,
+        `${apiPaths.communications}/campaigns${params.toString() ? `?${params.toString()}` : ""}`,
       )
       .then((result) => {
         if (!result.data) {

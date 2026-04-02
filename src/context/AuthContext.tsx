@@ -6,6 +6,7 @@ import {
 } from "react";
 import {
   api,
+  apiPaths,
   AUTH_TOKEN_STORAGE_KEY,
   AUTH_USER_STORAGE_KEY,
   clearPersistedAuthToken,
@@ -90,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let isMounted = true;
 
-    void api.get<AuthUser>("/api/v1/auth/me").then((result) => {
+    void api.get<AuthUser>(`${apiPaths.auth}/me`).then((result) => {
       if (!isMounted) {
         return;
       }
@@ -115,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const requestOtp = async (
     email: string,
   ): Promise<AuthActionResult<RequestOtpResponse>> => {
-    const result = await api.post<RequestOtpResponse>("/api/v1/auth/request-otp", {
+    const result = await api.post<RequestOtpResponse>(`${apiPaths.auth}/request-otp`, {
       email,
     });
 
@@ -137,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     code: string,
   ): Promise<AuthActionResult> => {
-    const result = await api.post<VerifyOtpResponse>("/api/v1/auth/verify-otp", {
+    const result = await api.post<VerifyOtpResponse>(`${apiPaths.auth}/verify-otp`, {
       email,
       code,
     });

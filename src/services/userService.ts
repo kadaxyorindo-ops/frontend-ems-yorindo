@@ -1,4 +1,7 @@
-import { api } from "@/services/api";
+import {
+  api,
+  apiPaths,
+} from "@/services/api";
 
 export interface User {
   _id: string;
@@ -67,18 +70,18 @@ export function getUsers(params: GetUsersParams = {}) {
   if (params.search) query.set("search", params.search);
   if (params.role)   query.set("role",   params.role);
   return api.get<{ items: User[]; pagination: { page: number; limit: number; total: number; totalPages: number } }>(
-    `/api/v1/users?${query.toString()}`,
+    `${apiPaths.users}?${query.toString()}`,
   );
 }
 
 export function createUser(data: UserFormData) {
-  return api.post<User>("/api/v1/users", data);
+  return api.post<User>(apiPaths.users, data);
 }
 
 export function updateUser(id: string, data: UpdateUserData) {
-  return api.patch<User>(`/api/v1/users/${id}`, data);
+  return api.patch<User>(`${apiPaths.users}/${id}`, data);
 }
 
 export function toggleUserActive(id: string) {
-  return api.patch<User>(`/api/v1/users/${id}/toggle-active`);
+  return api.patch<User>(`${apiPaths.users}/${id}/toggle-active`);
 }
