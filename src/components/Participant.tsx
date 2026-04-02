@@ -14,13 +14,13 @@ import {
 import { Input } from "./ui/input.tsx";
 
 const dummyParticipants = [
-  { id: 1, Name: "Alice Johnson", Email: "alice.johnson@example.com", Company: "Tech Innovators Inc.", Industry: "Technology", Role: "HR Manager", status: "Approved"},
-  { id: 2, Name: "Bob Smith", Email: "bob.smith@example.com", Company: "Global Solutions Ltd.", Industry: "Finance", Role: "Financial Analyst", status: "Rejected" },
-  { id: 3, Name: "Charlie Davis", Email: "charlie.davis@example.com", Company: "St. Helen Hospital", Industry: "Health", Role: "Nurse", status: "Pending" },
-  { id: 4, Name: "Diana Prince", Email: "diana.prince@example.com", Company: "Creative Minds", Industry: "Marketing", Role: "Marketing Specialist", status: "Approved" },
-  { id: 5, Name: "Ethan Hunt", Email: "ethan.hunt@example.com", Company: "SecureTech", Industry: "Security", Role: "Security Consultant", status: "Rejected" },
-  { id: 6, Name: "Fiona Gallagher", Email: "fiona.gallagher@example.com", Company: "Innovate Solutions", Industry: "Technology", Role: "Software Engineer", status: "Pending" },
-  { id: 7, Name: "George Washington", Email: "george.washington@example.com", Company: "Patriot Ventures", Industry: "Politics", Role: "Political Advisor", status: "Approved" }
+  { id: 1, Name: "Alice Johnson", Email: "alice.johnson@example.com", Company: "Tech Innovators Inc.", Industry: "Technology", Role: "HR Manager", City: "Jakarta", status: "Approved"},
+  { id: 2, Name: "Bob Smith", Email: "bob.smith@example.com", Company: "Global Solutions Ltd.", Industry: "Finance", Role: "Financial Analyst", City: "Bandung", status: "Rejected" },
+  { id: 3, Name: "Charlie Davis", Email: "charlie.davis@example.com", Company: "St. Helen Hospital", Industry: "Health", Role: "Nurse", City: "Surabaya", status: "Pending" },
+  { id: 4, Name: "Diana Prince", Email: "diana.prince@example.com", Company: "Creative Minds", Industry: "Marketing", Role: "Marketing Specialist", City: "Medan", status: "Approved" },
+  { id: 5, Name: "Ethan Hunt", Email: "ethan.hunt@example.com", Company: "SecureTech", Industry: "Security", Role: "Security Consultant", City: "Denpasar", status: "Rejected" },
+  { id: 6, Name: "Fiona Gallagher", Email: "fiona.gallagher@example.com", Company: "Innovate Solutions", Industry: "Technology", Role: "Software Engineer", City: "Makassar", status: "Pending" },
+  { id: 7, Name: "George Washington", Email: "george.washington@example.com", Company: "Patriot Ventures", Industry: "Politics", Role: "Political Advisor", City: "Balikpapan", status: "Approved" }
 ];
 
 const eventName = "Global Innovation Summit 2026";
@@ -68,7 +68,7 @@ export function Participants() {
 
     const toggleSelectOne =(participant: any) =>{
        const id = participant.id;
-    setSelectedIds(prev => {
+        setSelectedIds(prev => {
         const isCurrentlySelected = prev.includes(id);
         
         if (isCurrentlySelected) {
@@ -121,10 +121,10 @@ export function Participants() {
                         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[#001a4e]">
                             {eventName}
                         </h1>
-                        <div className="flex items-center gap-4">
+                        {/* <div className="flex items-center gap-4">
                             <span className="px-3 py-1 bg-[#fed174] text-[#785800] rounded-full text-xs font-bold tracking-wider uppercase">Active Tracking</span>
                             <span className="text-slate-500 text-sm font-medium">Updated 2 minutes ago</span>
-                        </div>
+                        </div> */}
                     </div>
 
                     <div className="flex items-center gap-3 mb-6 pb-2 ml-10 mr-10">
@@ -140,7 +140,7 @@ export function Participants() {
                             </div>
                         </div>
                         <button 
-                        className="bg-[#e8e7ef] text-primary px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:shadow-xl transition-colors active:scale-95"
+                        className="bg-[#e8e7ef]/50 text-primary px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:shadow-xl transition-all active:scale-95"
                         >
                             Reject Selected
                         </button>
@@ -322,11 +322,44 @@ export function Participants() {
                     <div className={`transition-all duration-300 ${selectedParticipant ? "block lg:block col-span-3":"hidden lg:hidden"}`}>
                         <div className="bg-white p-6 rounded-2xl relative overflow-hidden shadow-xl shadow-slate-300 h-full">
                             {selectedParticipant ? (
-                                <div className="flex flex-col gap-4">
+                                <div className="flex flex-col gap-6">
                                     <div>
-                                        <p className="text-sm font-bold text-slate-500">Participant Details</p>
+                                        <p className="text-[13px] font-bold text-slate-500">Participant Details</p>
                                     </div>
-                                    <h2 className="text-xl font-bold ">{selectedParticipant.Name}</h2>
+                                    <div className="items-center pt-3">
+                                        <h2 className="text-3xl font-bold tracking-loose text-primary text-center">{selectedParticipant.Name}</h2>
+                                        <h3 className="text-sm text-[#002D7A] text-center">{selectedParticipant.Email}</h3>
+                                    </div>
+                                    <div className="pt-5 flex justify-between text-left">
+                                        <div>
+                                            <div className="text-[11px] text-muted-foreground uppercase font-bold ">COmpany</div>
+                                            <div className="text-sm font-bold text-primary">{selectedParticipant.Company}</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-[11px] text-muted-foreground uppercase font-bold">Role</div>
+                                            <div className="text-sm font-bold text-[#002D7A]">{selectedParticipant.Role}</div>
+                                        </div>
+                                    </div>
+                                    <div className="pt-3 flex justify-between text-left">
+                                        <div>
+                                            <div className="text-[11px] text-muted-foreground uppercase font-bold ">Industry</div>
+                                            <div className="text-sm font-bold text-primary">{selectedParticipant.Industry}</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-[11px] text-muted-foreground uppercase font-bold">City</div>
+                                            <div className="text-sm font-bold text-[#002D7A]">{selectedParticipant?.City}</div>
+                                        </div>
+                                    </div>
+                                    <div className="pt-5 px-3 flex flex-row justify-around">
+                                        <button 
+                                        className="bg-[#DDDCE3] text-foreground px-6 py-2 rounded-lg font-bold text-sm hover:shadow-xl transition-all active:scale-95 w-[100px]"
+                                        >
+                                            Reject
+                                        </button>
+                                        <button className="bg-[#15439F] text-white px-6 py-2 rounded-lg font-bold text-sm hover:shadow-xl transition-all active:scale-95 w-[100px]">
+                                            Approve
+                                        </button>
+                                    </div>
                                 </div>
                             ) : null}
 
