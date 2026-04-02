@@ -7,10 +7,12 @@ import {
 } from "react-router-dom";
 import { Login } from "@/pages/auth/Login";
 import { Events } from "@/pages/events/Events";
+import { Users } from "@/pages/users/Users";
 import { Communication } from "@/pages/communication/Communication";
 import { CampaignHistory } from "@/pages/communication/CampaignHistory";
 import { Settings } from "@/pages/settings/Settings";
 import { NotFound } from "@/pages/NotFound";
+import {Participants} from "@/components/Participant";
 import { useAuth } from "@/hooks/useAuth";
 
 function FullPageStatus({ label }: { label: string }) {
@@ -35,6 +37,24 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function SuperAdminRoute({ children }: { children: ReactNode }) {
+  const { user, isAuthenticated, isInitializing } = useAuth();
+
+  if (isInitializing) {
+    return <FullPageStatus label="Memuat..." />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (user?.role !== "super_admin") {
+    return <Navigate to="/events" replace />;
   }
 
   return <>{children}</>;
@@ -72,6 +92,14 @@ function App() {
             <ProtectedRoute>
               <Events />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <SuperAdminRoute>
+              <Users />
+            </SuperAdminRoute>
           }
         />
         <Route

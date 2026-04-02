@@ -1,8 +1,6 @@
-import { startTransition, useEffect, useState, type FormEvent } from "react";
+import { startTransition, useEffect, useState } from "react";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
 import { OtpInput } from "@/components/auth/OtpInput";
 
@@ -11,48 +9,42 @@ const EMPTY_OTP = ["", "", "", "", "", ""];
 export function Login() {
   const navigate = useNavigate();
   const { requestOtp, verifyOtp } = useAuth();
+
   const [emailInput, setEmailInput] = useState("");
   const [submittedEmail, setSubmittedEmail] = useState("");
   const [otpDigits, setOtpDigits] = useState<string[]>(EMPTY_OTP);
-  const [step, setStep] = useState<"email" | "otp">("email");
+  const [otpSent, setOtpSent] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [otpError, setOtpError] = useState("");
-  const [feedbackMessage, setFeedbackMessage] = useState("");
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [otpExpiresInSeconds, setOtpExpiresInSeconds] = useState(300);
 
   const otpValue = otpDigits.join("");
 
   useEffect(() => {
-    if (resendCooldown <= 0) {
-      return;
-    }
-
-    const timer = window.setTimeout(() => {
-      setResendCooldown((currentValue) => currentValue - 1);
-    }, 1_000);
-
+    if (resendCooldown <= 0) return;
+    const timer = window.setTimeout(
+      () => setResendCooldown((v) => v - 1),
+      1_000,
+    );
     return () => window.clearTimeout(timer);
   }, [resendCooldown]);
 
-  const handleRequestOtp = async (event?: FormEvent) => {
+  const handleSendCode = async (event?: { preventDefault(): void }) => {
     event?.preventDefault();
-    const normalizedEmail = emailInput.trim().toLowerCase();
+    const email = emailInput.trim().toLowerCase();
 
     setEmailError("");
     setOtpError("");
-    setFeedbackMessage("");
 
-    if (!normalizedEmail) {
-      setEmailError("Masukkan email kantor Anda terlebih dahulu.");
+    if (!email) {
+      setEmailError("Enter your work email first.");
       return;
     }
 
     setIsSendingCode(true);
-
-    const result = await requestOtp(normalizedEmail);
+    const result = await requestOtp(email);
     setIsSendingCode(false);
 
     if (!result.ok) {
@@ -60,21 +52,18 @@ export function Login() {
       return;
     }
 
-    setSubmittedEmail(normalizedEmail);
-    setStep("otp");
+    setSubmittedEmail(email);
     setOtpDigits([...EMPTY_OTP]);
-    setFeedbackMessage(result.message);
-    setOtpExpiresInSeconds(result.data?.expiresInSeconds ?? 300);
+    setOtpSent(true);
     setResendCooldown(result.data?.resendAvailableInSeconds ?? 60);
   };
 
-  const handleVerifyOtp = async (event: FormEvent) => {
+  const handleLogin = async (event: { preventDefault(): void }) => {
     event.preventDefault();
     setOtpError("");
-    setFeedbackMessage("");
 
     if (otpValue.length !== 6) {
-      setOtpError("Masukkan 6 digit kode OTP yang Anda terima.");
+      setOtpError("Enter all 6 digits of your OTP code.");
       return;
     }
 
@@ -92,167 +81,132 @@ export function Login() {
     });
   };
 
-  const handleResendOtp = async () => {
-    if (resendCooldown > 0 || isSendingCode) {
-      return;
-    }
+  const sendButtonDisabled =
+    isSendingCode || isVerifying || (otpSent && resendCooldown > 0);
 
-    setIsSendingCode(true);
-    setOtpError("");
-    setFeedbackMessage("");
-
-    const result = await requestOtp(submittedEmail);
-    setIsSendingCode(false);
-
-    if (!result.ok) {
-      setOtpError(result.message);
-      return;
-    }
-
-    setOtpDigits([...EMPTY_OTP]);
-    setFeedbackMessage("Kode OTP baru sudah dikirim. Silakan cek inbox Anda.");
-    setOtpExpiresInSeconds(result.data?.expiresInSeconds ?? 300);
-    setResendCooldown(result.data?.resendAvailableInSeconds ?? 60);
-  };
+  const sendButtonLabel = isSendingCode
+    ? "Sending code..."
+    : otpSent && resendCooldown > 0
+      ? `Resend in ${resendCooldown}s`
+      : "Send Verification Code";
 
   return (
     <AuthLayout>
-      <div className="space-y-8 rounded-2xl border-2 border-dashed border-slate-300 bg-white p-8 shadow-sm md:p-10">
-        <div className="space-y-2">
-          <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-400">
-            Yorindo EMS
-          </p>
-          <h2 className="text-3xl font-bold text-slate-800">
-            Login dengan OTP Email
-          </h2>
-          <p className="font-mono text-sm text-slate-500">
-            Masukkan email kantor Anda untuk menerima kode verifikasi 6 digit.
+      <div className="space-y-7">
+        {/* Header */}
+        <div className="space-y-1">
+          <h1 className="text-[1.9rem] font-bold tracking-tight text-slate-900">
+            Welcome back
+          </h1>
+          <p className="text-slate-500 text-sm">
+            Access your event management dashboard.
           </p>
         </div>
 
-          <div className="relative py-2">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-dashed border-slate-300" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-4 font-bold tracking-widest text-slate-400">
-                {step === "email" ? "Request OTP" : "Verify OTP"}
-              </span>
-            </div>
-          </div>
-
-          {feedbackMessage ? (
-            <div className="rounded-xl border border-dashed border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-              {feedbackMessage}
-            </div>
-          ) : null}
-
-          {step === "email" ? (
-            <form onSubmit={handleRequestOtp} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Professional Email
-                </label>
-                <div className="relative">
-                  <Input
-                    type="email"
-                    autoFocus
-                    value={emailInput}
-                    onChange={(event) => setEmailInput(event.target.value)}
-                    placeholder="nama@yorindo.co.id"
-                    className="h-12 border-dashed bg-slate-50 pl-4 pr-11 font-mono text-sm text-slate-700"
-                  />
-                  <div className="absolute right-3 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-sm border border-dashed border-slate-400">
-                    <span className="text-[10px] text-slate-400">✉</span>
-                  </div>
-                </div>
-                {emailError ? (
-                  <p className="text-sm text-rose-600">{emailError}</p>
-                ) : null}
-              </div>
-
-              <Button
-                type="submit"
-                size="lg"
-                disabled={isSendingCode}
-                className="h-12 w-full border-2 border-dashed border-slate-400 bg-slate-200 font-bold text-slate-700 hover:bg-slate-300"
-              >
-                {isSendingCode ? "Mengirim kode..." : "Kirim Kode Verifikasi"}
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handleVerifyOtp} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Email Tujuan OTP
-                </label>
-                <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 px-4 py-3 font-mono text-sm text-slate-600">
-                  {submittedEmail}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  6-Digit Code
-                </label>
-                <OtpInput
-                  value={otpDigits}
-                  onChange={setOtpDigits}
-                  disabled={isVerifying}
-                />
-                {otpError ? (
-                  <p className="text-sm text-rose-600">{otpError}</p>
-                ) : (
-                  <p className="text-sm font-mono text-slate-400">
-                    Kode berlaku{" "}
-                    {Math.ceil(otpExpiresInSeconds / 60)} menit dan hanya bisa
-                    dipakai sekali.
-                  </p>
-                )}
-              </div>
-
-              <Button
-                type="submit"
-                size="lg"
-                disabled={isVerifying}
-                className="h-12 w-full border-2 border-dashed border-slate-400 bg-slate-800 font-bold text-white hover:bg-slate-700"
-              >
-                {isVerifying ? "Memverifikasi..." : "Login ke Dashboard"}
-              </Button>
-
-              <div className="flex items-center justify-between gap-3 text-sm">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStep("email");
+        {/* Email section */}
+        <form onSubmit={handleSendCode} className="space-y-3">
+          <div className="space-y-1.5">
+            <label className="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+              Professional Email
+            </label>
+            <div className="relative">
+              <input
+                type="email"
+                autoFocus
+                value={emailInput}
+                onChange={(e) => {
+                  setEmailInput(e.target.value);
+                  if (otpSent) {
+                    setOtpSent(false);
                     setOtpDigits([...EMPTY_OTP]);
                     setOtpError("");
-                    setFeedbackMessage("");
-                  }}
-                  className="font-medium text-slate-500 underline-offset-4 hover:text-slate-700 hover:underline"
-                >
-                  Ganti email
-                </button>
+                  }
+                }}
+                disabled={isSendingCode || isVerifying}
+                placeholder="nama@yorindo.co.id"
+                className="w-full h-11 rounded-lg border border-slate-200 bg-slate-50 px-4 pr-11 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-100 disabled:opacity-60"
+              />
+              {/* Mail icon */}
+              <svg
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+              </svg>
+            </div>
+            {emailError && (
+              <p className="text-xs text-rose-500">{emailError}</p>
+            )}
+          </div>
 
-                <button
-                  type="button"
-                  onClick={handleResendOtp}
-                  disabled={resendCooldown > 0 || isSendingCode}
-                  className="font-medium text-slate-500 underline-offset-4 hover:text-slate-700 hover:underline disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
-                >
-                  {resendCooldown > 0
-                    ? `Kirim ulang dalam ${resendCooldown}s`
-                    : isSendingCode
-                      ? "Mengirim..."
-                      : "Kirim ulang kode"}
-                </button>
-              </div>
-            </form>
-          )}
+          <button
+            type="submit"
+            disabled={sendButtonDisabled}
+            className="w-full h-11 rounded-lg bg-[#0c1b45] text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-[#162454] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {sendButtonLabel}
+            {!isSendingCode && !(otpSent && resendCooldown > 0) && (
+              <span className="text-base leading-none">→</span>
+            )}
+          </button>
+        </form>
 
-        <div className="text-center text-sm font-mono text-slate-500 pt-2">
-          Akses login diberikan oleh admin internal Yorindo.
+        {/* Divider */}
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-slate-200" />
+          <span className="text-[9px] font-bold uppercase tracking-[0.22em] text-slate-400">
+            Verification Required
+          </span>
+          <div className="flex-1 h-px bg-slate-200" />
         </div>
+
+        {/* OTP section */}
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div className="space-y-2">
+            <label className="block text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+              6-Digit Code
+            </label>
+            <OtpInput
+              value={otpDigits}
+              onChange={setOtpDigits}
+              disabled={!otpSent || isVerifying}
+            />
+            {otpError && (
+              <p className="text-xs text-rose-500">{otpError}</p>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={!otpSent || otpValue.length !== 6 || isVerifying}
+            className="w-full h-11 rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors bg-slate-200 text-slate-400 disabled:cursor-not-allowed enabled:bg-[#0c1b45] enabled:text-white enabled:hover:bg-[#162454]"
+          >
+            {isVerifying ? (
+              "Verifying..."
+            ) : (
+              <>
+                <span>Login</span>
+                <span className="text-base leading-none">→</span>
+              </>
+            )}
+          </button>
+        </form>
+
+        {/* Footer */}
+        <p className="text-center text-sm text-slate-500">
+          Don&apos;t have an account?{" "}
+          <span className="text-blue-600 font-medium cursor-pointer hover:underline">
+            Contact admin
+          </span>
+        </p>
       </div>
     </AuthLayout>
   );

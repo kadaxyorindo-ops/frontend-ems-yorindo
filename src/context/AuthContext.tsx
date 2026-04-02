@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     let isMounted = true;
 
-    void api.get<AuthUser>("/api/auth/me").then((result) => {
+    void api.get<AuthUser>("/api/v1/auth/me").then((result) => {
       if (!isMounted) {
         return;
       }
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const requestOtp = async (
     email: string,
   ): Promise<AuthActionResult<RequestOtpResponse>> => {
-    const result = await api.post<RequestOtpResponse>("/api/auth/request-otp", {
+    const result = await api.post<RequestOtpResponse>("/api/v1/auth/request-otp", {
       email,
     });
 
@@ -137,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     code: string,
   ): Promise<AuthActionResult> => {
-    const result = await api.post<VerifyOtpResponse>("/api/auth/verify-otp", {
+    const result = await api.post<VerifyOtpResponse>("/api/v1/auth/verify-otp", {
       email,
       code,
     });
