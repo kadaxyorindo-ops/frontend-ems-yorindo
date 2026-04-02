@@ -10,14 +10,17 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select"
-
+} from "./ui/select.tsx"
 import { Input } from "./ui/input.tsx";
 
 const dummyParticipants = [
   { id: 1, Name: "Alice Johnson", Email: "alice.johnson@example.com", Company: "Tech Innovators Inc.", Industry: "Technology", Role: "HR Manager", status: "Approved"},
   { id: 2, Name: "Bob Smith", Email: "bob.smith@example.com", Company: "Global Solutions Ltd.", Industry: "Finance", Role: "Financial Analyst", status: "Rejected" },
-  { id: 3, Name: "Charlie Davis", Email: "charlie.davis@example.com", Company: "St. Helen Hospital", Industry: "Health", Role: "Nurse", status: "Pending" }
+  { id: 3, Name: "Charlie Davis", Email: "charlie.davis@example.com", Company: "St. Helen Hospital", Industry: "Health", Role: "Nurse", status: "Pending" },
+  { id: 4, Name: "Diana Prince", Email: "diana.prince@example.com", Company: "Creative Minds", Industry: "Marketing", Role: "Marketing Specialist", status: "Approved" },
+  { id: 5, Name: "Ethan Hunt", Email: "ethan.hunt@example.com", Company: "SecureTech", Industry: "Security", Role: "Security Consultant", status: "Rejected" },
+  { id: 6, Name: "Fiona Gallagher", Email: "fiona.gallagher@example.com", Company: "Innovate Solutions", Industry: "Technology", Role: "Software Engineer", status: "Pending" },
+  { id: 7, Name: "George Washington", Email: "george.washington@example.com", Company: "Patriot Ventures", Industry: "Politics", Role: "Political Advisor", status: "Approved" }
 ];
 
 const eventName = "Global Innovation Summit 2026";
@@ -91,6 +94,19 @@ export function Participants() {
     // Mengambil daftar industri unik (Technology, Finance, Health, dll)
     const uniqueIndustries = Array.from(new Set(dummyParticipants.map(p => p.Industry)));
 
+    const getStatusStyles = (status: string) => {
+        switch (status.toLowerCase()) {
+            case "approved":
+            return "bg-[#9cd3b2] text-[#002112] w-[100px]";
+            case "pending":
+            return "bg-[#fed174] text-[#785800] w-[100px]";
+            case "rejected":
+            return "bg-[#f8d7da] text-[#721c24] w-[100px]";
+            default:
+            return "bg-slate-50 text-slate-700 border-slate-200"; 
+        }
+    };
+
     return(
         <div className="min-h-screen flex bg-background relative overflow-hidden">
             <Sidebar 
@@ -135,7 +151,7 @@ export function Participants() {
                 </header>
 
                 <div className="grid grid-cols-12 gap-6 px-10">
-                    <div className={`transition-all duration-300 ${selectedParticipant ? "col-span-12 lg:col-span-8":"col-span-12"}`}>
+                    <div className={`transition-all duration-300 ${selectedParticipant ? "col-span-12 lg:col-span-9":"col-span-12"}`}>
                         <div className="bg-white p-6 rounded-2xl">
                             {/* filter and search */}
                             <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -177,7 +193,7 @@ export function Participants() {
                                 </Select>
                                 
                                 {/* Filter Industry */}
-                                <Select
+                                {/* <Select
                                 value={industryFilter}
                                 onValueChange={(value) => {setIndustryFilter(value === "all" ? "" : value); setCurrentPage(1);}}
                                 >
@@ -192,7 +208,7 @@ export function Participants() {
                                         </SelectItem>
                                         ))}
                                     </SelectContent>
-                                </Select>
+                                </Select> */}
                             </div>
 
                             {/* Tabel Participants */}
@@ -205,7 +221,7 @@ export function Participants() {
                                                 type="checkbox" 
                                                 checked={currentItems.length > 0 && selectedIds.length === currentItems.length}
                                                 onChange={toggleSelectAll}
-                                                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                                className="translate-y-[2px] h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                                                 />
                                             </TableHead>
                                             <TableHead className="font-bold text-primary pl-10">Name</TableHead>
@@ -226,14 +242,18 @@ export function Participants() {
                                                     type="checkbox" 
                                                     checked={selectedIds.includes(participant.id)}
                                                     onChange={() => {toggleSelectOne(participant)}}
-                                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                                    className="translate-y-[2px] h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                                                     />
                                                 </TableCell>
                                                 <TableCell className="font-medium pl-10">{participant.Name}</TableCell>
                                                 <TableCell className="text-center">{participant.Company}</TableCell>
                                                 <TableCell className="text-center">{participant.Industry}</TableCell>
                                                 <TableCell className="text-center">{participant.Role}</TableCell>
-                                                <TableCell className="text-center">{participant.status}</TableCell>
+                                                <TableCell className="text-center">
+                                                    <span className={`inline-flex items-center justify-center w-24 px-3 py-1 rounded-full text-[13px] font-bold tracking-tight ${getStatusStyles(participant.status)}`}>
+                                                    {participant.status}
+                                                    </span>
+                                                </TableCell>
                                             </TableRow>
                                         ))}
                                     </TableBody>
@@ -297,6 +317,20 @@ export function Participants() {
                                 </div>
                             </div>
                         </div>  
+                    </div>
+
+                    <div className={`transition-all duration-300 ${selectedParticipant ? "block lg:block col-span-3":"hidden lg:hidden"}`}>
+                        <div className="bg-white p-6 rounded-2xl relative overflow-hidden shadow-xl shadow-slate-300 h-full">
+                            {selectedParticipant ? (
+                                <div className="flex flex-col gap-4">
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-500">Participant Details</p>
+                                    </div>
+                                    <h2 className="text-xl font-bold ">{selectedParticipant.Name}</h2>
+                                </div>
+                            ) : null}
+
+                        </div>
                     </div>
                 </div>
                 
