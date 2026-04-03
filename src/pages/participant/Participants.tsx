@@ -1,17 +1,17 @@
-import {Sidebar} from "./Sidebar";
-import { Topbar } from "./Topbar";
+import {Sidebar} from "@/components/Sidebar";
+import { Topbar } from "@/components/Topbar";
 import { useState } from "react";
 import {Search} from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table.tsx";
-import { Button } from "./ui/button.tsx";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select.tsx"
-import { Input } from "./ui/input.tsx";
+} from "@/components/ui/select"
+import { Input } from "@/components/ui/input";
 
 const dummyParticipants = [
   { id: 1, Name: "Alice Johnson", Email: "alice.johnson@example.com", Company: "Tech Innovators Inc.", Industry: "Technology", Role: "HR Manager", City: "Jakarta", status: "Approved"},

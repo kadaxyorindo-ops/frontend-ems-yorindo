@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -49,7 +50,10 @@ const statusStyles: Record<string, string> = {
 };
 
 // Pure function: outputs the exact same result given the same inputs
-const calculateDaysToEvent = (eventDate: string | Date, currentTime: number): number => {
+const calculateDaysToEvent = (
+  eventDate: string | Date,
+  currentTime: number,
+): number => {
   return Math.ceil((new Date(eventDate).getTime() - currentTime) / 86400000);
 };
 
@@ -66,6 +70,7 @@ export function Events() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const refresh = () => setRefreshKey((k) => k + 1);
   const tableRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const LIMIT = 5;
 
   useEffect(() => {
@@ -147,7 +152,10 @@ export function Events() {
             </div>
             {stats?.nearestUpcomingEvent &&
               (() => {
-                const days = calculateDaysToEvent(stats.nearestUpcomingEvent.eventDate, Date.now());
+                const days = calculateDaysToEvent(
+                  stats.nearestUpcomingEvent.eventDate,
+                  Date.now(),
+                );
                 return (
                   <span className="w-fit px-4 py-2 rounded-xl bg-amber-200 text-amber-800 text-xs font-bold uppercase shadow-sm">
                     {days > 0 ? `In ${days} Days` : "Today"}
@@ -300,7 +308,12 @@ export function Events() {
                                   onSuccess={refresh}
                                 />
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="font-medium cursor-pointer">
+                              <DropdownMenuItem
+                                className="font-medium cursor-pointer"
+                                onSelect={() =>
+                                  navigate(`/participants?eventId=${event._id}`)
+                                }
+                              >
                                 Manage Participants
                               </DropdownMenuItem>
                               <DropdownMenuItem
