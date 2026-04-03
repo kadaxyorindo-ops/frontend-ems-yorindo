@@ -48,6 +48,11 @@ const statusStyles: Record<string, string> = {
   cancelled: "bg-red-50 text-red-600 border-red-200",
 };
 
+// Pure function: outputs the exact same result given the same inputs
+const calculateDaysToEvent = (eventDate: string | Date, currentTime: number): number => {
+  return Math.ceil((new Date(eventDate).getTime() - currentTime) / 86400000);
+};
+
 export function Events() {
   // --- LOGIKA PAGINATION ---
   const [currentPage, setCurrentPage] = useState(1);
@@ -142,11 +147,7 @@ export function Events() {
             </div>
             {stats?.nearestUpcomingEvent &&
               (() => {
-                const days = Math.ceil(
-                  (new Date(stats.nearestUpcomingEvent.eventDate).getTime() -
-                    Date.now()) /
-                    86400000,
-                );
+                const days = calculateDaysToEvent(stats.nearestUpcomingEvent.eventDate, Date.now());
                 return (
                   <span className="w-fit px-4 py-2 rounded-xl bg-amber-200 text-amber-800 text-xs font-bold uppercase shadow-sm">
                     {days > 0 ? `In ${days} Days` : "Today"}
