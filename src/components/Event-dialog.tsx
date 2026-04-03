@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "./ui/textarea";
+import { Textarea } from "@/components/ui/textarea";
 import {
   CalendarPlus,
   CalendarDays,
@@ -30,9 +31,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"; // Import Select
+import {
+  createEvent,
+  updateEvent,
+  getIndustries,
+  type Industry,
+  type CreateEventBody,
+} from "@/services/eventService";
 
 interface EventDialogProps {
   mode: "create" | "edit";
+  eventId?: string;
   defaultData?: {
     name: string;
     date: string;
@@ -40,33 +49,98 @@ interface EventDialogProps {
     location: string;
     description: string;
     status: string;
-    industry: string;
+    industry: { refId: string | null; name: string | null };
   };
+  onSuccess?: () => void;
 }
 
-export function EventDialog({ mode, defaultData }: EventDialogProps) {
+export function EventDialog({
+  mode,
+  eventId,
+  defaultData,
+  onSuccess,
+}: EventDialogProps) {
   const isEdit = mode === "edit";
+  const [open, setOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [industries, setIndustries] = useState<Industry[]>([]);
+  const [selectedIndustry, setSelectedIndustry] = useState<Industry | null>(
+    defaultData?.industry?.refId
+      ? {
+          _id: defaultData.industry.refId,
+          name: defaultData.industry.name ?? "",
+        }
+      : null,
+  );
+  const [selectedStatus, setSelectedStatus] = useState<string>(
+    defaultData?.status ?? "",
+  );
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  useEffect(() => {
+    if (!open) return;
+    void getIndustries().then((result) => {
+      if (result.data) setIndustries(result.data);
+    });
+  }, [open]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
 
-    const data = {
-      name: formData.get("eventName"),
-      date: formData.get("eventDate"),
-      time: formData.get("eventTime"),
-      location: formData.get("eventLocation"),
-      description: formData.get("eventDescription"),
-      status: formData.get("eventStatus"),
-      industry: formData.get("eventIndustry"),
-    };
+    const date = formData.get("eventDate") as string;
+    const time = formData.get("eventTime") as string;
+    const eventDate = `${date}T${time}:00.000Z`;
 
-    console.log(`Action: ${mode.toUpperCase()}`, data);
-    alert(`Event ${isEdit ? "updated" : "created"} successfully!`);
+    setSubmitting(true);
+    try {
+      if (isEdit && eventId) {
+        const result = await updateEvent(eventId, {
+          title: formData.get("eventName") as string,
+          description: (formData.get("eventDescription") as string) || null,
+          location: (formData.get("eventLocation") as string) || null,
+          eventDate,
+          status: selectedStatus || undefined,
+          industry: selectedIndustry
+            ? {
+                refId: selectedIndustry._id,
+                name: selectedIndustry.name || null,
+              }
+            : { refId: null, name: null },
+        });
+        if (result.error) {
+          alert(`Update failed: ${result.error}`);
+          return;
+        }
+      } else {
+        const body: CreateEventBody = {
+          title: formData.get("eventName") as string,
+          description: (formData.get("eventDescription") as string) || null,
+          category: null,
+          industry: selectedIndustry
+            ? {
+                refId: selectedIndustry._id,
+                name: selectedIndustry.name || null,
+              }
+            : { refId: null, name: null },
+          eventDate,
+          location: (formData.get("eventLocation") as string) || null,
+          registrationForm: { fields: [] },
+        };
+        const result = await createEvent(body);
+        if (result.error) {
+          alert(`Create failed: ${result.error}`);
+          return;
+        }
+      }
+      setOpen(false);
+      onSuccess?.();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {isEdit ? (
           <button className="w-full text-left px-2 py-1.5 text-sm hover:bg-slate-100 rounded-sm cursor-pointer">
@@ -171,54 +245,20 @@ export function EventDialog({ mode, defaultData }: EventDialogProps) {
               <FieldRow icon={<Tag className="w-3.5 h-3.5" />} label="Status">
                 <Select
                   name="eventStatus"
-                  defaultValue={defaultData?.status}
+                  value={selectedStatus}
+                  onValueChange={setSelectedStatus}
                   required
                 >
                   <SelectTrigger className="h-9 rounded-lg border-slate-200 bg-slate-50 text-sm foucs:ring-1 focus:ring-[#1a3fa8]/40">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem
-                      value="draft"
-                      className="bg-slate-50 text-slate-900 border-slate-200"
-                    >
-                      Draft
-                    </SelectItem>
-                    
-                    <SelectItem
-                      value="upcoming"
-                      className="bg-blue-50 text-blue-600 border-blue-200"
-                    >
-                      Upcoming
-                    </SelectItem>
-
-                    <SelectItem
-                      value="open"
-                      className="bg-yellow-50 text-yellow-600 border-yellow-200"
-                    >
-                      Registration
-                    </SelectItem>
-
-                    <SelectItem
-                      value="published"
-                      className="bg-emerald-50 text-emerald-600 border-emerald-200"
-                    >
-                      Ongoing
-                    </SelectItem>
-
-                    <SelectItem
-                      value="archived"
-                      className="bg-slate-100 text-slate-700 border-slate-200"
-                    >
-                      Done
-                    </SelectItem>
-
-                    <SelectItem
-                      value="cancelled"
-                      className="bg-red-50 text-red-600 border-red-200"
-                    >
-                      Cancelled
-                    </SelectItem>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="upcoming">Upcoming</SelectItem>
+                    <SelectItem value="registration">Registration</SelectItem>
+                    <SelectItem value="ongoing">Ongoing</SelectItem>
+                    <SelectItem value="done">Done</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
               </FieldRow>
@@ -229,17 +269,22 @@ export function EventDialog({ mode, defaultData }: EventDialogProps) {
               >
                 <Select
                   name="eventIndustry"
-                  defaultValue={defaultData?.industry}
                   required
+                  value={selectedIndustry?._id ?? ""}
+                  onValueChange={(val) => {
+                    const found = industries.find((i) => i._id === val) ?? null;
+                    setSelectedIndustry(found);
+                  }}
                 >
-                  <SelectTrigger className="h-9 rounded-lg border-slate-200 bg-slate-50 text-sm foucs:ring-1 focus:ring-[#1a3fa8]/40">
+                  <SelectTrigger className="h-9 rounded-lg border-slate-200 bg-slate-50 text-sm focus:ring-1 focus:ring-[#1a3fa8]/40">
                     <SelectValue placeholder="Select industry" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="draft">Technology</SelectItem>
-                    <SelectItem value="published">Creative</SelectItem>
-                    <SelectItem value="archived">Education</SelectItem>
-                    <SelectItem value="cancelled">Healthcare</SelectItem>
+                    {industries.map((industry) => (
+                      <SelectItem key={industry._id} value={industry._id}>
+                        {industry.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </FieldRow>
@@ -274,9 +319,14 @@ export function EventDialog({ mode, defaultData }: EventDialogProps) {
             </DialogClose>
             <Button
               type="submit"
-              className="h-9 px-5 rounded-lg bg-[#1a3fa8] hover:bg-[#153289] text-white text-sm font-semibold shadow-sm"
+              disabled={submitting}
+              className="h-9 px-5 rounded-lg bg-[#1a3fa8] hover:bg-[#153289] text-white text-sm font-semibold shadow-sm disabled:opacity-60"
             >
-              {isEdit ? "Save Changes" : "Publish Event"}
+              {submitting
+                ? "Saving..."
+                : isEdit
+                  ? "Save Changes"
+                  : "Publish Event"}
             </Button>
           </DialogFooter>
         </form>

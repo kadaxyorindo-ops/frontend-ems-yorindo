@@ -1,4 +1,5 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
 export const API_V1_PREFIX = "/api/v1";
 export const apiPaths = {
   auth: `${API_V1_PREFIX}/auth`,
@@ -85,7 +86,9 @@ async function request<T>(
     };
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Tidak dapat terhubung ke server.";
+      error instanceof Error
+        ? error.message
+        : "Tidak dapat terhubung ke server.";
 
     return {
       data: null,
@@ -110,6 +113,11 @@ export const api = {
     return request<T>(path, {
       method: "PATCH",
       body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  },
+  delete<T>(path: string) {
+    return request<T>(path, {
+      method: "DELETE",
     });
   },
 };
