@@ -46,6 +46,7 @@ export function getEvents(page: number, limit = 5, search = "") {
     page: String(page),
     limit: String(limit),
     ...(search ? { search } : {}),
+    _t: String(Date.now()),
   });
   return api.get<PaginatedEvents>(`${apiPaths.events}?${params.toString()}`);
 }

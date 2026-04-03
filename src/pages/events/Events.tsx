@@ -58,6 +58,7 @@ export function Events() {
   const [stats, setStats] = useState<EventStats | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const [search, setSearch] = useState("");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const refresh = () => setRefreshKey((k) => k + 1);
   const tableRef = useRef<HTMLDivElement>(null);
   const LIMIT = 5;
@@ -255,7 +256,14 @@ export function Events() {
                         </TableCell>
 
                         <TableCell className="pr-6 text-right">
-                          <DropdownMenu>
+                          <DropdownMenu
+                            open={openMenuId === event._id}
+                            onOpenChange={() =>
+                              setOpenMenuId(
+                                openMenuId === event._id ? null : event._id,
+                              )
+                            }
+                          >
                             <DropdownMenuTrigger asChild>
                               <Button
                                 variant="ghost"
@@ -269,8 +277,8 @@ export function Events() {
                               className="rounded-xl shadow-xl border-slate-100"
                             >
                               <DropdownMenuItem
-                                asChild
                                 onSelect={(e) => e.preventDefault()}
+                                className="cursor-pointer p-0"
                               >
                                 <EventDialog
                                   mode="edit"
@@ -287,6 +295,7 @@ export function Events() {
                                       name: null,
                                     },
                                   }}
+                                  onOpen={() => setOpenMenuId(null)}
                                   onSuccess={refresh}
                                 />
                               </DropdownMenuItem>
@@ -363,7 +372,6 @@ export function Events() {
                     size="sm"
                     onClick={() => {
                       setCurrentPage((prev) => Math.max(prev - 1, 1));
-                      window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
                     disabled={currentPage === 1}
                     className="h-8 rounded-lg text-[10px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef] disabled:opacity-30"
@@ -375,7 +383,6 @@ export function Events() {
                     size="sm"
                     onClick={() => {
                       setCurrentPage((prev) => Math.min(prev + 1, totalPages));
-                      window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
                     disabled={currentPage === totalPages || totalPages === 0}
                     className="h-8 rounded-lg text-[10px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef] disabled:opacity-30"

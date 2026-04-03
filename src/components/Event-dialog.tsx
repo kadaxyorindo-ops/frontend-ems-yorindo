@@ -54,6 +54,8 @@ interface EventDialogProps {
   onSuccess?: () => void;
 }
 
+const VALID_STATUSES = ["draft", "upcoming", "registration", "ongoing", "done", "cancelled"]; 
+
 export function EventDialog({
   mode,
   eventId,
@@ -99,7 +101,7 @@ export function EventDialog({
           description: (formData.get("eventDescription") as string) || null,
           location: (formData.get("eventLocation") as string) || null,
           eventDate,
-          status: selectedStatus || undefined,
+          status: VALID_STATUSES.includes(selectedStatus) ? selectedStatus : undefined,
           industry: selectedIndustry
             ? {
                 refId: selectedIndustry._id,
@@ -193,6 +195,7 @@ export function EventDialog({
                 defaultValue={defaultData?.name}
                 placeholder="Enter event name"
                 required
+                onKeyDown={(e) => e.stopPropagation()}
                 className="h-9 rounded-lg border-slate-200 bg-slate-50 placeholder:text-slate-300 text-sm text-slate-700 focus-visible:ring-1 focus-visible:ring-[#1a3fa8]/40 focus-visible:border-[#1a3fa8]/50"
               />
             </FieldRow>
@@ -208,6 +211,7 @@ export function EventDialog({
                 defaultValue={defaultData?.location}
                 placeholder="Enter event location"
                 required
+                onKeyDown={(e) => e.stopPropagation()}
                 className="h-9 rounded-lg border-slate-200 bg-slate-50 placeholder:text-slate-300 text-sm text-slate-700 focus-visible:ring-1 focus-visible:ring-[#1a3fa8]/40 focus-visible:border-[#1a3fa8]/50"
               />
             </FieldRow>
@@ -253,12 +257,47 @@ export function EventDialog({
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="upcoming">Upcoming</SelectItem>
-                    <SelectItem value="registration">Registration</SelectItem>
-                    <SelectItem value="ongoing">Ongoing</SelectItem>
-                    <SelectItem value="done">Done</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem
+                      value="draft"
+                      className="bg-slate-50 text-slate-900 border-slate-200"
+                    >
+                      Draft
+                    </SelectItem>
+
+                    <SelectItem
+                      value="upcoming"
+                      className="bg-blue-50 text-blue-600 border-blue-200"
+                    >
+                      Upcoming
+                    </SelectItem>
+
+                    <SelectItem
+                      value="registration"
+                      className="bg-yellow-50 text-yellow-600 border-yellow-200"
+                    >
+                      Registration
+                    </SelectItem>
+
+                    <SelectItem
+                      value="ongoing"
+                      className="bg-emerald-50 text-emerald-600 border-emerald-200"
+                    >
+                      Ongoing
+                    </SelectItem>
+
+                    <SelectItem
+                      value="done"
+                      className="bg-slate-100 text-slate-700 border-slate-200"
+                    >
+                      Done
+                    </SelectItem>
+
+                    <SelectItem
+                      value="cancelled"
+                      className="bg-red-50 text-red-600 border-red-200"
+                    >
+                      Cancelled
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </FieldRow>
@@ -301,6 +340,7 @@ export function EventDialog({
                 defaultValue={defaultData?.description}
                 placeholder="Enter event description"
                 required
+                onKeyDown={(e) => e.stopPropagation()}
                 className="min-h-[88px] rounded-lg border-slate-200 bg-slate-50 placeholder:text-slate-300 text-sm text-slate-700 focus-visible:ring-1 focus-visible:ring-[#1a3fa8]/40 focus-visible:border-[#1a3fa8]/50 resize-none p-3"
               />
             </FieldRow>
