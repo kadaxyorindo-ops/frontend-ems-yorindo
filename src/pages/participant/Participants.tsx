@@ -140,11 +140,11 @@ export function Participants() {
                             </div>
                         </div>
                         <button 
-                        className="bg-[#e8e7ef]/50 text-primary px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:shadow-xl transition-all active:scale-95"
+                        className="bg-[#e8e7ef]/50 text-primary px-6 py-3 rounded-lg font-bold text-sm shadow-md hover:shadow-xl transition-all active:scale-95"
                         >
                             Reject Selected
                         </button>
-                        <button className="bg-[linear-gradient(135deg,#002d7a_0%,#15439f_100%)] text-white px-6 py-3 rounded-xl font-bold text-sm shadow-md hover:shadow-xl transition-all active:scale-95">
+                        <button className="bg-[linear-gradient(135deg,#002d7a_0%,#15439f_100%)] text-white px-6 py-3 rounded-lg font-bold text-sm shadow-md hover:shadow-xl transition-all active:scale-95">
                             Approve Selected
                         </button>
                     </div>
