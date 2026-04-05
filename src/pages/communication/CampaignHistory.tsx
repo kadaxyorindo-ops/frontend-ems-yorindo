@@ -372,7 +372,7 @@ export function CampaignHistory() {
                 name="campaign-history-search"
                 value={searchInput}
                 autoComplete="off"
-                placeholder="Cari subject, event, creator…"
+                placeholder="Search subject, event, creator…"
                 onChange={(event) => setSearchInput(event.target.value)}
                 className="h-11 pl-10 bg-background border-slate-200 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
               />
