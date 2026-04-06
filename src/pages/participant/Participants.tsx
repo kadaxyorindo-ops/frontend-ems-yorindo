@@ -2,7 +2,7 @@ import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,9 +19,11 @@ import {
   rejectRegistration,
   bulkApproveRegistrations,
   bulkRejectRegistrations,
+  type BulkApproveRegistrationsResult,
   type RegistrationItem,
   type RegistrationMeta,
   type RegistrationStatus,
+  type RegistrationTicketDeliveryStatus,
 } from "@/services/registrationService";
 
 const STATUS_OPTIONS: { label: string; value: RegistrationStatus }[] = [
@@ -43,10 +45,48 @@ const getStatusStyles = (status: string) => {
 const formatStatus = (status: string) =>
   status === "checked_in" ? "Checked In" : status.charAt(0).toUpperCase() + status.slice(1);
 
+const getTicketDeliveryStyles = (status: RegistrationTicketDeliveryStatus | undefined) => {
+  switch (status) {
+    case "sent":
+      return "bg-emerald-100 text-emerald-700 border-emerald-200";
+    case "queued":
+      return "bg-amber-100 text-amber-800 border-amber-200";
+    case "processing":
+      return "bg-sky-100 text-sky-700 border-sky-200";
+    case "failed":
+      return "bg-rose-100 text-rose-700 border-rose-200";
+    default:
+      return "bg-slate-100 text-slate-600 border-slate-200";
+  }
+};
+
+const formatTicketDeliveryStatus = (
+  status: RegistrationTicketDeliveryStatus | undefined,
+) => {
+  switch (status) {
+    case "queued":
+      return "Queued";
+    case "processing":
+      return "Sending";
+    case "sent":
+      return "Sent";
+    case "failed":
+      return "Failed";
+    default:
+      return "Not queued";
+  }
+};
+
+type ActionFeedback = {
+  tone: "success" | "error";
+  message: string;
+};
+
 export function Participants() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const eventId = searchParams.get("eventId") ?? "";
   const eventTitle = searchParams.get("eventTitle") ?? "Participant Approvals";
+  const selectedRegistrationId = searchParams.get("selectedRegistrationId") ?? "";
 
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -61,6 +101,7 @@ export function Participants() {
   const [totalResults, setTotalResults] = useState(0);
   const [isLoading, setIsLoading]     = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<ActionFeedback | null>(null);
   const [refreshKey, setRefreshKey]   = useState(0);
 
   const [searchQuery, setSearchQuery]       = useState("");
@@ -68,6 +109,22 @@ export function Participants() {
   const [statusFilter, setStatusFilter]     = useState<RegistrationStatus | "">("");
   const [currentPage, setCurrentPage]       = useState(1);
   const [rowsPerPage, setRowsPerPage]       = useState(5);
+
+  const updateSearchParams = (updates: Record<string, string | null>) => {
+    setSearchParams((currentParams) => {
+      const nextParams = new URLSearchParams(currentParams);
+
+      for (const [key, value] of Object.entries(updates)) {
+        if (value) {
+          nextParams.set(key, value);
+        } else {
+          nextParams.delete(key);
+        }
+      }
+
+      return nextParams;
+    }, { replace: true });
+  };
 
   // Debounce: wait 400ms after the user stops typing before sending the request
   useEffect(() => {
@@ -100,6 +157,16 @@ export function Participants() {
         setMeta(result.data.meta);
         setTotalPages(result.data.pagination.totalPages);
         setTotalResults(result.data.pagination.total);
+
+        if (selectedRegistrationId) {
+          const selectedFromPage = result.data.items.find(
+            (item) => item._id === selectedRegistrationId,
+          );
+
+          if (selectedFromPage) {
+            setSelectedParticipant(selectedFromPage);
+          }
+        }
       }
       setIsLoading(false);
     })();
@@ -107,12 +174,33 @@ export function Participants() {
     return () => { active = false; };
   }, [eventId, currentPage, rowsPerPage, statusFilter, debouncedSearch, refreshKey]);
 
+  useEffect(() => {
+    if (!selectedRegistrationId) {
+      setSelectedParticipant(null);
+      return;
+    }
+
+    const nextSelectedParticipant = items.find(
+      (item) => item._id === selectedRegistrationId,
+    );
+
+    if (nextSelectedParticipant) {
+      setSelectedParticipant(nextSelectedParticipant);
+      return;
+    }
+
+    if (selectedParticipant?._id !== selectedRegistrationId) {
+      setSelectedParticipant(null);
+    }
+  }, [items, selectedParticipant, selectedRegistrationId]);
+
   // --- Selection ---
 
   const toggleSelectAll = () => {
     if (selectedIds.length === items.length && items.length > 0) {
       setSelectedIds([]);
       setSelectedParticipant(null);
+      updateSearchParams({ selectedRegistrationId: null });
     } else {
       setSelectedIds(items.map((p) => p._id));
     }
@@ -122,51 +210,97 @@ export function Participants() {
     const isSelected = selectedIds.includes(item._id);
     if (isSelected) {
       setSelectedIds((prev) => prev.filter((id) => id !== item._id));
-      if (selectedParticipant?._id === item._id) setSelectedParticipant(null);
+      if (selectedParticipant?._id === item._id) {
+        setSelectedParticipant(null);
+        updateSearchParams({ selectedRegistrationId: null });
+      }
     } else {
       setSelectedIds((prev) => [...prev, item._id]);
       setSelectedParticipant(item);
+      updateSearchParams({ selectedRegistrationId: item._id });
     }
+  };
+
+  const closeSelectedParticipant = () => {
+    setSelectedParticipant(null);
+    setSelectedIds((prev) =>
+      selectedRegistrationId ? prev.filter((id) => id !== selectedRegistrationId) : prev,
+    );
+    updateSearchParams({ selectedRegistrationId: null });
   };
 
   // --- Actions ---
 
   const handleApprove = async (registrationId: string) => {
+    setActionFeedback(null);
     const result = await approveRegistration(eventId, registrationId);
     if (result.error) { setActionError(result.error); return; }
+    setActionError(null);
+    setActionFeedback({
+      tone: "success",
+      message:
+        result.data?.message ?? result.message ?? "Registration approved and QR ticket delivery updated.",
+    });
     setSelectedIds([]);
-    setSelectedParticipant(null);
+    setSelectedParticipant(result.data?.registration ?? selectedParticipant);
+    updateSearchParams({
+      selectedRegistrationId: result.data?.registration?._id ?? registrationId,
+    });
     setRefreshKey((k) => k + 1);
   };
 
   const handleReject = async (registrationId: string) => {
+    setActionFeedback(null);
     const result = await rejectRegistration(eventId, registrationId);
     if (result.error) { setActionError(result.error); return; }
+    setActionError(null);
+    setActionFeedback({
+      tone: "success",
+      message: result.message || "Registration rejected successfully.",
+    });
     setSelectedIds([]);
-    setSelectedParticipant(null);
+    closeSelectedParticipant();
     setRefreshKey((k) => k + 1);
   };
 
   const handleBulkApprove = async () => {
     if (selectedIds.length === 0) return;
+    setActionFeedback(null);
     const result = await bulkApproveRegistrations(eventId, selectedIds);
     if (result.error) { setActionError(result.error); return; }
+    const data: BulkApproveRegistrationsResult | null = result.data;
+    setActionError(null);
+    setActionFeedback({
+      tone: data?.failedQueueCount ? "error" : "success",
+      message:
+        data?.message ??
+        result.message ??
+        "Selected registrations approved and QR ticket queue updated.",
+    });
     setSelectedIds([]);
-    setSelectedParticipant(null);
     setRefreshKey((k) => k + 1);
   };
 
   const handleBulkReject = async () => {
     if (selectedIds.length === 0) return;
+    setActionFeedback(null);
     const result = await bulkRejectRegistrations(eventId, selectedIds);
     if (result.error) { setActionError(result.error); return; }
+    setActionError(null);
+    setActionFeedback({
+      tone: "success",
+      message: result.message || "Selected registrations rejected successfully.",
+    });
     setSelectedIds([]);
-    setSelectedParticipant(null);
+    closeSelectedParticipant();
     setRefreshKey((k) => k + 1);
   };
 
   const indexOfFirstItem = totalResults === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
   const indexOfLastItem  = Math.min(currentPage * rowsPerPage, totalResults);
+  const selectedParticipantVisible = selectedParticipant
+    ? items.some((item) => item._id === selectedParticipant._id)
+    : false;
 
   return (
     <div className="min-h-screen flex bg-background relative overflow-hidden">
@@ -213,6 +347,19 @@ export function Participants() {
         <div className="grid grid-cols-12 gap-6 px-10">
           <div className={`transition-all duration-300 ${selectedParticipant ? "col-span-12 lg:col-span-9" : "col-span-12"}`}>
             <div className="bg-white p-6 rounded-2xl">
+              {(actionError || actionFeedback) ? (
+                <div
+                  aria-live="polite"
+                  className={`mb-5 rounded-2xl border px-4 py-3 text-sm leading-6 ${
+                    actionError || actionFeedback?.tone === "error"
+                      ? "border-rose-200 bg-rose-50 text-rose-700"
+                      : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  }`}
+                >
+                  {actionError ?? actionFeedback?.message}
+                </div>
+              ) : null}
+
               {/* Search & Filter */}
               <div className="flex flex-col md:flex-row gap-4 mb-6">
                 <div className="relative flex-1">
@@ -265,18 +412,19 @@ export function Participants() {
                       <TableHead className="font-bold text-primary text-center">Industry</TableHead>
                       <TableHead className="font-bold text-primary text-center">Role</TableHead>
                       <TableHead className="font-bold text-primary text-center">Status</TableHead>
+                      <TableHead className="font-bold text-primary text-center">QR Delivery</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-10 text-slate-400">
+                        <TableCell colSpan={7} className="text-center py-10 text-slate-400">
                           Loading...
                         </TableCell>
                       </TableRow>
                     ) : items.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-10 text-slate-400">
+                        <TableCell colSpan={7} className="text-center py-10 text-slate-400">
                           No participants found.
                         </TableCell>
                       </TableRow>
@@ -301,6 +449,15 @@ export function Participants() {
                           <TableCell className="text-center">
                             <span className={`inline-flex items-center justify-center w-24 px-3 py-1 rounded-full text-[13px] font-bold tracking-tight ${getStatusStyles(item.status)}`}>
                               {formatStatus(item.status)}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span
+                              className={`inline-flex min-w-[112px] items-center justify-center rounded-full border px-3 py-1 text-[12px] font-semibold ${getTicketDeliveryStyles(
+                                item.ticketDelivery?.status,
+                              )}`}
+                            >
+                              {formatTicketDeliveryStatus(item.ticketDelivery?.status)}
                             </span>
                           </TableCell>
                         </TableRow>
@@ -367,9 +524,24 @@ export function Participants() {
             <div className="bg-white p-6 rounded-2xl relative overflow-hidden shadow-xl shadow-slate-300 h-full">
               {selectedParticipant && (
                 <div className="flex flex-col gap-6">
-                  <div>
+                  <div className="flex items-center justify-between gap-3">
                     <p className="text-[13px] font-bold text-slate-500">Participant Details</p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={closeSelectedParticipant}
+                      className="h-8 w-8 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-[#15439F]"
+                      aria-label="Close participant details"
+                    >
+                      <X className="h-4 w-4" aria-hidden="true" />
+                    </Button>
                   </div>
+                  {!selectedParticipantVisible ? (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
+                      Participant ini tetap terbuka untuk direview, tetapi sudah tidak muncul di tabel karena tidak cocok dengan filter saat ini.
+                    </div>
+                  ) : null}
                   <div className="items-center pt-3">
                     <h2 className="text-3xl font-bold tracking-loose text-primary text-center">
                       {selectedParticipant.participant.fullName}
@@ -396,6 +568,44 @@ export function Participants() {
                     <div className="text-right">
                       <div className="text-[11px] text-muted-foreground uppercase font-bold">City</div>
                       <div className="text-sm font-bold text-[#002D7A]">{selectedParticipant.citySnapshot?.name ?? "—"}</div>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                          QR Ticket Delivery
+                        </div>
+                        <p className="mt-2 text-sm text-slate-500">
+                          Approval will generate a QR ticket and queue the delivery email automatically.
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex min-w-[108px] items-center justify-center rounded-full border px-3 py-1 text-[12px] font-semibold ${getTicketDeliveryStyles(
+                          selectedParticipant.ticketDelivery?.status,
+                        )}`}
+                      >
+                        {formatTicketDeliveryStatus(selectedParticipant.ticketDelivery?.status)}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 space-y-3 text-sm text-slate-600">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="font-semibold text-slate-500">Ticket code</span>
+                        <span className="text-right font-mono text-[12px] text-slate-700">
+                          {selectedParticipant.ticket?.qrCode ?? "Generated after approval"}
+                        </span>
+                      </div>
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="font-semibold text-slate-500">Attempts</span>
+                        <span>{selectedParticipant.ticketDelivery?.attempts ?? 0}</span>
+                      </div>
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="font-semibold text-slate-500">Last issue</span>
+                        <span className="max-w-[160px] text-right">
+                          {selectedParticipant.ticketDelivery?.failureReason ?? "No delivery issue recorded"}
+                        </span>
+                      </div>
                     </div>
                   </div>
                   <div className="pt-5 px-3 flex flex-row justify-around">

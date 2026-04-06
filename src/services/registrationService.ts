@@ -3,22 +3,61 @@ import { api, apiPaths } from "./api";
 // --- Types ---
 
 export type RegistrationStatus = "pending" | "approved" | "rejected" | "checked_in";
+export type RegistrationTicketDeliveryStatus =
+  | "idle"
+  | "queued"
+  | "processing"
+  | "sent"
+  | "failed";
 
 export interface RegistrationParticipant {
   _id: string;
   fullName: string;
-  personalEmail: string;
-  companyEmail: string;
+  personalEmail: string | null;
+  companyEmail: string | null;
 }
 
 export interface RegistrationItem {
   _id: string;
   status: RegistrationStatus;
+  ticket?: {
+    qrCode: string;
+    qrPayload?: string;
+    issuedAt?: string;
+    reissueCount?: number;
+    isActive?: boolean;
+  } | null;
+  ticketDelivery?: {
+    status: RegistrationTicketDeliveryStatus;
+    queuedAt: string | null;
+    lastAttemptAt: string | null;
+    sentAt: string | null;
+    failedAt: string | null;
+    failureReason: string | null;
+    attempts: number;
+  } | null;
   companySnapshot:  { name: string };
   industrySnapshot: { name: string };
   jobTitleSnapshot: { name: string };
   citySnapshot:     { name: string };
   participant: RegistrationParticipant;
+}
+
+export interface ApproveRegistrationResult {
+  registration: RegistrationItem;
+  ticketDelivery: RegistrationItem["ticketDelivery"];
+  message: string;
+}
+
+export interface BulkApproveRegistrationsResult {
+  modifiedCount: number;
+  queuedCount: number;
+  failedQueueCount: number;
+  queueFailures: Array<{
+    registrationId: string;
+    reason: string;
+  }>;
+  message: string;
 }
 
 export interface RegistrationMeta {
@@ -57,7 +96,7 @@ export function getRegistrations(eventId: string, params: GetRegistrationsParams
 }
 
 export function approveRegistration(eventId: string, registrationId: string) {
-  return api.patch<RegistrationItem>(
+  return api.patch<ApproveRegistrationResult>(
     `${apiPaths.events}/${eventId}/registrations/${registrationId}/approve`,
   );
 }
@@ -69,7 +108,7 @@ export function rejectRegistration(eventId: string, registrationId: string) {
 }
 
 export function bulkApproveRegistrations(eventId: string, ids: string[]) {
-  return api.patch<{ modifiedCount: number }>(
+  return api.patch<BulkApproveRegistrationsResult>(
     `${apiPaths.events}/${eventId}/registrations/bulk-approve`,
     { ids },
   );
