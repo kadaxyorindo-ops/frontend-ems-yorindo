@@ -1,18 +1,14 @@
 import type { ReactNode } from "react";
-import {
-  BrowserRouter,
-  Navigate,
-  Route,
-  Routes,
-} from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Login } from "@/pages/auth/Login";
 import { Events } from "@/pages/events/Events";
 import { Users } from "@/pages/users/Users";
 import { Communication } from "@/pages/communication/Communication";
+import { CampaignHistory } from "@/pages/communication/CampaignHistory";
 import { Settings } from "@/pages/settings/Settings";
 import { NotFound } from "@/pages/NotFound";
-import {Participants} from "@/components/Participant";
 import { useAuth } from "@/hooks/useAuth";
+import { Participants } from "@/pages/participant/Participants";
 
 function FullPageStatus({ label }: { label: string }) {
   return (
@@ -110,6 +106,22 @@ function App() {
           }
         />
         <Route
+          path="/communication/history"
+          element={
+            <ProtectedRoute>
+              <CampaignHistory />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/participants"
+          element={
+            <ProtectedRoute>
+              <Participants />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/settings"
           element={
             <ProtectedRoute>
@@ -117,7 +129,7 @@ function App() {
             </ProtectedRoute>
           }
         />
-        
+
         {/* Catch-all route for undefined paths */}
         <Route path="*" element={<NotFound />} />
       </Routes>

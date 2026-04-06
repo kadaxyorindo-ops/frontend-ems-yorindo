@@ -1,4 +1,12 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ?? "http://localhost:5000";
+export const API_V1_PREFIX = "/api/v1";
+export const apiPaths = {
+  auth: `${API_V1_PREFIX}/auth`,
+  communications: `${API_V1_PREFIX}/communications`,
+  events: `${API_V1_PREFIX}/events`,
+  users: `${API_V1_PREFIX}/users`,
+} as const;
 
 export const AUTH_TOKEN_STORAGE_KEY = "ems_auth_token";
 export const AUTH_USER_STORAGE_KEY = "ems_auth_user";
@@ -78,7 +86,9 @@ async function request<T>(
     };
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Tidak dapat terhubung ke server.";
+      error instanceof Error
+        ? error.message
+        : "Tidak dapat terhubung ke server.";
 
     return {
       data: null,
@@ -106,6 +116,8 @@ export const api = {
     });
   },
   delete<T>(path: string) {
-    return request<T>(path, { method: "DELETE" });
+    return request<T>(path, {
+      method: "DELETE",
+    });
   },
 };
