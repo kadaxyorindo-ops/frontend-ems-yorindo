@@ -6,6 +6,7 @@ import {
 import {
   Link,
   useSearchParams,
+  useNavigate,
 } from "react-router-dom";
 import {
   Clock3,
@@ -242,6 +243,19 @@ export function CampaignHistory() {
   const failedCount = history?.summary.statusCounts.failed ?? 0;
   const draftCount = history?.summary.statusCounts.draft ?? 0;
 
+
+  const navigate = useNavigate(); 
+
+  const handleNewCampaign = () => {
+    // Sekarang 'navigate' sudah terdefinisi
+    navigate("/composer?action=new");
+  };
+
+  const handleGoBack = () => {
+    navigate("/composer?action=resume");
+  };
+
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -265,6 +279,7 @@ export function CampaignHistory() {
               size="lg"
               asChild
               className="h-11 border border-sm border-grey-100"
+              onClick={handleGoBack}
             >
               <Link to="/communication">Back to Composer</Link>
             </Button>
@@ -273,6 +288,7 @@ export function CampaignHistory() {
               size="lg"
               asChild
               className="h-11 px-5 text-white border border-sm border-[#002d7a]"
+              onClick={handleNewCampaign}
             >
               <Link to="/communication">
                 <SendHorizontal className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -480,7 +496,7 @@ export function CampaignHistory() {
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right min-w-[3rem] px-6">
+                      <TableCell className="text-center min-w-[3rem] px-6">
                         {item.status === "draft" ? (
                           <Button
                             type="button"
