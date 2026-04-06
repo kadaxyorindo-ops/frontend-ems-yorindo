@@ -25,7 +25,13 @@ import {
 //   SelectValue,
 // } from "@/components/ui/select";
 import { EventDialog } from "@/components/Event-dialog";
-import { CalendarClock, MapPin, MoreHorizontal } from "lucide-react";
+import {
+  CalendarClock,
+  MapPin,
+  MoreHorizontal,
+  UserCog,
+  Trash2,
+} from "lucide-react";
 import {
   getEvents,
   getEventStats,
@@ -33,6 +39,18 @@ import {
   type EventItem,
   type EventStats,
 } from "@/services/eventService";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 // const dummyEvents = [
 //   { id: 1, date: "Oct 12, 2026", name: "Global Innovation Summit 2026", location: "San Francisco, CA", participants: 1200, capacity: 1500, status: "Upcoming" },
@@ -95,11 +113,11 @@ export function Events() {
     setCurrentPage(1);
   };
 
-  const handleDelete = async (id: string, title: string) => {
-    if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
-    await deleteEvent(id);
-    refresh();
-  };
+  // const handleDelete = async (id: string, title: string) => {
+  //   if (!window.confirm(`Delete "${title}"? This cannot be undone.`)) return;
+  //   await deleteEvent(id);
+  //   refresh();
+  // };
 
   return (
     <DashboardLayout>
@@ -237,7 +255,7 @@ export function Events() {
                           <div className="flex items-center gap-3">
                             <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                               <div
-                                className={`h-full rounded-full transition-all duration-500 ${isFull ? "bg-slate-400" : "bg-[#1a3fa8]"}`}
+                                className={`h-full rounded-full transition-all duration-500 ${isFull ? "bg-emerald-500" : "bg-[#1a3fa8]"}`}
                                 style={{ width: `${Math.min(pct, 100)}%` }}
                               />
                             </div>
@@ -246,8 +264,9 @@ export function Events() {
                                 {event.approvedCount.toLocaleString()} /{" "}
                                 {event.totalCount.toLocaleString()}
                               </span>
-                              <span className="text-[10px] text-slate-400">
-                                {pct}% approved
+                              < span className={`text-[10px] ${isFull ? "text-emerald-600" : "text-slate-600"} font-medium`}>{isFull
+                                ? "Full Capacity"
+                                : `${pct}% Filled`}
                               </span>
                             </div>
                           </div>
@@ -265,67 +284,108 @@ export function Events() {
                         </TableCell>
 
                         <TableCell className="pr-6 text-right">
-                          <DropdownMenu
-                            open={openMenuId === event._id}
-                            onOpenChange={() =>
-                              setOpenMenuId(
-                                openMenuId === event._id ? null : event._id,
-                              )
-                            }
-                          >
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
-                              >
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="end"
-                              className="rounded-xl shadow-xl border-slate-100"
+                          {/* ACTIONS WRAPPER */}
+                          <AlertDialog>
+                            <DropdownMenu
+                              open={openMenuId === event._id}
+                              onOpenChange={() =>
+                                setOpenMenuId(
+                                  openMenuId === event._id ? null : event._id,
+                                )
+                              }
                             >
-                              <DropdownMenuItem
-                                onSelect={(e) => e.preventDefault()}
-                                className="cursor-pointer p-0"
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                                >
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                align="end"
+                                className="rounded-xl shadow-xl border-slate-100"
                               >
-                                <EventDialog
-                                  mode="edit"
-                                  eventId={event._id}
-                                  defaultData={{
-                                    name: event.title,
-                                    date: event.eventDate.split("T")[0] ?? "",
-                                    time: "10:00",
-                                    location: event.location ?? "",
-                                    description: event.description ?? "",
-                                    status: event.status,
-                                    industry: event.industry ?? {
-                                      refId: null,
-                                      name: null,
-                                    },
+                                <DropdownMenuItem
+                                  onSelect={(e) => e.preventDefault()}
+                                  className="cursor-pointer p-0"
+                                >
+                                  <EventDialog
+                                    mode="edit"
+                                    eventId={event._id}
+                                    defaultData={{
+                                      name: event.title,
+                                      date: event.eventDate.split("T")[0] ?? "",
+                                      time: "10:00",
+                                      location: event.location ?? "",
+                                      description: event.description ?? "",
+                                      status: event.status,
+                                      industry: event.industry ?? {
+                                        refId: null,
+                                        name: null,
+                                      },
+                                    }}
+                                    // onOpen={() => setOpenMenuId(null)}
+                                    // onSuccess={refresh}
+                                  />
+                                </DropdownMenuItem>
+
+                                <DropdownMenuItem
+                                  className="font-medium cursor-pointer gap-2"
+                                  onSelect={() =>
+                                    navigate(
+                                      `/participants?eventId=${event._id}`,
+                                    )
+                                  }
+                                >
+                                  {" "}
+                                  <UserCog className="w-4 h-4" />
+                                  Manage Participants
+                                </DropdownMenuItem>
+
+                                {/* ALERT DIALOG TRIGGER */}
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    className="font-medium text-red-500 focus:text-red-600 cursor-pointer gap-2 focus:bg-red-50"
+                                    onSelect={(e) => e.preventDefault()}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    Delete Event
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+
+                            {/* ALERT DIALOG CONTENT */}
+                            <AlertDialogContent className="rounded-2xl border-slate-200 shadow-lg">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Are you sure?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently delete the event{" "}
+                                  <span className="font-bold text-slate-900"></span>
+                                  "{event.title}" and all its associated data.
+                                  This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="rounded-lg">
+                                  Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={async () => {
+                                    await deleteEvent(event._id);
+                                    refresh();
                                   }}
-                                  onOpen={() => setOpenMenuId(null)}
-                                  onSuccess={refresh}
-                                />
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="font-medium cursor-pointer"
-                                onSelect={() =>
-                                  navigate(`/participants?eventId=${event._id}`)
-                                }
-                              >
-                                Manage Participants
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="font-medium text-red-500 focus:text-red-600 cursor-pointer"
-                                onSelect={() =>
-                                  void handleDelete(event._id, event.title)
-                                }
-                              >
-                                Delete Event
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                                  className="bg-red-500 hover:bg-red-600 text-white rounded-lg"
+                                >
+                                  Delete Event
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </TableCell>
                       </TableRow>
                     );
