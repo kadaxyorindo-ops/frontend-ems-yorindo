@@ -250,7 +250,7 @@ export function CampaignHistory() {
             <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
               Communication Ops
             </p>
-            <h1 className="text-pretty text-3xl font-bold text-[#1d376b]">
+            <h1 className="text-4xl font-bold tracking-tight text-[#001a4e]">
               Campaign History
             </h1>
             <p className="max-w-2xl text-sm leading-6 text-slate-500">
@@ -264,7 +264,7 @@ export function CampaignHistory() {
               variant="outline"
               size="lg"
               asChild
-              className="h-11 border-dashed"
+              className="h-11 border border-sm border-grey-100"
             >
               <Link to="/communication">Back to Composer</Link>
             </Button>
@@ -272,7 +272,7 @@ export function CampaignHistory() {
               type="button"
               size="lg"
               asChild
-              className="h-11 bg-[#0f2f78] px-5 text-white hover:bg-[#11265c]"
+              className="h-11 px-5 text-white border border-sm border-[#002d7a]"
             >
               <Link to="/communication">
                 <SendHorizontal className="mr-2 h-4 w-4" aria-hidden="true" />
@@ -283,7 +283,7 @@ export function CampaignHistory() {
         </div>
 
         <div className="grid gap-4 xl:grid-cols-4">
-          <div className="rounded-[24px] border border-dashed border-slate-300 bg-slate-50 px-5 py-4">
+          <div className="rounded-[24px] border border-slate-300 bg-slate-50 px-5 py-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
               Total
             </p>
@@ -295,7 +295,7 @@ export function CampaignHistory() {
             </p>
           </div>
 
-          <div className="rounded-[24px] border border-dashed border-amber-300 bg-amber-50/70 px-5 py-4">
+          <div className="rounded-[24px] border border-amber-300 bg-amber-50/70 px-5 py-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-700">
               Active Queue
             </p>
@@ -307,7 +307,7 @@ export function CampaignHistory() {
             </p>
           </div>
 
-          <div className="rounded-[24px] border border-dashed border-emerald-300 bg-emerald-50/70 px-5 py-4">
+          <div className="rounded-[24px] border border-[#72a688]/50 bg-emerald-50/70 px-5 py-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-emerald-700">
               Delivered
             </p>
@@ -319,7 +319,7 @@ export function CampaignHistory() {
             </p>
           </div>
 
-          <div className="rounded-[24px] border border-dashed border-rose-300 bg-rose-50/70 px-5 py-4">
+          <div className="rounded-[24px] border border-rose-300 bg-rose-50/70 px-5 py-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-rose-700">
               Failed / Draft
             </p>
@@ -332,8 +332,8 @@ export function CampaignHistory() {
           </div>
         </div>
 
-        <section className="rounded-[28px] border border-dashed border-slate-300 bg-white p-5 sm:p-6">
-          <div className="flex flex-col gap-4 border-b border-dashed border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
+        <section className="rounded-[28px] border border-slate-200 bg-white p-5 sm:p-6">
+          <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap gap-2">
               {STATUS_OPTIONS.map((option) => {
                 const isActive = status === option.value;
@@ -350,7 +350,7 @@ export function CampaignHistory() {
                     className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
                       isActive
                         ? "border-[#1d376b] bg-[#1d376b] text-white"
-                        : "border-dashed border-slate-300 bg-slate-50 text-slate-600 hover:border-slate-400"
+                        : "border-slate-300 bg-slate-50 text-slate-600 hover:border-slate-400"
                     } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d376b]/20`}
                   >
                     {option.label}{" "}
@@ -372,15 +372,15 @@ export function CampaignHistory() {
                 name="campaign-history-search"
                 value={searchInput}
                 autoComplete="off"
-                placeholder="Cari subject, event, creator…"
+                placeholder="Search subject, event, creator…"
                 onChange={(event) => setSearchInput(event.target.value)}
-                className="h-11 border-dashed bg-slate-50 pl-10"
+                className="h-11 pl-10 bg-background border-slate-200 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
               />
             </div>
           </div>
 
           {draftCount > 0 ? (
-            <div className="mt-5 rounded-2xl border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="mt-5 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
               {draftCount} draft masih aktif. Draft bisa dibuka lagi dari composer
               atau langsung dari tabel di bawah.
             </div>
@@ -389,28 +389,28 @@ export function CampaignHistory() {
           {error ? (
             <div
               role="alert"
-              className="mt-5 rounded-2xl border border-dashed border-rose-300 bg-rose-50 px-4 py-4 text-sm text-rose-600"
+              className="mt-5 rounded-2xl border border-rose-300 bg-rose-50 px-4 py-4 text-sm text-rose-600"
             >
               {error}
             </div>
           ) : null}
 
-          <div className="mt-5 overflow-hidden rounded-[24px] border border-dashed border-slate-300">
+          <div className="mt-5 overflow-hidden rounded-[24px] border border-slate-300">
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow className="hover:bg-slate-50">
-                  <TableHead>Status</TableHead>
-                  <TableHead>Campaign</TableHead>
-                  <TableHead>Event</TableHead>
-                  <TableHead>Delivery</TableHead>
-                  <TableHead>Updated</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableHead className="w-[100px] px-6 text-center">Status</TableHead>
+                  <TableHead className="px-4">Campaign</TableHead>
+                  <TableHead className="px-4">Event</TableHead>
+                  <TableHead className="px-4">Delivery</TableHead>
+                  <TableHead className="px-4">Updated</TableHead>
+                  <TableHead className="text-center px-6">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  <TableRow className="hover:bg-white">
-                    <TableCell colSpan={6} className="h-48 text-center">
+                  <TableRow className="hover:bg-white ">
+                    <TableCell colSpan={6} className="h-48 text-center ">
                       <div className="flex items-center justify-center gap-3 text-sm text-slate-500">
                         <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
                         Loading campaign history…
@@ -420,7 +420,7 @@ export function CampaignHistory() {
                 ) : history?.items.length ? (
                   history.items.map((item) => (
                     <TableRow key={item.id} className="align-top">
-                      <TableCell>
+                      <TableCell className="min-w-[6rem] px-7">
                         <div className="space-y-2">
                           <span
                             className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(
@@ -435,7 +435,7 @@ export function CampaignHistory() {
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell className="min-w-[18rem]">
+                      <TableCell className="min-w-[18rem] px-4">
                         <div className="space-y-1">
                           <p className="font-semibold text-slate-800">
                             {item.subject || "Untitled campaign"}
@@ -450,7 +450,7 @@ export function CampaignHistory() {
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell className="min-w-[13rem]">
+                      <TableCell className="min-w-[12rem] px-4">
                         <div className="space-y-1">
                           <p className="font-medium text-slate-700">
                             {item.event.title ?? "All events"}
@@ -460,7 +460,7 @@ export function CampaignHistory() {
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell className="min-w-[14rem]">
+                      <TableCell className="min-w-[12rem] px-4">
                         <div className="space-y-1">
                           <p className="font-medium text-slate-700">
                             {getDeliveryLabel(item)}
@@ -470,7 +470,7 @@ export function CampaignHistory() {
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell className="min-w-[12rem]">
+                      <TableCell className="min-w-[13rem] px-4">
                         <div className="space-y-1">
                           <p className="font-medium text-slate-700">
                             {formatDateTime(item.updatedAt)}
@@ -480,7 +480,7 @@ export function CampaignHistory() {
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right min-w-[3rem] px-6">
                         {item.status === "draft" ? (
                           <Button
                             type="button"

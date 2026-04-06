@@ -30,7 +30,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         }`}
       >
         <div className="h-30 flex items-center justify-around px-6 relative">
-          <span><img src="yorindo-logo.png" alt="Yorindo Logo" className="w-40" /></span>
+          <span><img src="/yorindo-logo.png" alt="Yorindo Logo" className="w-40" /></span>
           {/* <button 
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center rounded-md border border-sm border-slate-300 text-slate-500 hover:bg-slate-100 transition-colors"
