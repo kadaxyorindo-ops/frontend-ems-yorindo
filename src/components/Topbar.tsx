@@ -23,7 +23,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
   // const userInitial = user?.name.trim().charAt(0).toUpperCase() ?? "U";
 
   return (
-    <header className="h-20 bg-[#faf8ff]/80 shadow-sm backdrop-blur-xl px-4 md:px-8 flex items-center justify-between sticky top-0 z-10">
+    <header className="h-20 bg-[#faf8ff]/10 shadow-sm backdrop-blur-xl px-4 md:px-8 flex items-center justify-between sticky top-0 z-30">
       <div className="flex items-center gap-4 w-full max-w-md">
         {/* Hamburger Menu Button */}
         <button 

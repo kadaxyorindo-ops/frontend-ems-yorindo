@@ -7,7 +7,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen flex bg-background relative overflow-hidden">
+    <div className="min-h-[screen] flex bg-background relative overflow-visible">
       
       {/* Isolated Sidebar Component */}
       <Sidebar 
@@ -16,7 +16,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
       />
 
       {/* Main Content Area */}
-      <div className="flex min-w-0 flex-1 flex-col w-full">
+      <div className="flex min-w-0 flex-1 flex-col w-full ">
         
         {/* Isolated Topbar Component */}
         <Topbar onToggleSidebar={() => setIsSidebarOpen(true)} />
