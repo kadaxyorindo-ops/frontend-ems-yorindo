@@ -512,6 +512,14 @@ function FilterSelect({
   );
 }
 
+const LOCAL_STORAGE_KEY = "pending_email_campaign";
+
+  // Helper untuk mengambil data dari local storage
+  function getLocalDraft() {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : null;
+  }
+
 export function Communication() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -1070,10 +1078,15 @@ export function Communication() {
       return;
     }
 
+    // Jika sampai di titik ini, artinya API berhasil menyimpan data ke server.
+    // Kita bisa menghapus draf sementara di browser karena sudah "aman" di database.
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+
     setFeedback({
       tone: "success",
       message: result.message,
     });
+    
     setLastCommittedSignature(signatureAtSubmit);
     await loadDrafts();
 
@@ -1092,6 +1105,61 @@ export function Communication() {
 
   const selectedRecipientPreview = selectedRecipients.slice(0, 5);
 
+  const [showRestorePrompt, setShowRestorePrompt] = useState(false);
+  const [localDraftData, setLocalDraftData] = useState<any>(null);
+
+  useEffect(() => {
+  // Jangan simpan jika sedang loading draft dari server atau sedang review
+    if (loadingDraftId || isReviewingSend) return;
+
+    const timeoutId = setTimeout(() => {
+      const dataToSave = {
+        subject,
+        previewText,
+        editorValue,
+        templateId,
+        filters,
+        selectedRegistrationIds,
+        timestamp: new Date().toISOString(),
+      };
+      
+      // Hanya simpan jika ada konten yang berarti
+      if (subject.trim() || editorValue.text.trim() || selectedRegistrationIds.length > 0) {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
+      }
+    }, 1000); // Debounce 1 detik agar tidak terlalu sering menulis ke disk
+
+    return () => clearTimeout(timeoutId);
+  }, [subject, previewText, editorValue, templateId, filters, selectedRegistrationIds, loadingDraftId]);
+
+  useEffect(() => {
+    const savedData = getLocalDraft();
+    // Jika ada data DAN user tidak sedang diarahkan untuk memuat draft spesifik dari navigasi
+    if (savedData && !draftIdFromNavigation) {
+      setLocalDraftData(savedData);
+      setShowRestorePrompt(true);
+    }
+  }, [draftIdFromNavigation]);
+
+  const handleRestoreLocalDraft = () => {
+    if (!localDraftData) return;
+    
+    setSubject(localDraftData.subject);
+    setPreviewText(localDraftData.previewText);
+    setEditorValue(localDraftData.editorValue);
+    setTemplateId(localDraftData.templateId);
+    setFilters(localDraftData.filters);
+    setSelectedRegistrationIds(localDraftData.selectedRegistrationIds);
+    
+    setShowRestorePrompt(false);
+    localStorage.removeItem(LOCAL_STORAGE_KEY); // Hapus setelah direstore
+  };
+
+  const handleDiscardLocalDraft = () => {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    setShowRestorePrompt(false);
+  };
+  
   
 
   if (isReviewingSend) {
@@ -1468,6 +1536,34 @@ export function Communication() {
 
   return (
     <DashboardLayout>
+    {showRestorePrompt && (
+      <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-full bg-amber-100 p-2 text-amber-600">
+              <Mail size={20} />
+            </div>
+            <div>
+              <p className="text-[13.5px] text-amber-700">
+                We found unsaved draft from your last session.
+              </p>
+              <h4 className="font-semibold text-amber-900 text-md ">Restore and continue your draft?</h4>
+              
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" onClick={handleDiscardLocalDraft} className="text-amber-700 text-sm font-semibold hover:bg-amber-100">
+              Discard
+            </Button>
+            <Button size="sm" onClick={handleRestoreLocalDraft} className="bg-amber-600 hover:bg-amber-700 text-white">
+              Restore
+            </Button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    
       <div className="space-y-8">
         <div className="flex flex-col gap-4 border-b  border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2">

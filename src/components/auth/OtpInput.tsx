@@ -96,7 +96,7 @@ export function OtpInput({
           disabled={disabled}
           onChange={(event) => handleChange(index, event.target.value)}
           onKeyDown={(event) => handleKeyDown(index, event)}
-          className="h-12 w-12 rounded-lg border border-dashed border-slate-300 bg-slate-50 text-center font-mono text-lg font-bold text-slate-700 outline-none transition focus:border-slate-500 focus:bg-white focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:opacity-60 sm:h-14 sm:w-14"
+          className="h-12 w-12 rounded-lg border border-slate-200 bg-slate-50 text-center text-xl font-bold text-slate-800 outline-none transition focus:border-[#0c1b45] focus:bg-white focus:ring-2 focus:ring-slate-100 disabled:cursor-not-allowed disabled:opacity-50 sm:h-14 sm:w-14"
         />
       ))}
     </div>

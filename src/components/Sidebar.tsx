@@ -41,45 +41,54 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
         
         <nav className="flex-1 p-4 space-y-2">
-          <Link
-            to="/events"
-            onClick={onClose}
-            className={`h-12 font-semibold flex items-center px-4 font-mono text-sm transition-colors ${
-              isActive('/events') 
-                ? 'bg-[#eaedff] border-slate-400 text-[#002a85]' 
-                : 'border-slate-300 text-slate-600 hover:bg-[#eaedff] hover:translate-x-1'
-            }`}
-          >
-            <CalendarDays className={`mr-3 h-5 w-5 ${isActive('/events') ? 'text-[#002a85]' : ''}`} />
-            Event List
-          </Link>
+          {/* Event */}
+          {(user?.role === "super_admin" || user?.role === "admin" || user?.role === "event_operator") && (
+            <Link
+              to="/events"
+              onClick={onClose}
+              className={`h-12 font-semibold flex items-center px-4 font-mono text-sm transition-colors ${
+                isActive('/events')
+                  ? 'bg-[#eaedff] border-slate-400 text-[#002a85]'
+                  : 'border-slate-300 text-slate-600 hover:bg-[#eaedff] hover:translate-x-1'
+              }`}
+            >
+              <CalendarDays className={`mr-3 h-5 w-5 ${isActive('/events') ? 'text-[#002a85]' : ''}`} />
+              Event List
+            </Link>
+          )}
 
-          <Link 
-            to="/communication" 
-            onClick={onClose}
-            className={`h-12 font-semibold flex items-center px-4 font-mono text-sm transition-colors ${
-              isActive('/communication') 
-                ? 'bg-[#eaedff] border-slate-400 text-[#002a85]'  
-                : 'text-slate-600 hover:bg-[#eaedff] hover:translate-x-1'
-            }`}
-          >
-            <Mail className={`mr-3 h-5 w-5 ${isActive('/communication') ? 'text-[#002a85]' : ''}`} />
-            New Campaign
-          </Link>
+          {/* Communication */}
+          {(user?.role === "super_admin" || user?.role === "admin" || user?.role === "communication_operator") && (
+            <>
+              <Link
+                to="/communication"
+                onClick={onClose}
+                className={`h-12 font-semibold flex items-center px-4 font-mono text-sm transition-colors ${
+                  isActive('/communication')
+                    ? 'bg-[#eaedff] border-slate-400 text-[#002a85]'
+                    : 'text-slate-600 hover:bg-[#eaedff] hover:translate-x-1'
+                }`}
+              >
+                <Mail className={`mr-3 h-5 w-5 ${isActive('/communication') ? 'text-[#002a85]' : ''}`} />
+                Communication
+              </Link>
 
-          <Link 
-            to="/communication/history" 
-            onClick={onClose}
-            className={`h-12 font-semibold flex items-center px-4 font-mono text-sm transition-colors ${
-              isActive('/communication/history') 
-                ? 'bg-[#eaedff] border-slate-400 text-[#002a85]'  
-                : 'text-slate-600 hover:bg-[#eaedff] hover:translate-x-1'
-            }`}
-          >
-            <FileClockIcon className={`mr-3 h-5 w-5 ${isActive('/communication/history') ? 'text-[#002a85]' : ''}`} />
-            Campaign History
-          </Link>
-          
+              <Link
+                to="/communication/history"
+                onClick={onClose}
+                className={`h-12 font-semibold flex items-center px-4 font-mono text-sm transition-colors ${
+                  isActivePrefix('/communication/history')
+                    ? 'bg-[#eaedff] border-slate-400 text-[#002a85]'
+                    : 'text-slate-600 hover:bg-[#eaedff] hover:translate-x-1'
+                }`}
+              >
+                <FileClockIcon className={`mr-3 h-5 w-5 ${isActivePrefix('/communication/history') ? 'text-[#002a85]' : ''}`} />
+                Campaign History
+              </Link>
+            </>
+          )}
+
+          {/* Users */}
           {user?.role === "super_admin" && (
             <Link
               to="/users"
@@ -94,13 +103,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               Users
             </Link>
           )}
-          
-          <Link 
-            to="/settings" 
+
+          {/* Settings */}
+          <Link
+            to="/settings"
             onClick={onClose}
             className={`h-12 font-semibold flex items-center px-4 font-mono text-sm transition-colors ${
-              isActive('/settings') 
-                ? 'bg-[#eaedff] border-slate-400 text-[#002a85]' 
+              isActive('/settings')
+                ? 'bg-[#eaedff] border-slate-400 text-[#002a85]'
                 : 'text-slate-600 hover:bg-[#eaedff] hover:translate-x-1'
             }`}
           >
