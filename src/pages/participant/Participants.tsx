@@ -236,15 +236,34 @@ export function Participants() {
     const result = await approveRegistration(eventId, registrationId);
     if (result.error) { setActionError(result.error); return; }
     setActionError(null);
+    const registrationFromResponse = result.data?.registration;
+    const fallbackParticipant =
+      registrationFromResponse?.participant ??
+      selectedParticipant?.participant ??
+      items.find((item) => item._id === registrationId)?.participant;
+
     setActionFeedback({
       tone: "success",
       message:
         result.data?.message ?? result.message ?? "Registration approved and QR ticket delivery updated.",
     });
     setSelectedIds([]);
-    setSelectedParticipant(result.data?.registration ?? selectedParticipant);
+    setSelectedParticipant(
+      registrationFromResponse
+        ? {
+            ...registrationFromResponse,
+            participant:
+              fallbackParticipant ?? {
+                _id: registrationFromResponse.participant?._id ?? "",
+                fullName: "Participant",
+                personalEmail: null,
+                companyEmail: null,
+              },
+          }
+        : selectedParticipant,
+    );
     updateSearchParams({
-      selectedRegistrationId: result.data?.registration?._id ?? registrationId,
+      selectedRegistrationId: registrationFromResponse?._id ?? registrationId,
     });
     setRefreshKey((k) => k + 1);
   };
@@ -301,6 +320,12 @@ export function Participants() {
   const selectedParticipantVisible = selectedParticipant
     ? items.some((item) => item._id === selectedParticipant._id)
     : false;
+  const selectedParticipantName =
+    selectedParticipant?.participant?.fullName ?? "Participant";
+  const selectedParticipantEmail =
+    selectedParticipant?.participant?.companyEmail ||
+    selectedParticipant?.participant?.personalEmail ||
+    "Email not available";
 
   return (
     <div className="min-h-screen flex bg-background relative overflow-hidden">
@@ -328,6 +353,7 @@ export function Participants() {
               </div>
             </div>
             <button
+              type="button"
               onClick={handleBulkReject}
               disabled={selectedIds.length === 0 || isLoading}
               className="bg-[#e8e7ef]/50 text-primary px-6 py-3 rounded-lg font-bold text-sm shadow-md hover:shadow-xl transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -335,6 +361,7 @@ export function Participants() {
               Reject Selected
             </button>
             <button
+              type="button"
               onClick={handleBulkApprove}
               disabled={selectedIds.length === 0 || isLoading}
               className="bg-[linear-gradient(135deg,#002d7a_0%,#15439f_100%)] text-white px-6 py-3 rounded-lg font-bold text-sm shadow-md hover:shadow-xl transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -544,10 +571,10 @@ export function Participants() {
                   ) : null}
                   <div className="items-center pt-3">
                     <h2 className="text-3xl font-bold tracking-loose text-primary text-center">
-                      {selectedParticipant.participant.fullName}
+                      {selectedParticipantName}
                     </h2>
                     <h3 className="text-sm text-[#002D7A] text-center">
-                      {selectedParticipant.participant.companyEmail || selectedParticipant.participant.personalEmail}
+                      {selectedParticipantEmail}
                     </h3>
                   </div>
                   <div className="pt-5 flex justify-between text-left">
@@ -610,6 +637,7 @@ export function Participants() {
                   </div>
                   <div className="pt-5 px-3 flex flex-row justify-around">
                     <button
+                      type="button"
                       onClick={() => handleReject(selectedParticipant._id)}
                       disabled={selectedParticipant.status !== "pending" || isLoading}
                       className="bg-[#DDDCE3] text-foreground px-6 py-2 rounded-lg font-bold text-sm hover:shadow-xl transition-all active:scale-95 w-[100px] disabled:opacity-40 disabled:cursor-not-allowed"
@@ -617,6 +645,7 @@ export function Participants() {
                       Reject
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleApprove(selectedParticipant._id)}
                       disabled={selectedParticipant.status !== "pending" || isLoading}
                       className="bg-[#15439F] text-white px-6 py-2 rounded-lg font-bold text-sm hover:shadow-xl transition-all active:scale-95 w-[100px] disabled:opacity-40 disabled:cursor-not-allowed"
