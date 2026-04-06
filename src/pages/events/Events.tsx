@@ -311,7 +311,7 @@ export function Events() {
                               <DropdownMenuItem
                                 className="font-medium cursor-pointer"
                                 onSelect={() =>
-                                  navigate(`/participants?eventId=${event._id}`)
+                                  navigate(`/participants?eventId=${event._id}&eventTitle=${encodeURIComponent(event.title)}`)
                                 }
                               >
                                 Manage Participants
