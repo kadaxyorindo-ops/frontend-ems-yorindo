@@ -20,6 +20,13 @@ export interface AuthUser {
   role: string;
   organizationName: string | null;
   lastLoginAt: string | null;
+  /**
+   * Feature-level permissions for this user.
+   * super_admin receives [] here but bypasses all checks client-side via
+   * role === "super_admin" in usePermission().
+   * Populated from /api/v1/auth/me on every page load.
+   */
+  permissions: string[];
 }
 
 interface RequestOtpResponse {

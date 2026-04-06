@@ -19,21 +19,22 @@ import { UserFormModal } from "./UserFormModal";
 import {
   getUsers,
   toggleUserActive,
+  deleteUser,
   type User,
 } from "@/services/userService";
 
 const ROLE_LABELS: Record<string, string> = {
-  super_admin: "Super Admin",
-  admin:       "Admin",
-  staff:       "Staff",
-  scanner:     "Scanner",
+  super_admin:            "Super Admin",
+  event_operator:         "Event Operator",
+  communication_operator: "Communication Operator",
+  survey_analyst:         "Survey Analyst",
 };
 
 const ROLE_COLORS: Record<string, string> = {
-  super_admin: "bg-violet-100 text-violet-700",
-  admin:       "bg-blue-100 text-blue-700",
-  staff:       "bg-amber-100 text-amber-700",
-  scanner:     "bg-slate-100 text-slate-600",
+  super_admin:            "bg-violet-100 text-violet-700",
+  event_operator:         "bg-blue-100 text-blue-700",
+  communication_operator: "bg-amber-100 text-amber-700",
+  survey_analyst:         "bg-emerald-100 text-emerald-700",
 };
 
 export function Users() {
@@ -47,6 +48,8 @@ export function Users() {
   const [isModalOpen, setIsModalOpen]   = useState(false);
   const [editingUser, setEditingUser]   = useState<User | undefined>(undefined);
   const [togglingId, setTogglingId]     = useState<string | null>(null);
+  const [deletingId, setDeletingId]     = useState<string | null>(null);
+  const [deleteError, setDeleteError]   = useState<string | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -94,6 +97,19 @@ export function Users() {
     setTogglingId(user._id);
     await toggleUserActive(user._id);
     setTogglingId(null);
+    void fetchUsers();
+  };
+
+  const handleDelete = async (user: User) => {
+    if (!window.confirm(`Delete ${user.name}? This cannot be undone.`)) return;
+    setDeletingId(user._id);
+    setDeleteError(null);
+    const result = await deleteUser(user._id);
+    setDeletingId(null);
+    if (result.error) {
+      setDeleteError(result.error);
+      return;
+    }
     void fetchUsers();
   };
 
@@ -160,11 +176,18 @@ export function Users() {
           >
             <option value="">All Roles</option>
             <option value="super_admin">Super Admin</option>
-            <option value="admin">Admin</option>
-            <option value="staff">Staff</option>
-            <option value="scanner">Scanner</option>
+            <option value="event_operator">Event Operator</option>
+            <option value="communication_operator">Communication Operator</option>
+            <option value="survey_analyst">Survey Analyst</option>
           </select>
         </div>
+
+        {/* Delete error */}
+        {deleteError && (
+          <div className="rounded-lg border border-dashed border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-600">
+            {deleteError}
+          </div>
+        )}
 
         {/* Table */}
         <div className="border rounded-lg overflow-hidden">
@@ -247,6 +270,13 @@ export function Users() {
                             onClick={() => handleToggleActive(user)}
                           >
                             {user.isActive ? "Deactivate" : "Activate"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="cursor-pointer text-rose-600 focus:text-rose-600"
+                            disabled={deletingId === user._id}
+                            onClick={() => handleDelete(user)}
+                          >
+                            Delete User
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
