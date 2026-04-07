@@ -15,6 +15,10 @@ export interface RegistrationParticipant {
   fullName: string;
   personalEmail: string | null;
   companyEmail: string | null;
+  company?: { name?: string | null };
+  industry?: { name?: string | null };
+  jobTitle?: { name?: string | null };
+  city?: { name?: string | null };
 }
 
 export interface RegistrationItem {
