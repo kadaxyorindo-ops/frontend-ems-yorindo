@@ -27,40 +27,20 @@ export interface UserFormData {
   email: string;
   role: string;
   organizationName: string | null;
-  permissions: string[];
 }
 
 export interface UpdateUserData {
   name?: string;
   role?: string;
   organizationName?: string | null;
-  permissions?: string[];
 }
 
-export const SYSTEM_ROLES = ["super_admin", "admin", "staff", "scanner"] as const;
-
-export const PERMISSION_GROUPS = [
-  {
-    group: "Events",
-    items: [
-      { label: "View events list",       value: "events:view" },
-      { label: "Create new events",      value: "events:create" },
-      { label: "Edit events",            value: "events:edit" },
-      { label: "Delete / cancel events", value: "events:delete" },
-    ],
-  },
-  {
-    group: "Communication",
-    items: [
-      { label: "View communication page", value: "communication:view" },
-    ],
-  },
-  {
-    group: "Settings",
-    items: [
-      { label: "View settings page", value: "settings:view" },
-    ],
-  },
+export const SYSTEM_ROLES = [
+  "super_admin",
+  "admin",
+  "event_operator",
+  "communication_operator",
+  "survey_analyst",
 ] as const;
 
 export function getUsers(params: GetUsersParams = {}) {
@@ -84,4 +64,8 @@ export function updateUser(id: string, data: UpdateUserData) {
 
 export function toggleUserActive(id: string) {
   return api.patch<User>(`${apiPaths.users}/${id}/toggle-active`);
+}
+
+export function deleteUser(id: string) {
+  return api.delete<null>(`/api/v1/users/${id}`);
 }

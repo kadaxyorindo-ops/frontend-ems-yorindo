@@ -19,6 +19,10 @@ export function Login() {
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [sendNotification, setSendNotification] = useState<{
+    type: "sending" | "success" | "error";
+    message: string;
+  } | null>(null);
 
   const otpValue = otpDigits.join("");
 
@@ -37,21 +41,25 @@ export function Login() {
 
     setEmailError("");
     setOtpError("");
+    setSendNotification(null);
 
     if (!email) {
       setEmailError("Enter your work email first.");
       return;
     }
 
+    setSendNotification({ type: "sending", message: "Sending verification code to your email..." });
     setIsSendingCode(true);
     const result = await requestOtp(email);
     setIsSendingCode(false);
 
     if (!result.ok) {
+      setSendNotification(null);
       setEmailError(result.message);
       return;
     }
 
+    setSendNotification({ type: "success", message: "Verification code sent! Check your inbox." });
     setSubmittedEmail(email);
     setOtpDigits([...EMPTY_OTP]);
     setOtpSent(true);
@@ -84,9 +92,8 @@ export function Login() {
   const sendButtonDisabled =
     isSendingCode || isVerifying || (otpSent && resendCooldown > 0);
 
-  const sendButtonLabel = isSendingCode
-    ? "Sending code..."
-    : otpSent && resendCooldown > 0
+  const sendButtonLabel =
+    otpSent && resendCooldown > 0
       ? `Resend in ${resendCooldown}s`
       : "Send Verification Code";
 
@@ -116,6 +123,7 @@ export function Login() {
                 value={emailInput}
                 onChange={(e) => {
                   setEmailInput(e.target.value);
+                  setSendNotification(null);
                   if (otpSent) {
                     setOtpSent(false);
                     setOtpDigits([...EMPTY_OTP]);
@@ -123,7 +131,7 @@ export function Login() {
                   }
                 }}
                 disabled={isSendingCode || isVerifying}
-                placeholder="nama@yorindo.co.id"
+                placeholder="name@yorindo.co.id"
                 className="w-full h-11 rounded-lg border border-slate-200 bg-slate-50 px-4 pr-11 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-100 disabled:opacity-60"
               />
               {/* Mail icon */}
@@ -147,13 +155,61 @@ export function Login() {
             )}
           </div>
 
+          {sendNotification && (
+            <div
+              className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-medium ${
+                sendNotification.type === "sending"
+                  ? "border-blue-200 bg-blue-50 text-blue-700"
+                  : sendNotification.type === "success"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : "border-rose-200 bg-rose-50 text-rose-600"
+              }`}
+            >
+              {sendNotification.type === "sending" && (
+                <svg
+                  className="h-3.5 w-3.5 flex-shrink-0 animate-spin"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"
+                  />
+                </svg>
+              )}
+              {sendNotification.type === "success" && (
+                <svg
+                  className="h-3.5 w-3.5 flex-shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              )}
+              {sendNotification.message}
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={sendButtonDisabled}
             className="w-full h-11 rounded-lg bg-[#0c1b45] text-white text-sm font-semibold flex items-center justify-center gap-2 hover:bg-[#162454] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {sendButtonLabel}
-            {!isSendingCode && !(otpSent && resendCooldown > 0) && (
+            {!(otpSent && resendCooldown > 0) && (
               <span className="text-base leading-none">→</span>
             )}
           </button>

@@ -28,7 +28,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, isInitializing } = useAuth();
 
   if (isInitializing) {
-    return <FullPageStatus label="Memuat sesi login..." />;
+    return <FullPageStatus label="Loading..." />;
   }
 
   if (!isAuthenticated) {
@@ -60,7 +60,7 @@ function GuestRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, isInitializing } = useAuth();
 
   if (isInitializing) {
-    return <FullPageStatus label="Menyiapkan halaman login..." />;
+    return <FullPageStatus label="Preparing login page..." />;
   }
 
   if (isAuthenticated) {

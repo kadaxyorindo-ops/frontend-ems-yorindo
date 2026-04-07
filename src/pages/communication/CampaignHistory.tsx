@@ -261,22 +261,13 @@ export function CampaignHistory() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <Button
               type="button"
-              variant="outline"
-              size="lg"
-              asChild
-              className="h-11 border border-sm border-grey-100"
-            >
-              <Link to="/communication">Back to Composer</Link>
-            </Button>
-            <Button
-              type="button"
               size="lg"
               asChild
               className="h-11 px-5 text-white border border-sm border-[#002d7a]"
             >
               <Link to="/communication">
                 <SendHorizontal className="mr-2 h-4 w-4" aria-hidden="true" />
-                New Broadcast
+                Create Campaign
               </Link>
             </Button>
           </div>
@@ -420,10 +411,10 @@ export function CampaignHistory() {
                 ) : history?.items.length ? (
                   history.items.map((item) => (
                     <TableRow key={item.id} className="align-top">
-                      <TableCell className="min-w-[6rem] px-7">
+                      <TableCell className="min-w-[6rem] px-7 text-center">
                         <div className="space-y-2">
                           <span
-                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${getStatusBadgeClass(
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase ${getStatusBadgeClass(
                               item.status,
                             )}`}
                           >
@@ -480,7 +471,7 @@ export function CampaignHistory() {
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell className="text-right min-w-[3rem] px-6">
+                      <TableCell className="text-center min-w-[3rem] px-6">
                         {item.status === "draft" ? (
                           <Button
                             type="button"

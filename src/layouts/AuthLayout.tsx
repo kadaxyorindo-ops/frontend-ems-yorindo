@@ -1,67 +1,75 @@
 import type { ReactNode } from "react";
 
+const BRAND_COLORS = ["#6B3FA0", "#2B5EAB", "#43B049", "#EA4C1B", "#F5A623"] as const;
+
 export function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex">
       {/* Left Panel — Branding */}
-      <div className="hidden lg:flex lg:w-[520px] xl:w-[560px] flex-shrink-0 flex-col justify-between bg-[#0c1b45] p-12 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-[520px] xl:w-[560px] flex-shrink-0 flex-col bg-[#08101e] px-14 py-12 relative overflow-hidden">
 
-        {/* Subtle dot grid overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage:
-              "radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)",
-            backgroundSize: "32px 32px",
-          }}
-        />
+        {/* Left accent bar — brand colours */}
+        <div className="absolute left-0 inset-y-0 w-[3px] flex flex-col">
+          {BRAND_COLORS.map((c) => (
+            <div key={c} className="flex-1" style={{ backgroundColor: c }} />
+          ))}
+        </div>
 
-        {/* Glow blob */}
-        <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-blue-600/20 blur-3xl" />
-        <div className="absolute top-1/3 -right-20 w-72 h-72 rounded-full bg-indigo-500/10 blur-3xl" />
+        {/* Glow blobs */}
+        <div className="absolute -top-24 right-0 w-80 h-80 rounded-full bg-indigo-600/15 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-8 w-72 h-72 rounded-full bg-blue-700/10 blur-3xl pointer-events-none" />
+
+        {/* Faded "EMS" watermark */}
+        <div className="absolute right-[-20px] top-1/3 -translate-y-1/2 text-[220px] font-black text-white/[0.025] leading-none select-none pointer-events-none tracking-tighter">
+          EMS
+        </div>
 
         {/* Logo */}
-        <div className="relative z-10 flex items-center gap-3">
-          <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-            <rect x="0" y="0" width="17" height="17" rx="3.5" fill="#e74c3c" />
-            <rect x="21" y="0" width="17" height="17" rx="3.5" fill="#f39c12" />
-            <rect x="0" y="21" width="17" height="17" rx="3.5" fill="#3498db" />
-            <rect x="21" y="21" width="17" height="17" rx="3.5" fill="#2ecc71" />
-          </svg>
-          <div>
-            <p className="text-white font-bold text-sm tracking-[0.22em]">YORINDO</p>
-            <p className="text-blue-300/80 text-[10px] tracking-[0.35em]">COMMUNICATION</p>
+        <div className="relative z-10">
+          <div className="inline-flex bg-white rounded-2xl px-7 py-4 shadow-2xl shadow-black/50">
+            <img
+              src="/yorindo-logo.png"
+              alt="Yorindo Communication"
+              className="h-9 w-auto"
+            />
           </div>
         </div>
+
+        {/* Push hero down */}
+        <div className="flex-[0.4]" />
 
         {/* Hero text */}
-        <div className="relative z-10 space-y-5 max-w-sm">
-          <h1 className="text-[2.75rem] font-bold leading-[1.18] text-white">
-            Orchestrate<br />Memorable<br />
-            <span className="text-amber-400">Experiences.</span>
+        <div className="relative z-10 space-y-5">
+          <p className="text-[9px] font-bold uppercase tracking-[0.35em] text-slate-600">
+            Dashboard Portal
+          </p>
+          <h1 className="text-[3.25rem] font-black leading-[1.1] tracking-tight text-white">
+            Event<br />Management<br />
+            <span className="text-amber-400">System.</span>
           </h1>
-          <p className="text-blue-200/70 text-[15px] leading-relaxed">
-            The premium architectural conductor for high-end event management.
-            Structure your vision, layer your logistics, and deliver excellence.
+          <p className="text-[14px] text-slate-500 leading-relaxed max-w-[300px]">
+            A centralized platform for storing event data,
+            and keeping your team aligned in one place.
           </p>
         </div>
 
-        {/* Trust footer */}
-        <div className="relative z-10 flex items-center gap-4">
-          <div className="flex -space-x-2.5">
-            {(["bg-blue-400", "bg-indigo-400", "bg-violet-400"] as const).map(
-              (color, i) => (
-                <div
-                  key={i}
-                  className={`w-9 h-9 rounded-full ${color} border-2 border-white/20`}
-                />
-              )
-            )}
+        {/* Bottom row — pinned to bottom */}
+        <div className="absolute bottom-0 left-0 right-0 z-10 px-14 py-10 flex items-center gap-3">
+          <div className="flex gap-1.5">
+            {BRAND_COLORS.map((c) => (
+              <div
+                key={c}
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: c }}
+              />
+            ))}
           </div>
-          <p className="text-blue-200/60 text-sm">
-            Trusted by 500+ premium venues worldwide
-          </p>
+          <div className="flex-1 h-px bg-white/[0.06]" />
+          <span className="text-[10px] text-slate-700 font-mono tracking-widest">
+            YORINDO EMS
+          </span>
         </div>
+
       </div>
 
       {/* Right Panel */}
