@@ -32,11 +32,11 @@ const STATUS_OPTIONS: { label: string; value: RegistrationStatus }[] = [
 
 const getStatusStyles = (status: string) => {
   switch (status) {
-    case "approved":   return "bg-[#9cd3b2] text-[#002112] w-[100px]";
-    case "pending":    return "bg-[#fed174] text-[#785800] w-[100px]";
-    case "rejected":   return "bg-[#f8d7da] text-[#721c24] w-[100px]";
-    case "checked_in": return "bg-[#cfe2ff] text-[#084298] w-[100px]";
-    default:           return "bg-slate-50 text-slate-700 w-[100px]";
+    case "approved":   return "bg-emerald-50 text-emerald-600 border-emerald-200";
+    case "pending":    return "bg-yellow-50 text-yellow-600 border-yellow-200";
+    case "rejected":   return "bg-red-50 text-red-600 border-red-200";
+    case "checked_in": return "bg-blue-50 text-blue-600 border-blue-200";
+    default:           return "bg-slate-50 text-slate-700 border-slate-200";
   }
 };
 
@@ -250,22 +250,22 @@ export function Participants() {
 
                 {/* Table */}
                 <div className="overflow-x-auto">
-                  <Table className="w-full border border-sm">
-                    <TableHeader className="bg-slate-50">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
                         <TableHead className="w-[50px] text-center">
                           <input
                             type="checkbox"
                             checked={items.length > 0 && selectedIds.length === items.length}
                             onChange={toggleSelectAll}
-                            className="translate-y-[2px] h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                            className="translate-y-[2px] h-4 w-4 rounded border-gray-300 focus:ring-primary cursor-pointer"
                           />
                         </TableHead>
-                        <TableHead className="font-bold text-primary pl-10">Name</TableHead>
-                        <TableHead className="font-bold text-primary text-center">Company</TableHead>
-                        <TableHead className="font-bold text-primary text-center">Industry</TableHead>
-                        <TableHead className="font-bold text-primary text-center">Role</TableHead>
-                        <TableHead className="font-bold text-primary text-center">Status</TableHead>
+                        <TableHead className="pl-10">Name</TableHead>
+                        <TableHead className="text-center">Company</TableHead>
+                        <TableHead className="text-center">Industry</TableHead>
+                        <TableHead className="text-center">Role</TableHead>
+                        <TableHead className="text-center">Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -292,7 +292,7 @@ export function Participants() {
                                 type="checkbox"
                                 checked={selectedIds.includes(item._id)}
                                 onChange={() => toggleSelectOne(item)}
-                                className="translate-y-[2px] h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                className="translate-y-[2px] h-4 w-4 rounded border-gray-300 focus:ring-primary cursor-pointer"
                               />
                             </TableCell>
                             <TableCell className="font-medium pl-10">{item.participant.fullName}</TableCell>
@@ -300,8 +300,8 @@ export function Participants() {
                             <TableCell className="text-center">{item.industrySnapshot?.name ?? "—"}</TableCell>
                             <TableCell className="text-center">{item.jobTitleSnapshot?.name ?? "—"}</TableCell>
                             <TableCell className="text-center">
-                              <span className={`inline-flex items-center justify-center w-24 px-3 py-1 rounded-full text-[13px] font-bold tracking-tight ${getStatusStyles(item.status)}`}>
-                                {formatStatus(item.status)}
+                              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${getStatusStyles(item.status)}`}>
+                                {formatStatus(item.status).toUpperCase()}
                               </span>
                             </TableCell>
                           </TableRow>
@@ -365,7 +365,7 @@ export function Participants() {
 
             {/* Detail Sidebar */}
             <div className={`transition-all duration-300 ${selectedParticipant ? "block lg:block col-span-3" : "hidden lg:hidden"}`}>
-              <div className="bg-white p-6 rounded-2xl relative overflow-hidden shadow-xl shadow-slate-300 h-full">
+              <div className="bg-white p-6 rounded-2xl relative overflow-hidden shadow-xl shadow-slate-300 h-fit">
                 {selectedParticipant && (
                   <div className="flex flex-col gap-6">
                     <div>

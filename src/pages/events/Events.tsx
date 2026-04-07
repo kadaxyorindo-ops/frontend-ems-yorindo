@@ -169,18 +169,18 @@ export function Events() {
         <div ref={tableRef} className="px-10 pb-10">
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm min-h-[400px]">
             <Table>
-              <TableHeader className="bg-slate-50/50">
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-400 py-4 pl-6">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="py-4 pl-6">
                     Event Name & Details
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-400 py-4">
+                  <TableHead className="py-4">
                     Participant / Capacity
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-400 py-4">
+                  <TableHead className="py-4">
                     Status
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-400 py-4 pr-6 text-right">
+                  <TableHead className="py-4 pr-6 text-right">
                     Actions
                   </TableHead>
                 </TableRow>
