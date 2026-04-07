@@ -35,6 +35,7 @@ import {
   MoreHorizontal,
   Trash2,
   UserCog,
+  ScanLine,
 } from "lucide-react";
 import {
   getEvents,
@@ -51,6 +52,15 @@ const statusStyles: Record<string, string> = {
   registration: "bg-yellow-50 text-yellow-600 border-yellow-200",
   draft: "bg-slate-50 text-slate-400 border-slate-200",
   cancelled: "bg-red-50 text-red-600 border-red-200",
+};
+
+const dotStyles: Record<string, string> = {
+  ongoing: "bg-emerald-400",
+  done: "bg-slate-400",
+  upcoming: "bg-blue-400",
+  registration: "bg-yellow-400",
+  draft: "bg-slate-300",
+  cancelled: "bg-red-400",
 };
 
 const calculateDaysToEvent = (
@@ -291,14 +301,14 @@ export function Events() {
                           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${statusStyles[event.status]}`}
                         >
                           <span
-                            className={`w-1 h-1 rounded-full ${event.status === "ongoing" ? "bg-emerald-400" : "bg-blue-400"}`}
+                            className={`w-1 h-1 rounded-full ${dotStyles[event.status] ?? "bg-slate-300"}`}
                           />
                           {event.status.toUpperCase()}
                         </span>
                       </TableCell>
 
                       <TableCell className="pr-6 text-right">
-                        {/* WRAPPER UNTUK ACTIONS */}
+                        {/* WRAPPER FOR ACTIONS */}
                         <AlertDialog>
                           <DropdownMenu
                             open={openMenuId === event._id}
@@ -309,6 +319,7 @@ export function Events() {
                             <DropdownMenuTrigger asChild>
                               <Button
                                 variant="ghost"
+                                disabled={event.status === "cancelled"}
                                 className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-slate-600"
                               >
                                 <MoreHorizontal className="w-4 h-4" />
@@ -350,22 +361,14 @@ export function Events() {
                                   navigate(`/participants?eventId=${event._id}&eventTitle=${encodeURIComponent(event.title)}`)
                                 }
                               >
+                                <UserCog className="w-4 h-4" /> 
                                 Manage Participants
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="font-medium cursor-pointer"
                                 onSelect={() => navigate(`/events/${event._id}/check-in`)}
                               >
-                                Open Check-In Desk
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="font-medium text-red-500 focus:text-red-600 cursor-pointer"
-                                onSelect={() =>
-                                  void handleDelete(event._id, event.title)
-                                }
-                              >
-                                <UserCog className="w-4 h-4" /> Manage
-                                Participants
+                              <ScanLine className="w-4 h-4" /> Open Check-In Desk
                               </DropdownMenuItem>
 
                               {/* TRIGGER ALERT DIALOG DI DALAM MENU */}

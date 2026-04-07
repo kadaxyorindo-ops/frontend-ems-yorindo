@@ -350,7 +350,6 @@ export function EventDialog({
                 name="eventDescription"
                 defaultValue={defaultData?.description}
                 placeholder="Enter event description"
-                required
                 onKeyDown={(e) => e.stopPropagation()}
                 className="min-h-[88px] rounded-lg border-slate-200 bg-slate-50 placeholder:text-slate-300 text-sm text-slate-700 focus-visible:ring-1 focus-visible:ring-[#1a3fa8]/40 focus-visible:border-[#1a3fa8]/50 resize-none p-3"
               />
