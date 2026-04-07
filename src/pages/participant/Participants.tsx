@@ -55,6 +55,8 @@ const getTicketDeliveryStyles = (status: RegistrationTicketDeliveryStatus | unde
       return "bg-sky-100 text-sky-700 border-sky-200";
     case "failed":
       return "bg-rose-100 text-rose-700 border-rose-200";
+    case "idle":
+      return "bg-slate-100 text-slate-500 border-slate-200";
     default:
       return "bg-slate-100 text-slate-600 border-slate-200";
   }
@@ -64,6 +66,8 @@ const formatTicketDeliveryStatus = (
   status: RegistrationTicketDeliveryStatus | undefined,
 ) => {
   switch (status) {
+    case "idle":
+      return "Idle";
     case "queued":
       return "Queued";
     case "processing":
@@ -404,20 +408,6 @@ export function Participants() {
               <div className="text-xs font-medium text-[#72a688] bg-[#9cd3b2]/20 px-2 py-0.5 rounded">
                 Approved Participants
               </div>
-              <button
-                onClick={handleBulkReject}
-                disabled={selectedIds.length === 0 || isLoading}
-                className="bg-[#e8e7ef]/50 text-primary px-6 py-3 rounded-lg font-bold text-sm shadow-md hover:shadow-xl transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Reject Selected
-              </button>
-              <button
-                onClick={handleBulkApprove}
-                disabled={selectedIds.length === 0 || isLoading}
-                className="bg-[linear-gradient(135deg,#002d7a_0%,#15439f_100%)] text-white px-6 py-3 rounded-lg font-bold text-sm shadow-md hover:shadow-xl transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Approve Selected
-              </button>
             </div>
             <button
               type="button"
@@ -512,23 +502,14 @@ export function Participants() {
                   <TableBody>
                       {isLoading ? (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-10 text-slate-400">
+                          <TableCell colSpan={7} className="text-center py-10 text-slate-400">
                             Loading...
                           </TableCell>
                         </TableRow>
                       ) : items.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-10 text-slate-400">
+                          <TableCell colSpan={7} className="text-center py-10 text-slate-400">
                             No participants found.
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <span
-                              className={`inline-flex min-w-[112px] items-center justify-center rounded-full border px-3 py-1 text-[12px] font-semibold ${getTicketDeliveryStyles(
-                                items.ticketDelivery?.status,
-                              )}`}
-                            >
-                              {formatTicketDeliveryStatus(items.ticketDelivery?.status)}
-                            </span>
                           </TableCell>
                         </TableRow>
                       ) : (
@@ -552,6 +533,11 @@ export function Participants() {
                             <TableCell className="text-center">
                               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${getStatusStyles(item.status)}`}>
                                 {formatStatus(item.status).toUpperCase()}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className={`inline-flex min-w-[80px] items-center justify-center rounded-full border px-3 py-1 text-[10px] font-bold ${getTicketDeliveryStyles(item.ticketDelivery?.status)}`}>
+                                {formatTicketDeliveryStatus(item.ticketDelivery?.status)}
                               </span>
                             </TableCell>
                           </TableRow>
@@ -644,53 +630,24 @@ export function Participants() {
                       {selectedParticipantEmail}
                     </h3>
                   </div>
-                  <div className="pt-5 flex justify-between text-left">
+                  <div className="flex justify-between text-left">
                     <div>
-                      <p className="text-[13px] font-bold text-slate-500">Participant Details</p>
+                      <div className="text-[11px] text-muted-foreground uppercase font-bold">Company</div>
+                      <div className="text-sm font-bold text-primary">{selectedParticipant.companySnapshot?.name ?? "—"}</div>
                     </div>
-                    <div className="items-center pt-3">
-                      <h2 className="text-3xl font-bold tracking-loose text-primary text-center">
-                        {selectedParticipant.participant.fullName}
-                      </h2>
-                      <h3 className="text-sm text-[#002D7A] text-center">
-                        {selectedParticipant.participant.companyEmail || selectedParticipant.participant.personalEmail}
-                      </h3>
+                    <div className="text-right">
+                      <div className="text-[11px] text-muted-foreground uppercase font-bold">Role</div>
+                      <div className="text-sm font-bold text-[#002D7A]">{selectedParticipant.jobTitleSnapshot?.name ?? "—"}</div>
                     </div>
-                    <div className="pt-5 flex justify-between text-left">
-                      <div>
-                        <div className="text-[11px] text-muted-foreground uppercase font-bold">Company</div>
-                        <div className="text-sm font-bold text-primary">{selectedParticipant.companySnapshot?.name ?? "—"}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-[11px] text-muted-foreground uppercase font-bold">Role</div>
-                        <div className="text-sm font-bold text-[#002D7A]">{selectedParticipant.jobTitleSnapshot?.name ?? "—"}</div>
-                      </div>
+                  </div>
+                  <div className="flex justify-between text-left">
+                    <div>
+                      <div className="text-[11px] text-muted-foreground uppercase font-bold">Industry</div>
+                      <div className="text-sm font-bold text-primary">{selectedParticipant.industrySnapshot?.name ?? "—"}</div>
                     </div>
-                    <div className="pt-3 flex justify-between text-left">
-                      <div>
-                        <div className="text-[11px] text-muted-foreground uppercase font-bold">Industry</div>
-                        <div className="text-sm font-bold text-primary">{selectedParticipant.industrySnapshot?.name ?? "—"}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-[11px] text-muted-foreground uppercase font-bold">City</div>
-                        <div className="text-sm font-bold text-[#002D7A]">{selectedParticipant.citySnapshot?.name ?? "—"}</div>
-                      </div>
-                    </div>
-                    <div className="pt-5 px-3 flex flex-row justify-around">
-                      <button
-                        onClick={() => handleReject(selectedParticipant._id)}
-                        disabled={selectedParticipant.status !== "pending" || isLoading}
-                        className="bg-[#DDDCE3] text-foreground px-6 py-2 rounded-lg font-bold text-sm hover:shadow-xl transition-all active:scale-95 w-[100px] disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        Reject
-                      </button>
-                      <button
-                        onClick={() => handleApprove(selectedParticipant._id)}
-                        disabled={selectedParticipant.status !== "pending" || isLoading}
-                        className="bg-[#15439F] text-white px-6 py-2 rounded-lg font-bold text-sm hover:shadow-xl transition-all active:scale-95 w-[100px] disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        Approve
-                      </button>
+                    <div className="text-right">
+                      <div className="text-[11px] text-muted-foreground uppercase font-bold">City</div>
+                      <div className="text-sm font-bold text-[#002D7A]">{selectedParticipant.citySnapshot?.name ?? "—"}</div>
                     </div>
                   </div>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
@@ -715,7 +672,7 @@ export function Participants() {
                     <div className="mt-4 space-y-3 text-sm text-slate-600">
                       <div className="flex items-start justify-between gap-3">
                         <span className="font-semibold text-slate-500">Ticket code</span>
-                        <span className="text-right font-mono text-[12px] text-slate-700">
+                        <span className="text-right font-mono text-[12px] text-slate-700 max-w-[160px] break-all">
                           {selectedParticipant.ticket?.qrCode ?? "Generated after approval"}
                         </span>
                       </div>
