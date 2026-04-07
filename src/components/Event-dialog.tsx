@@ -23,6 +23,7 @@ import {
   Plus,
   Tag,
   Briefcase,
+  SquarePen,
 } from "lucide-react";
 import {
   Select,
@@ -147,11 +148,11 @@ export function EventDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {isEdit ? (
-          <button
+          <button 
             type="button"
             onClick={onOpen}
-            className="w-full text-left px-2 py-1.5 text-sm hover:bg-slate-100 rounded-sm cursor-pointer"
-          >
+            className=" flex items-center gap-2 w-full text-left px-2 py-1.5 font-medium hover:bg-slate-100 rounded-sm cursor-pointer">
+            <SquarePen className="w-4 h-4" />
             Edit Event
           </button>
         ) : (
@@ -263,7 +264,7 @@ export function EventDialog({
                   onValueChange={setSelectedStatus}
                   required
                 >
-                  <SelectTrigger className="h-9 rounded-lg border-slate-200 bg-slate-50 text-sm foucs:ring-1 focus:ring-[#1a3fa8]/40">
+                  <SelectTrigger className="w-full h-9 rounded-lg border-slate-200 bg-slate-50 text-sm foucs:ring-1 focus:ring-[#1a3fa8]/40">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -325,7 +326,7 @@ export function EventDialog({
                     setSelectedIndustry(found);
                   }}
                 >
-                  <SelectTrigger className="h-9 rounded-lg border-slate-200 bg-slate-50 text-sm focus:ring-1 focus:ring-[#1a3fa8]/40">
+                  <SelectTrigger className="w-full h-9 rounded-lg border-slate-200 bg-slate-50 text-sm focus:ring-1 focus:ring-[#1a3fa8]/40">
                     <SelectValue placeholder="Select industry" />
                   </SelectTrigger>
                   <SelectContent>
