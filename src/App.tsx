@@ -9,6 +9,7 @@ import { Settings } from "@/pages/settings/Settings";
 import { NotFound } from "@/pages/NotFound";
 import { useAuth } from "@/hooks/useAuth";
 import { Participants } from "@/pages/participant/Participants";
+import { EventCheckInDesk } from "@/pages/checkin/EventCheckInDesk";
 
 function FullPageStatus({ label }: { label: string }) {
   return (
@@ -118,6 +119,14 @@ function App() {
           element={
             <ProtectedRoute>
               <Participants />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/events/:eventId/check-in"
+          element={
+            <ProtectedRoute>
+              <EventCheckInDesk />
             </ProtectedRoute>
           }
         />
