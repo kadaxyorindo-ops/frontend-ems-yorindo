@@ -26,7 +26,8 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
     <header className="h-20 bg-[#faf8ff]/10 shadow-sm backdrop-blur-xl px-4 md:px-8 flex items-center justify-between sticky top-0 z-30">
       <div className="flex items-center gap-4 w-full max-w-md">
         {/* Hamburger Menu Button */}
-        <button 
+        <button
+          type="button"
           onClick={onToggleSidebar}
           className="w-10 h-10 flex flex-shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-500 hover:bg-[#eaedff] transition-colors"
         >

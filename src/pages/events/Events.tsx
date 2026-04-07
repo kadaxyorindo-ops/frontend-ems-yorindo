@@ -317,6 +317,12 @@ export function Events() {
                                 Manage Participants
                               </DropdownMenuItem>
                               <DropdownMenuItem
+                                className="font-medium cursor-pointer"
+                                onSelect={() => navigate(`/events/${event._id}/check-in`)}
+                              >
+                                Open Check-In Desk
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
                                 className="font-medium text-red-500 focus:text-red-600 cursor-pointer"
                                 onSelect={() =>
                                   void handleDelete(event._id, event.title)

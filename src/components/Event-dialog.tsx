@@ -51,6 +51,7 @@ interface EventDialogProps {
     status: string;
     industry: { refId: string | null; name: string | null };
   };
+  onOpen?: () => void;
   onSuccess?: () => void;
 }
 
@@ -60,6 +61,7 @@ export function EventDialog({
   mode,
   eventId,
   defaultData,
+  onOpen,
   onSuccess,
 }: EventDialogProps) {
   const isEdit = mode === "edit";
@@ -145,11 +147,19 @@ export function EventDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {isEdit ? (
-          <button className="w-full text-left px-2 py-1.5 text-sm hover:bg-slate-100 rounded-sm cursor-pointer">
+          <button
+            type="button"
+            onClick={onOpen}
+            className="w-full text-left px-2 py-1.5 text-sm hover:bg-slate-100 rounded-sm cursor-pointer"
+          >
             Edit Event
           </button>
         ) : (
-          <Button className="bg-[#1a3fa8] hover:bg-[#153289] cursor-pointer gap-1.5 text-sm font-semibold px-4 h-9 rounded-lg shadow-sm">
+          <Button
+            type="button"
+            onClick={onOpen}
+            className="bg-[#1a3fa8] hover:bg-[#153289] cursor-pointer gap-1.5 text-sm font-semibold px-4 h-9 rounded-lg shadow-sm"
+          >
             <Plus className="w-4 h-4" />
             Create Event
           </Button>
