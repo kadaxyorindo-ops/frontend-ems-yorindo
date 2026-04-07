@@ -132,32 +132,65 @@ export function Events() {
 
         {/* MILESTONE CARD */}
         <div className="px-10 mb-8">
-          <Card className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-orange-50/30 p-6 shadow-sm flex items-center justify-between">
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-widest text-amber-600 mb-1">
-                Upcoming Milestone
-              </p>
-              <div className="text-xl font-bold text-[#001a4e]">
-                {stats?.nearestUpcomingEvent?.title ?? "No upcoming events"}
+          <Card className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-orange-50/30 p-6 shadow-sm transition-all hover:shadow-md hover:border-amber-200">
+           
+            <div className="flex items-center justify-between gap-8">
+              {/* GROUP 1: TEXT */}
+              <div className="space-y-1.5">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-amber-600 mb-1">
+                  Upcoming Milestone
+                </p>
+                <h2 className="text-2xl font-extrabold tracking-tight text-[#001a4e]">
+                  {stats?.nearestUpcomingEvent?.title ?? "No upcoming events"}
+                </h2>
+
+                <div className="flex items-center gap-2 text-slate-500 font-medium text-sm">
+                  <CalendarClock className="w-4 h-4 text-amber-500" />
+                  {stats?.nearestUpcomingEvent ? (
+                    <span>
+                      Scheduled for{" "}
+                      <span className="text-slate-800 font-semibold">
+                        {new Date(
+                          stats.nearestUpcomingEvent.eventDate,
+                        ).toLocaleDateString("en-US", {
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </span>
+                  ) : (
+                    "No events scheduled at the moment."
+                  )}
+                </div>
               </div>
-              <p className="text-xs text-amber-700/70 mt-1 font-medium italic">
-                {stats?.nearestUpcomingEvent
-                  ? `Scheduled for ${new Date(stats.nearestUpcomingEvent.eventDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`
-                  : ""}
-              </p>
-            </div>
-            {stats?.nearestUpcomingEvent &&
-              (() => {
-                const days = calculateDaysToEvent(
-                  stats.nearestUpcomingEvent.eventDate,
-                  Date.now(),
-                );
-                return (
-                  <span className="px-4 py-2 rounded-xl bg-amber-200 text-amber-800 text-xs font-bold uppercase shadow-sm">
-                    {days > 0 ? `In ${days} Days` : "Today"}
-                  </span>
-                );
-              })()}
+
+              {/* GROUP 2: COUNTDOWN */}
+              {stats?.nearestUpcomingEvent &&
+                (() => {
+                  const days = calculateDaysToEvent(
+                    stats.nearestUpcomingEvent.eventDate,
+                    Date.now(),
+                  );
+                  return (
+                    <div className="flex flex-col items-center justify-center min-w-[110px] px-4 py-3 rounded-xl bg-amber-200/50 border border-amber-300 text-amber-800 shadow-sm">
+                      <div className="text-[9px] uppercase font-bold tracking-widest opacity-70 mb-0.5">
+                        Countdown
+                      </div>
+                      <div className="text-xl font-bold tabular-nums">
+                        {days > 0 ? (
+                          <div className="flex items-baseline gap-1">
+                            {days}{" "}
+                            <span className="text-xs font-semibold">Days</span>
+                          </div>
+                        ) : (
+                          "Today"
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+            </div>{" "}
           </Card>
         </div>
 
