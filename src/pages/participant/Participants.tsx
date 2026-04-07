@@ -510,20 +510,6 @@ export function Participants() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {isLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-10 text-slate-400">
-                          Loading...
-                        </TableCell>
-                      </TableRow>
-                    ) : items.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={7} className="text-center py-10 text-slate-400">
-                          No participants found.
-                        </TableCell>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
                       {isLoading ? (
                         <TableRow>
                           <TableCell colSpan={6} className="text-center py-10 text-slate-400">
@@ -538,10 +524,10 @@ export function Participants() {
                           <TableCell className="text-center">
                             <span
                               className={`inline-flex min-w-[112px] items-center justify-center rounded-full border px-3 py-1 text-[12px] font-semibold ${getTicketDeliveryStyles(
-                                item.ticketDelivery?.status,
+                                items.ticketDelivery?.status,
                               )}`}
                             >
-                              {formatTicketDeliveryStatus(item.ticketDelivery?.status)}
+                              {formatTicketDeliveryStatus(items.ticketDelivery?.status)}
                             </span>
                           </TableCell>
                         </TableRow>
@@ -767,6 +753,7 @@ export function Participants() {
               )}
             </div>
           </div>
+        </div>
         </main>
       </div>
     </div>
