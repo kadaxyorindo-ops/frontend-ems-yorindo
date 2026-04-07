@@ -48,7 +48,7 @@ function ToolbarButton({
       aria-pressed={isActive || undefined}
       onClick={onClick}
       disabled={disabled}
-      className={`flex h-9 w-9 items-center justify-center rounded-lg border border-dashed transition ${
+      className={`flex h-9 w-9 items-center justify-center rounded-lg border  transition ${
         isActive
           ? "border-slate-500 bg-slate-100 text-slate-800"
           : "border-slate-300 bg-white text-slate-500 hover:bg-slate-50"
@@ -155,8 +155,8 @@ export function TiptapEmailEditor({
   };
 
   return (
-    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/60">
-      <div className="flex flex-wrap items-center gap-2 border-b border-dashed border-slate-300 px-4 py-3">
+    <div className="rounded-2xl border  border-slate-300 bg-slate-50/60">
+      <div className="flex flex-wrap items-center gap-2 border-b  border-slate-300 px-4 py-3">
         <ToolbarButton
           label="Undo"
           disabled={!editor?.can().chain().focus().undo().run()}
@@ -209,7 +209,7 @@ export function TiptapEmailEditor({
       </div>
 
       {isLinkInputOpen ? (
-        <div className="flex flex-col gap-2 border-b border-dashed border-slate-300 bg-white/80 px-4 py-3 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2 border-b  border-slate-300 bg-white/80 px-4 py-3 sm:flex-row sm:items-center">
           <Input
             type="url"
             name="message-link"
@@ -230,7 +230,7 @@ export function TiptapEmailEditor({
                 closeLinkInput();
               }
             }}
-            className="h-10 border-dashed bg-white"
+            className="h-10  bg-white"
           />
           <div className="flex gap-2">
             <Button type="button" size="sm" onClick={handleApplyLink}>

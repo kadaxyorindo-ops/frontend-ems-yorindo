@@ -32,6 +32,7 @@ import {
   api,
   apiPaths,
 } from "@/services/api";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 
 type FilterOption = {
   id: string;
@@ -499,7 +500,7 @@ function FilterSelect({
         value={value}
         autoComplete="off"
         onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-xl border border-dashed border-slate-300 bg-white px-3 text-sm text-slate-700 transition focus-visible:border-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
+        className="h-11 w-full rounded-xl border  border-slate-300 bg-white px-3 text-sm text-slate-700 transition focus-visible:border-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -510,6 +511,14 @@ function FilterSelect({
     </div>
   );
 }
+
+const LOCAL_STORAGE_KEY = "pending_email_campaign";
+
+  // Helper untuk mengambil data dari local storage
+  function getLocalDraft() {
+    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : null;
+  }
 
 export function Communication() {
   const location = useLocation();
@@ -537,6 +546,7 @@ export function Communication() {
   );
   const [previewText, setPreviewText] = useState("");
   const [subject, setSubject] = useState("");
+  
   const [editorValue, setEditorValue] = useState<EmailEditorValue>(
     createEmptyEditorValue,
   );
@@ -1068,10 +1078,15 @@ export function Communication() {
       return;
     }
 
+    // Jika sampai di titik ini, artinya API berhasil menyimpan data ke server.
+    // Kita bisa menghapus draf sementara di browser karena sudah "aman" di database.
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+
     setFeedback({
       tone: "success",
       message: result.message,
     });
+    
     setLastCommittedSignature(signatureAtSubmit);
     await loadDrafts();
 
@@ -1090,11 +1105,68 @@ export function Communication() {
 
   const selectedRecipientPreview = selectedRecipients.slice(0, 5);
 
+  const [showRestorePrompt, setShowRestorePrompt] = useState(false);
+  const [localDraftData, setLocalDraftData] = useState<any>(null);
+
+  useEffect(() => {
+  // Jangan simpan jika sedang loading draft dari server atau sedang review
+    if (loadingDraftId || isReviewingSend) return;
+
+    const timeoutId = setTimeout(() => {
+      const dataToSave = {
+        subject,
+        previewText,
+        editorValue,
+        templateId,
+        filters,
+        selectedRegistrationIds,
+        timestamp: new Date().toISOString(),
+      };
+      
+      // Hanya simpan jika ada konten yang berarti
+      if (subject.trim() || editorValue.text.trim() || selectedRegistrationIds.length > 0) {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
+      }
+    }, 1000); // Debounce 1 detik agar tidak terlalu sering menulis ke disk
+
+    return () => clearTimeout(timeoutId);
+  }, [subject, previewText, editorValue, templateId, filters, selectedRegistrationIds, loadingDraftId]);
+
+  useEffect(() => {
+    const savedData = getLocalDraft();
+    // Jika ada data DAN user tidak sedang diarahkan untuk memuat draft spesifik dari navigasi
+    if (savedData && !draftIdFromNavigation) {
+      setLocalDraftData(savedData);
+      setShowRestorePrompt(true);
+    }
+  }, [draftIdFromNavigation]);
+
+  const handleRestoreLocalDraft = () => {
+    if (!localDraftData) return;
+    
+    setSubject(localDraftData.subject);
+    setPreviewText(localDraftData.previewText);
+    setEditorValue(localDraftData.editorValue);
+    setTemplateId(localDraftData.templateId);
+    setFilters(localDraftData.filters);
+    setSelectedRegistrationIds(localDraftData.selectedRegistrationIds);
+    
+    setShowRestorePrompt(false);
+    localStorage.removeItem(LOCAL_STORAGE_KEY); // Hapus setelah direstore
+  };
+
+  const handleDiscardLocalDraft = () => {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    setShowRestorePrompt(false);
+  };
+  
+  
+
   if (isReviewingSend) {
     return (
       <DashboardLayout>
         <div className="space-y-8">
-          <div className="flex flex-col gap-4 border-b border-dashed border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-4 border-b  border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-2">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
                 Communication Review
@@ -1114,7 +1186,7 @@ export function Communication() {
                 variant="outline"
                 size="lg"
                 asChild
-                className="h-12 border-dashed"
+                className="h-12 "
               >
                 <Link to="/communication/history">Campaign History</Link>
               </Button>
@@ -1128,7 +1200,7 @@ export function Communication() {
                   setIsPreviewLoading(false);
                   setPreviewError("");
                 }}
-                className="h-12 self-start border-dashed"
+                className="h-12 self-start "
               >
                 Back to Editing
               </Button>
@@ -1141,8 +1213,8 @@ export function Communication() {
               aria-live="polite"
               className={`rounded-2xl border px-4 py-3 text-sm ${
                 feedback.tone === "success"
-                  ? "border-dashed border-emerald-300 bg-emerald-50 text-emerald-700"
-                  : "border-dashed border-rose-300 bg-rose-50 text-rose-600"
+                  ? " border-emerald-300 bg-emerald-50 text-emerald-700"
+                  : " border-rose-300 bg-rose-50 text-rose-600"
               }`}
             >
               {feedback.message}
@@ -1150,9 +1222,9 @@ export function Communication() {
           ) : null}
 
           <div className="grid gap-6 xl:grid-cols-[minmax(320px,360px)_minmax(0,1fr)]">
-            <section className="space-y-5 rounded-[28px] border border-dashed border-slate-300 bg-slate-50/80 p-5 sm:p-6">
+            <section className="space-y-5 rounded-[28px] border  border-slate-300 bg-slate-50/80 p-5 sm:p-6">
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4">
+                <div className="rounded-2xl border  border-slate-300 bg-white px-4 py-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Final Audience
                   </p>
@@ -1164,7 +1236,7 @@ export function Communication() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4">
+                <div className="rounded-2xl border  border-slate-300 bg-white px-4 py-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Risk Check
                   </p>
@@ -1179,7 +1251,7 @@ export function Communication() {
                 </div>
               </div>
 
-              <div className="rounded-[24px] border border-dashed border-slate-300 bg-white p-4">
+              <div className="rounded-[24px] border  border-slate-300 bg-white p-4">
                 <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                   Current Event
                 </p>
@@ -1193,7 +1265,7 @@ export function Communication() {
                 </p>
               </div>
 
-              <div className="rounded-[24px] border border-dashed border-slate-300 bg-white p-4">
+              <div className="rounded-[24px] border  border-slate-300 bg-white p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
@@ -1211,7 +1283,7 @@ export function Communication() {
                       setComposerStep("compose");
                       setLeftPanelTab("recipients");
                     }}
-                    className="border-dashed"
+                    className=""
                   >
                     Open List
                   </Button>
@@ -1222,7 +1294,7 @@ export function Communication() {
                     selectedRecipientPreview.map((recipient) => (
                       <div
                         key={recipient.registrationId}
-                        className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2"
+                        className="rounded-2xl border  border-slate-300 bg-slate-50 px-3 py-2"
                       >
                         <p className="truncate text-sm font-semibold text-slate-800">
                           {recipient.fullName}
@@ -1246,7 +1318,7 @@ export function Communication() {
                 </div>
               </div>
 
-              <div className="rounded-[24px] border border-dashed border-slate-300 bg-white p-4">
+              <div className="rounded-[24px] border  border-slate-300 bg-white p-4">
                 <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                   Active Filters
                 </p>
@@ -1269,7 +1341,7 @@ export function Communication() {
               </div>
             </section>
 
-            <section className="space-y-5 rounded-[28px] border border-dashed border-slate-300 bg-white p-5 sm:p-6">
+            <section className="space-y-5 rounded-[28px] border  border-slate-300 bg-white p-5 sm:p-6">
               <div className="space-y-1">
                 <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                   Final Preview
@@ -1295,7 +1367,7 @@ export function Communication() {
                       className={`rounded-2xl border p-4 text-left transition ${
                         isActive
                           ? "border-amber-400 bg-amber-50/40 shadow-sm"
-                          : "border-dashed border-slate-300 bg-slate-50 hover:border-slate-400"
+                          : " border-slate-300 bg-slate-50 hover:border-slate-400"
                       } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300`}
                     >
                       <div
@@ -1313,7 +1385,7 @@ export function Communication() {
               </div>
 
               <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4">
+                <div className="rounded-2xl border  border-slate-300 bg-slate-50 px-4 py-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     From
                   </p>
@@ -1325,7 +1397,7 @@ export function Communication() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4">
+                <div className="rounded-2xl border  border-slate-300 bg-slate-50 px-4 py-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     To
                   </p>
@@ -1337,7 +1409,7 @@ export function Communication() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4">
+                <div className="rounded-2xl border  border-slate-300 bg-slate-50 px-4 py-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Subject
                   </p>
@@ -1346,7 +1418,7 @@ export function Communication() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4">
+                <div className="rounded-2xl border  border-slate-300 bg-slate-50 px-4 py-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Preheader
                   </p>
@@ -1361,7 +1433,7 @@ export function Communication() {
               {previewError ? (
                 <div
                   role="alert"
-                  className="rounded-2xl border border-dashed border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-600"
+                  className="rounded-2xl border  border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-600"
                 >
                   {previewError}
                 </div>
@@ -1374,7 +1446,7 @@ export function Communication() {
                 </TabsList>
 
                 <TabsContent value="visual">
-                  <div className="overflow-hidden rounded-[24px] border border-dashed border-slate-300 bg-slate-100">
+                  <div className="overflow-hidden rounded-[24px] border  border-slate-300 bg-slate-100">
                     {isPreviewLoading ? (
                       <div className="flex min-h-[40rem] items-center justify-center gap-3 text-sm text-slate-500">
                         <LoaderCircle
@@ -1399,7 +1471,7 @@ export function Communication() {
                 </TabsContent>
 
                 <TabsContent value="text">
-                  <div className="rounded-[24px] border border-dashed border-slate-300 bg-slate-950 px-4 py-4">
+                  <div className="rounded-[24px] border  border-slate-300 bg-slate-950 px-4 py-4">
                     <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-100">
                       <TextQuote className="h-4 w-4" aria-hidden="true" />
                       Plain Text Fallback
@@ -1412,7 +1484,7 @@ export function Communication() {
                 </TabsContent>
               </Tabs>
 
-              <div className="flex flex-col gap-3 border-t border-dashed border-slate-300 pt-5 sm:flex-row sm:justify-between">
+              <div className="flex flex-col gap-3 border-t  border-slate-300 pt-5 sm:flex-row sm:justify-between">
                 <div className="space-y-1 text-xs leading-5 text-slate-500">
                   <p>
                     `Save Draft` menyimpan segment, subject, dan body tanpa
@@ -1431,7 +1503,7 @@ export function Communication() {
                     size="lg"
                     disabled={submissionMode !== null}
                     onClick={() => void handleSubmitCampaign("draft")}
-                    className="h-12 border-dashed"
+                    className="h-12 "
                   >
                     {submissionMode === "draft" ? "Saving…" : "Save Draft"}
                   </Button>
@@ -1464,10 +1536,38 @@ export function Communication() {
 
   return (
     <DashboardLayout>
+    {showRestorePrompt && (
+      <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-full bg-amber-100 p-2 text-amber-600">
+              <Mail size={20} />
+            </div>
+            <div>
+              <p className="text-[13.5px] text-amber-700">
+                We found unsaved draft from your last session.
+              </p>
+              <h4 className="font-semibold text-amber-900 text-md ">Restore and continue your draft?</h4>
+              
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" onClick={handleDiscardLocalDraft} className="text-amber-700 text-sm font-semibold hover:bg-amber-100">
+              Discard
+            </Button>
+            <Button size="sm" onClick={handleRestoreLocalDraft} className="bg-amber-600 hover:bg-amber-700 text-white">
+              Restore
+            </Button>
+          </div>
+        </div>
+      </div>
+    )}
+
+    
       <div className="space-y-8">
-        <div className="flex flex-col gap-4 border-b border-dashed border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-4 border-b  border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2">
-            <h1 className="text-pretty text-3xl font-bold text-[#1d376b]">
+            <h1 className="text-4xl font-bold tracking-tight text-[#001a4e]">
               Communication Hub
             </h1>
             <p className="max-w-2xl text-sm leading-6 text-slate-500">
@@ -1476,7 +1576,7 @@ export function Communication() {
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="inline-flex items-center gap-2 self-start rounded-full border border-dashed border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700">
+            <div className="inline-flex items-center gap-2 self-start rounded-full border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
               <Users2 className="h-4 w-4" aria-hidden="true" />
               <span className="tabular-nums">
                 {audience?.summary.totalRecipients ?? 0} eligible recipients
@@ -1487,7 +1587,7 @@ export function Communication() {
               variant="outline"
               size="lg"
               asChild
-              className="h-11 border-dashed"
+              className="h-11 "
             >
               <Link to="/communication/history">Campaign History</Link>
             </Button>
@@ -1495,7 +1595,7 @@ export function Communication() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[minmax(320px,360px)_minmax(0,1fr)] lg:items-start">
-          <section className="self-start rounded-[28px] border border-dashed border-slate-300 bg-slate-50/80 p-5 sm:p-6">
+          <section className="self-start rounded-[28px] border border-slate-300 bg-sidebar p-5 sm:p-6">
             <div className="space-y-1">
               <p className="text-sm font-bold text-[#1d376b]">Audience Builder</p>
               <p className="text-sm text-slate-500">
@@ -1506,7 +1606,7 @@ export function Communication() {
 
             <div className="mt-5 space-y-5">
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3">
+                <div className="rounded-2xl border border-slate-300 bg-white px-4 py-3">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Visible Now
                   </p>
@@ -1517,7 +1617,7 @@ export function Communication() {
                     Recipients match the current audience filters.
                   </p>
                 </div>
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3">
+                <div className="rounded-2xl border border-slate-300 bg-white px-4 py-3">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Selected
                   </p>
@@ -1547,19 +1647,29 @@ export function Communication() {
                     want to focus on who will actually receive the email.
                   </p>
 
-                  <FilterSelect
-                    id="communication-event"
-                    label="Event"
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">
+                      Event
+                    </Label>
+
+                    <Select
                     value={filters.eventId}
-                    options={[
-                      { value: "", label: "Choose event" },
-                      ...(audience?.events.map((event) => ({
-                        value: event.id,
-                        label: `${event.title} · ${formatEventDate(event.eventDate)}`,
-                      })) ?? []),
-                    ]}
-                    onChange={(value) => updateFilter("eventId", value)}
-                  />
+                    onValueChange={(value) => updateFilter("eventId", value === "all" ? "" : value)}
+                    >
+                      <SelectTrigger id="communication-event" className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400">
+                        <SelectValue placeholder="Choose event" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">        
+                        {audience?.events.map((event) => (
+                          <SelectItem key={event.id} value={event.id}>
+                            <div className="flex flex-col">
+                              {event.title} · {formatEventDate(event.eventDate)}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                   <div className="space-y-1.5">
                     <Label
@@ -1568,6 +1678,7 @@ export function Communication() {
                     >
                       Search
                     </Label>
+                    
                     <div className="relative">
                       <Search
                         className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
@@ -1579,12 +1690,12 @@ export function Communication() {
                         type="search"
                         value={searchInput}
                         autoComplete="off"
-                        placeholder="Cari nama, email, company…"
+                        placeholder="Search name, email, company…"
                         onChange={(event) => {
                           setSearchInput(event.target.value);
                           setFeedback(null);
                         }}
-                        className="h-11 border-dashed bg-white pl-10"
+                        className="h-11 bg-white pl-10 border-slate-300 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
                       />
                     </div>
                   </div>
@@ -1606,10 +1717,11 @@ export function Communication() {
                             className={`rounded-xl border px-3 py-2 text-left text-sm transition ${
                               isActive
                                 ? "border-[#1d376b] bg-[#1d376b] text-white"
-                                : "border-dashed border-slate-300 bg-white text-slate-600 hover:border-slate-400"
+                                : "border-slate-300 bg-white text-slate-600 hover:border-slate-400"
                             } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d376b]/20`}
                           >
                             <p className="font-semibold">{status.label}</p>
+
                             <p
                               className={`mt-1 text-xs tabular-nums ${
                                 isActive ? "text-slate-200" : "text-slate-400"
@@ -1622,89 +1734,177 @@ export function Communication() {
                       })}
                     </div>
                   </div>
+                  
+                  {/* participant type */}
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">
+                      Participant Type
+                    </Label>
 
-                  <FilterSelect
-                    id="communication-participant-type"
-                    label="Participant Type"
-                    value={filters.participantType}
-                    options={PARTICIPANT_TYPE_OPTIONS.map((option) => ({
-                      value: option.value,
-                      label: option.label,
-                    }))}
-                    onChange={(value) =>
-                      updateFilter("participantType", value as ParticipantTypeValue)
-                    }
-                  />
+                    <Select
+                      value={filters.participantType}
+                      onValueChange={(value) => updateFilter("participantType", value as ParticipantTypeValue)}
+                    >
+                      <SelectTrigger id="communication-participant-type" className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400">
+                          <SelectValue placeholder="Participant Type" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                        {PARTICIPANT_TYPE_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                  <FilterSelect
-                    id="communication-company"
-                    label="Company"
-                    value={filters.companyId}
-                    options={[
-                      { value: "", label: "All companies" },
-                      ...(audience?.filterOptions.companies.map((company) => ({
-                        value: company.id,
-                        label: company.label,
-                      })) ?? []),
-                    ]}
-                    onChange={(value) => updateFilter("companyId", value)}
-                  />
+                  {/* company */}
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-4 mb-2">
+                      Company
+                    </Label>
 
-                  <FilterSelect
-                    id="communication-industry"
-                    label="Industry"
-                    value={filters.industryId}
-                    options={[
-                      { value: "", label: "All industries" },
-                      ...(audience?.filterOptions.industries.map((industry) => ({
-                        value: industry.id,
-                        label: industry.label,
-                      })) ?? []),
-                    ]}
-                    onChange={(value) => updateFilter("industryId", value)}
-                  />
+                    <Select 
+                    value={filters.companyId || "all"} 
+                    onValueChange={(value) => updateFilter("companyId", value === "all" ? "" : value)}
+                    >
+                      <SelectTrigger id="communication-company" className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400">
+                        <SelectValue placeholder="All companies" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                        <SelectItem value="all">All companies</SelectItem>
+                        {audience?.filterOptions.companies.map((company) => (
+                          <SelectItem key={company.id} value={company.id}>
+                            {company.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                  <FilterSelect
-                    id="communication-job-title"
-                    label="Job Title"
-                    value={filters.jobTitleId}
-                    options={[
-                      { value: "", label: "All job titles" },
-                      ...(audience?.filterOptions.jobTitles.map((jobTitle) => ({
-                        value: jobTitle.id,
-                        label: jobTitle.label,
-                      })) ?? []),
-                    ]}
-                    onChange={(value) => updateFilter("jobTitleId", value)}
-                  />
+                  {/* INDUSTRY */}
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-4 mb-2">
+                      Industry
+                    </Label>
+                    
+                    <Select
+                      value={filters.industryId || "all"}
+                      onValueChange={(value) => 
+                        updateFilter("industryId", value === "all" ? "" : value)
+                      }
+                    >
+                      <SelectTrigger 
+                        id="communication-industry" 
+                        className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
+                      >
+                        <SelectValue placeholder="All industries" />
+                      </SelectTrigger>
 
-                  <FilterSelect
-                    id="communication-city"
-                    label="City"
-                    value={filters.cityId}
-                    options={[
-                      { value: "", label: "All cities" },
-                      ...(audience?.filterOptions.cities.map((city) => ({
-                        value: city.id,
-                        label: city.label,
-                      })) ?? []),
-                    ]}
-                    onChange={(value) => updateFilter("cityId", value)}
-                  />
+                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                        <SelectItem value="all">All industries</SelectItem>
+                        
+                        {audience?.filterOptions.industries.map((industry) => (
+                          <SelectItem key={industry.id} value={industry.id}>
+                            {industry.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {/* JOBTITLE */}
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-4 mb-2">
+                      Job title
+                    </Label>
+                    
+                    <Select
+                      value={filters.jobTitleId || "all"}
+                      onValueChange={(value) => 
+                        updateFilter("jobTitleId", value === "all" ? "" : value)
+                      }
+                    >
+                      <SelectTrigger 
+                        id="communication-job-title" 
+                        className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
+                      >
+                        <SelectValue placeholder="All job titles" />
+                      </SelectTrigger>
 
-                  <FilterSelect
-                    id="communication-source-channel"
-                    label="Source Channel"
-                    value={filters.sourceChannelCode}
-                    options={[
-                      { value: "", label: "All sources" },
-                      ...(audience?.filterOptions.sourceChannels.map((source) => ({
-                        value: source,
-                        label: source,
-                      })) ?? []),
-                    ]}
-                    onChange={(value) => updateFilter("sourceChannelCode", value)}
-                  />
+                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                        <SelectItem value="all">All job titles</SelectItem>
+                        
+                        {audience?.filterOptions.jobTitles.map((jobTitle) => (
+                          <SelectItem key={jobTitle.id} value={jobTitle.id}>
+                            {jobTitle.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* CITY */}
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-4 mb-2">
+                      City
+                    </Label>
+                    
+                    <Select
+                      value={filters.cityId || "all"}
+                      onValueChange={(value) => 
+                        updateFilter("cityId", value === "all" ? "" : value)
+                      }
+                    >
+                      <SelectTrigger 
+                        id="communication-city" 
+                        className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
+                      >
+                        <SelectValue placeholder="All cities" />
+                      </SelectTrigger>
+
+                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                        <SelectItem value="all">All cities</SelectItem>
+                        
+                        {audience?.filterOptions.cities.map((city) => (
+                          <SelectItem key={city.id} value={city.id}>
+                            {city.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* SOURCE CHANNEL */}
+                  <div className="space-y-2">
+                    <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-4 mb-2">
+                      Souce channel
+                    </Label>
+                    
+                    <Select
+                      value={filters.sourceChannelCode || "all"}
+                      onValueChange={(value) => 
+                        updateFilter("sourceChannelCode", value === "all" ? "" : value)
+                      }
+                    >
+                      <SelectTrigger 
+                        id="communication-source-channel" 
+                        className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
+                      >
+                        <SelectValue placeholder="All source channels" />
+                      </SelectTrigger>
+
+                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                        <SelectItem value="all">All source channels</SelectItem>
+                        
+                        {audience?.filterOptions.sourceChannels.map((sourceChannel) => (
+                          <SelectItem key={sourceChannel.code} value={sourceChannel.code}>
+                            {sourceChannel.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="recipients" className="space-y-4">
@@ -1728,16 +1928,16 @@ export function Communication() {
                     </Button>
                   </div>
 
-                  <div className="space-y-3 rounded-[24px] border border-dashed border-slate-300 bg-white/60 p-3">
+                  <div className="space-y-3 rounded-[24px] border  border-slate-300 bg-white/60 p-3">
                     <div className="max-h-[30rem] space-y-3 overflow-y-auto pr-1 [contain-intrinsic-size:640px] [content-visibility:auto]">
                       {isLoading ? (
-                        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-400">
+                        <div className="rounded-2xl border  border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-400">
                           Loading audience…
                         </div>
                       ) : loadError ? (
                         <div
                           role="alert"
-                          className="rounded-2xl border border-dashed border-rose-300 bg-rose-50 px-4 py-4 text-sm text-rose-600"
+                          className="rounded-2xl border  border-rose-300 bg-rose-50 px-4 py-4 text-sm text-rose-600"
                         >
                           {loadError}
                         </div>
@@ -1750,7 +1950,7 @@ export function Communication() {
                           return (
                             <label
                               key={recipient.registrationId}
-                              className="flex cursor-pointer items-start gap-3 rounded-2xl border border-dashed border-slate-300 bg-white px-3 py-3 transition hover:border-slate-400 has-[:focus-visible]:border-[#1d376b] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#1d376b]/10"
+                              className="flex cursor-pointer items-start gap-3 rounded-2xl border  border-slate-300 bg-white px-3 py-3 transition hover:border-slate-400 has-[:focus-visible]:border-[#1d376b] has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#1d376b]/10"
                             >
                               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-200 font-bold text-slate-700">
                                 {getInitials(recipient.fullName)}
@@ -1787,7 +1987,7 @@ export function Communication() {
                           );
                         })
                       ) : (
-                        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-400">
+                        <div className="rounded-2xl border  border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-400">
                           No recipients match the current filters.
                         </div>
                       )}
@@ -1796,7 +1996,7 @@ export function Communication() {
                 </TabsContent>
 
                 <TabsContent value="review" className="space-y-4">
-                  <div className="rounded-[24px] border border-dashed border-slate-300 bg-white p-4">
+                  <div className="rounded-[24px] border border-slate-300 bg-white p-4">
                     <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                       Current Event
                     </p>
@@ -1810,7 +2010,7 @@ export function Communication() {
                     </p>
                   </div>
 
-                  <div className="rounded-[24px] border border-dashed border-slate-300 bg-white p-4">
+                  <div className="rounded-[24px] border border-slate-300 bg-white p-4">
                     <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                       Active Filters
                     </p>
@@ -1832,7 +2032,7 @@ export function Communication() {
                     </div>
                   </div>
 
-                  <div className="rounded-[24px] border border-dashed border-slate-300 bg-white p-4">
+                  <div className="rounded-[24px] border border-slate-300 bg-white p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div>
                         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
@@ -1847,7 +2047,7 @@ export function Communication() {
                         variant="outline"
                         size="sm"
                         onClick={() => setLeftPanelTab("recipients")}
-                        className="border-dashed"
+                        className=""
                       >
                         Open List
                       </Button>
@@ -1858,7 +2058,7 @@ export function Communication() {
                         selectedRecipientPreview.map((recipient) => (
                           <div
                             key={recipient.registrationId}
-                            className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-3 py-2"
+                            className="rounded-2xl border border-slate-300 bg-slate-50 px-3 py-2"
                           >
                             <p className="truncate text-sm font-semibold text-slate-800">
                               {recipient.fullName}
@@ -1882,7 +2082,7 @@ export function Communication() {
                     </div>
                   </div>
 
-                  <div className="border-t border-dashed border-slate-300 pt-4">
+                  <div className="border-t border-slate-300 pt-4">
                     <p className="text-sm font-semibold text-slate-700">
                       {visibleRecipients.length} visible recipients
                     </p>
@@ -1894,7 +2094,7 @@ export function Communication() {
                 </TabsContent>
               </Tabs>
 
-              <div className="rounded-[24px] border border-dashed border-slate-300 bg-white p-4">
+              <div className="rounded-[24px] border border-slate-300 bg-white p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
@@ -1910,7 +2110,7 @@ export function Communication() {
                       variant="outline"
                       size="sm"
                       onClick={handleDetachDraft}
-                      className="border-dashed"
+                      className=""
                     >
                       Save as New
                     </Button>
@@ -1920,7 +2120,7 @@ export function Communication() {
                 {draftsError ? (
                   <div
                     role="alert"
-                    className="mt-3 rounded-2xl border border-dashed border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-600"
+                    className="mt-3 rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-600"
                   >
                     {draftsError}
                   </div>
@@ -1928,7 +2128,7 @@ export function Communication() {
 
                 <div className="mt-4 space-y-3">
                   {isDraftsLoading ? (
-                    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                    <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-500">
                       Loading saved drafts…
                     </div>
                   ) : drafts.length ? (
@@ -1941,7 +2141,7 @@ export function Communication() {
                           className={`rounded-2xl border px-4 py-4 ${
                             isCurrentDraft
                               ? "border-amber-300 bg-amber-50/50"
-                              : "border-dashed border-slate-300 bg-slate-50/70"
+                              : "border-slate-300 bg-slate-50/70"
                           }`}
                         >
                           <div className="flex items-start justify-between gap-3">
@@ -1970,7 +2170,7 @@ export function Communication() {
                                 size="sm"
                                 disabled={loadingDraftId === draft.id}
                                 onClick={() => void handleLoadDraft(draft.id)}
-                                className="border-dashed"
+                                className=""
                               >
                                 {loadingDraftId === draft.id ? "Opening…" : "Open"}
                               </Button>
@@ -1980,7 +2180,7 @@ export function Communication() {
                       );
                     })
                   ) : (
-                    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-500">
+                    <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-500">
                       No saved drafts yet. Save the current composer once to create
                       your first reusable draft.
                     </div>
@@ -1990,8 +2190,8 @@ export function Communication() {
             </div>
           </section>
 
-          <section className="min-w-0 rounded-[28px] border border-dashed border-slate-300 bg-white">
-            <div className="flex flex-col gap-4 border-b border-dashed border-slate-300 px-5 py-5 sm:px-6 sm:py-6 lg:flex-row lg:items-end lg:justify-between">
+          <section className="min-w-0 rounded-[28px] border border-slate-300 bg-white">
+            <div className="flex flex-col gap-4 border-b border-slate-300 px-5 py-5 sm:px-6 sm:py-6 lg:flex-row lg:items-end lg:justify-between">
               <div className="space-y-2">
                 <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                   Compose
@@ -2007,7 +2207,7 @@ export function Communication() {
                     : "Save the current work as a draft any time before queueing the broadcast."}
                 </p>
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+              <div className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-500">
                 <Mail className="h-4 w-4" aria-hidden="true" />
                 <span className="tabular-nums">
                   {selectedRecipientCount} recipients selected
@@ -2017,7 +2217,7 @@ export function Communication() {
 
             <div className="flex flex-1 flex-col space-y-6 px-5 py-5 sm:px-6 sm:py-6">
               <div className="grid gap-3 xl:grid-cols-3">
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 xl:min-h-[118px]">
+                <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4 xl:min-h-[118px]">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Event
                   </p>
@@ -2031,7 +2231,7 @@ export function Communication() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 xl:min-h-[118px]">
+                <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4 xl:min-h-[118px]">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Audience Snapshot
                   </p>
@@ -2044,7 +2244,7 @@ export function Communication() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 xl:min-h-[118px]">
+                <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4 xl:min-h-[118px]">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     Active Filters
                   </p>
@@ -2064,8 +2264,8 @@ export function Communication() {
                   aria-live="polite"
                   className={`rounded-2xl border px-4 py-3 text-sm ${
                     feedback.tone === "success"
-                      ? "border-dashed border-emerald-300 bg-emerald-50 text-emerald-700"
-                      : "border-dashed border-rose-300 bg-rose-50 text-rose-600"
+                      ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                      : "border-rose-300 bg-rose-50 text-rose-600"
                   }`}
                 >
                   {feedback.message}
@@ -2089,8 +2289,8 @@ export function Communication() {
                 <div
                   className={`min-h-[76px] rounded-2xl border px-4 py-3 ${
                     composerErrors.recipients
-                      ? "border-dashed border-rose-300 bg-rose-50/60"
-                      : "border-dashed border-slate-300 bg-slate-50"
+                      ? "border-rose-300 bg-rose-50/60"
+                      : "border-slate-300 bg-slate-50"
                   }`}
                 >
                   <div className="flex flex-wrap gap-2">
@@ -2147,7 +2347,7 @@ export function Communication() {
                     }));
                     setFeedback(null);
                   }}
-                  className="h-12 border-dashed bg-slate-50"
+                  className="h-12 bg-slate-50 border-slate-200 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
                 />
                 {composerErrors.subject ? (
                   <p className="text-sm text-rose-600">{composerErrors.subject}</p>
@@ -2172,12 +2372,12 @@ export function Communication() {
                   value={previewText}
                   autoComplete="off"
                   maxLength={160}
-                  placeholder="Tambahkan ringkasan singkat yang muncul di inbox participant…"
+                  placeholder="Add simple summary to be viewed by participant…"
                   onChange={(event) => {
                     setPreviewText(event.target.value);
                     setFeedback(null);
                   }}
-                  className="h-12 border-dashed bg-slate-50"
+                  className="h-12  bg-slate-50 border-slate-200 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
                 />
               </div>
 
@@ -2191,7 +2391,7 @@ export function Communication() {
                 <div
                   className={
                     composerErrors.body
-                      ? "rounded-[22px] border border-dashed border-rose-300"
+                      ? "rounded-[22px] border border-rose-300"
                       : ""
                   }
                 >
@@ -2221,7 +2421,7 @@ export function Communication() {
                 ) : null}
               </div>
 
-              <div className="mt-auto flex flex-col gap-4 border-t border-dashed border-slate-300 pt-4 lg:flex-row lg:items-center lg:justify-between">
+              <div className="mt-auto flex flex-col gap-4 border-t  border-slate-300 pt-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="max-w-md space-y-1 text-xs leading-5 text-slate-500">
                   <p>{hasUnsavedChanges ? "Unsaved changes pending." : "All changes saved."}</p>
                   <p>
@@ -2238,7 +2438,7 @@ export function Communication() {
                     size="lg"
                     disabled={submissionMode !== null}
                     onClick={() => void handleSubmitCampaign("draft")}
-                    className="h-12 border-dashed"
+                    className="h-12 "
                   >
                     {submissionMode === "draft" ? "Saving…" : "Save Draft"}
                   </Button>

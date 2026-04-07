@@ -4,7 +4,6 @@ import {
   createUser,
   updateUser,
   SYSTEM_ROLES,
-  PERMISSION_GROUPS,
   type User,
   type UserFormData,
 } from "@/services/userService";
@@ -20,16 +19,16 @@ interface UserFormModalProps {
 const EMPTY_FORM: UserFormData = {
   name:             "",
   email:            "",
-  role:             "admin",
+  role:             "event_operator",
   organizationName: null,
-  permissions:      [],
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  super_admin: "Super Admin",
-  admin:       "Admin",
-  staff:       "Staff",
-  scanner:     "Scanner",
+  super_admin:            "Super Admin",
+  admin:                  "Admin",
+  event_operator:         "Event Operator",
+  communication_operator: "Communication Operator",
+  survey_analyst:         "Survey Analyst",
 };
 
 export function UserFormModal({ mode, user, isOpen, onClose, onSuccess }: UserFormModalProps) {
@@ -46,7 +45,6 @@ export function UserFormModal({ mode, user, isOpen, onClose, onSuccess }: UserFo
         email:            user.email,
         role:             user.role,
         organizationName: user.organizationName,
-        permissions:      [...(user.permissions ?? [])],
       });
     } else {
       setForm(EMPTY_FORM);
@@ -67,24 +65,6 @@ export function UserFormModal({ mode, user, isOpen, onClose, onSuccess }: UserFo
     return Object.keys(next).length === 0;
   };
 
-  const togglePermission = (value: string) => {
-    const next = form.permissions.includes(value)
-      ? form.permissions.filter((p) => p !== value)
-      : [...form.permissions, value];
-
-    // Dependency: unchecking events:view also removes the sub-permissions
-    if (value === "events:view" && !next.includes("events:view")) {
-      return setForm((f) => ({
-        ...f,
-        permissions: next.filter(
-          (p) => !["events:create", "events:edit", "events:delete"].includes(p),
-        ),
-      }));
-    }
-
-    setForm((f) => ({ ...f, permissions: next }));
-  };
-
   const handleSubmit = async (e: { preventDefault(): void }) => {
     e.preventDefault();
     if (!validate()) return;
@@ -98,7 +78,6 @@ export function UserFormModal({ mode, user, isOpen, onClose, onSuccess }: UserFo
           name:             form.name,
           role:             form.role,
           organizationName: form.organizationName,
-          permissions:      form.permissions,
         });
 
     setIsSubmitting(false);
@@ -166,7 +145,7 @@ export function UserFormModal({ mode, user, isOpen, onClose, onSuccess }: UserFo
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder="e.g. Ahmad Fauzi"
+                placeholder="e.g. John Smith"
                 className="w-full h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-100"
               />
               {errors.name && <p className="text-xs text-rose-500">{errors.name}</p>}
@@ -182,7 +161,7 @@ export function UserFormModal({ mode, user, isOpen, onClose, onSuccess }: UserFo
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 disabled={mode === "edit"}
-                placeholder="nama@yorindo.co.id"
+                placeholder="name@yorindo.co.id"
                 className="w-full h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-100 disabled:opacity-60 disabled:cursor-not-allowed"
               />
               {errors.email && <p className="text-xs text-rose-500">{errors.email}</p>}
@@ -220,60 +199,6 @@ export function UserFormModal({ mode, user, isOpen, onClose, onSuccess }: UserFo
               </div>
             </div>
 
-            {/* Permissions */}
-            <div className="space-y-3 pt-1">
-              <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-slate-200" />
-                <span className="text-[9px] font-bold uppercase tracking-[0.22em] text-slate-400">
-                  Feature Access
-                </span>
-                <div className="flex-1 h-px bg-slate-200" />
-              </div>
-
-              <div className="space-y-4">
-                {PERMISSION_GROUPS.map((group) => (
-                  <div key={group.group}>
-                    <p className="text-xs font-bold text-slate-500 mb-2">{group.group}</p>
-                    <div className="space-y-2">
-                      {group.items.map((item) => {
-                        const isChecked = form.permissions.includes(item.value);
-                        const isDisabled =
-                          ["events:create", "events:edit", "events:delete"].includes(item.value) &&
-                          !form.permissions.includes("events:view");
-
-                        return (
-                          <label
-                            key={item.value}
-                            className={`flex items-center gap-3 cursor-pointer group ${isDisabled ? "opacity-40 cursor-not-allowed" : ""}`}
-                          >
-                            <div
-                              onClick={() => !isDisabled && togglePermission(item.value)}
-                              className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                                isChecked
-                                  ? "bg-[#1a40a8] border-[#1a40a8]"
-                                  : "border-slate-300 bg-white group-hover:border-slate-400"
-                              } ${isDisabled ? "pointer-events-none" : ""}`}
-                            >
-                              {isChecked && (
-                                <svg width="9" height="9" viewBox="0 0 12 12" fill="none">
-                                  <path d="M2 6l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              )}
-                            </div>
-                            <span
-                              onClick={() => !isDisabled && togglePermission(item.value)}
-                              className="text-sm text-slate-700 select-none"
-                            >
-                              {item.label}
-                            </span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* Footer */}
