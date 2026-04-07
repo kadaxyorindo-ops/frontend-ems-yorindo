@@ -3,7 +3,7 @@ import { api, apiPaths, API_V1_PREFIX } from "./api";
 export interface EventItem {
   _id: string;
   title: string;
-  description: string | null;
+  description?: string | null;
   eventDate: string;
   location: string | null;
   status: string;
