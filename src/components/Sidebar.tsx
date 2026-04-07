@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import {CalendarDays, Mail, Settings,User } from "lucide-react";
+import {CalendarDays, FileClockIcon, Mail, Settings,User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 interface SidebarProps {
@@ -82,7 +82,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     : 'text-slate-600 hover:bg-[#eaedff] hover:translate-x-1'
                 }`}
               >
-                <Mail className={`mr-3 h-5 w-5 ${isActivePrefix('/communication/history') ? 'text-[#002a85]' : ''}`} />
+                <FileClockIcon className={`mr-3 h-5 w-5 ${isActivePrefix('/communication/history') ? 'text-[#002a85]' : ''}`} />
                 Campaign History
               </Link>
             </>
