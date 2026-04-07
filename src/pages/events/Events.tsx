@@ -168,19 +168,19 @@ export function Events() {
         {/* TABLE SECTION (Hanya tabel yang dibungkus Card Putih) */}
         <div ref={tableRef} className="px-10 pb-10">
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm min-h-[400px]">
-            <Table>
-              <TableHeader className="bg-slate-50/50">
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-400 py-4 pl-6">
+            <Table className="w-full">
+              <TableHeader className="bg-slate-50">
+                <TableRow className="hover:bg-slate-50/40 transition-colors border-slate-100">
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-primary py-4 pl-10">
                     Event Name & Details
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-400 py-4">
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-primary py-4 text-center">
                     Participant / Capacity
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-400 py-4">
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-primary py-4 text-center">
                     Status
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-400 py-4 pr-6 text-right">
+                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-primary py-4 pr-6 text-right">
                     Actions
                   </TableHead>
                 </TableRow>
@@ -192,7 +192,7 @@ export function Events() {
                   <TableRow>
                     <TableCell
                       colSpan={4}
-                      className="text-center py-10 text-slate-400 text-sm"
+                      className="text-center py-5 pl-10 text-slate-400 text-sm"
                     >
                       No events found.
                     </TableCell>
@@ -210,7 +210,7 @@ export function Events() {
                         key={event._id}
                         className="hover:bg-slate-50/40 transition-colors border-slate-100"
                       >
-                        <TableCell className="py-5 pl-6">
+                        <TableCell className="py-5 pl-10">
                           <div className="font-bold text-[#001a4e] text-sm mb-1.5">
                             {event.title}
                           </div>
@@ -233,7 +233,7 @@ export function Events() {
                           </div>
                         </TableCell>
 
-                        <TableCell>
+                        <TableCell className="py-5 pl-10">
                           <div className="flex items-center gap-3">
                             <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                               <div
@@ -253,18 +253,18 @@ export function Events() {
                           </div>
                         </TableCell>
 
-                        <TableCell>
+                        <TableCell className="py-5 pl-10">
                           <span
                             className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${statusStyles[event.status]}`}
                           >
                             <span
                               className={`w-1 h-1 rounded-full ${event.status === "ongoing" ? "bg-emerald-400" : "bg-blue-400"}`}
-                            />
+                            /> 
                             {event.status.toUpperCase()}
                           </span>
                         </TableCell>
 
-                        <TableCell className="pr-6 text-right">
+                        <TableCell className="py-5 pl-10 pr-6 text-right">
                           <DropdownMenu
                             open={openMenuId === event._id}
                             onOpenChange={() =>
