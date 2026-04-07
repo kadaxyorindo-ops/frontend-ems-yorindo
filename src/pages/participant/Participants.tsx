@@ -1,8 +1,8 @@
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Search, X } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, QrCode, Search, X } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import {
@@ -83,6 +83,7 @@ type ActionFeedback = {
 };
 
 export function Participants() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const eventId = searchParams.get("eventId") ?? "";
   const eventTitle = searchParams.get("eventTitle") ?? "Participant Approvals";
@@ -327,6 +328,38 @@ export function Participants() {
     selectedParticipant?.participant?.personalEmail ||
     "Email not available";
 
+  if (!eventId) {
+    return (
+      <div className="min-h-screen flex bg-background relative overflow-hidden">
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+        <main className="flex-1 flex flex-col min-w-0 w-full">
+          <Topbar onToggleSidebar={() => setIsSidebarOpen(true)} />
+
+          <div className="px-10 py-8">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-6 text-amber-900">
+              <h1 className="text-2xl font-bold text-[#001a4e]">Event belum dipilih</h1>
+              <p className="mt-2 text-sm leading-6">
+                Halaman manajemen participant butuh konteks event. Buka halaman event dulu,
+                lalu pilih <span className="font-semibold">Manage Participants</span> dari event yang ingin dikelola.
+              </p>
+              <div className="mt-5">
+                <Button
+                  type="button"
+                  onClick={() => navigate("/events")}
+                  className="h-10 rounded-xl bg-[#0f2f78] px-5 text-white hover:bg-[#11265c]"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Back to Events
+                </Button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex bg-background relative overflow-hidden">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
@@ -343,6 +376,25 @@ export function Participants() {
           </div>
 
           <div className="flex items-center gap-3 mb-6 pb-2 ml-10 mr-10">
+            <Button
+              asChild
+              variant="outline"
+              className="h-11 rounded-xl border-slate-200 px-4"
+            >
+              <Link to="/events">
+                <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+                Back to Events
+              </Link>
+            </Button>
+            <Button
+              asChild
+              className="h-11 rounded-xl bg-[#0f2f78] px-5 text-white hover:bg-[#11265c]"
+            >
+              <Link to={`/events/${eventId}/check-in`}>
+                <QrCode className="mr-2 h-4 w-4" aria-hidden="true" />
+                Open Check-In Desk
+              </Link>
+            </Button>
             <div className="text-right mr-4">
               <div className="text-2xl font-bold text-primary">
                 {meta.approvedCount}
