@@ -1,8 +1,8 @@
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
-import { Search } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, QrCode, Search, X } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,9 +19,11 @@ import {
   rejectRegistration,
   bulkApproveRegistrations,
   bulkRejectRegistrations,
+  type BulkApproveRegistrationsResult,
   type RegistrationItem,
   type RegistrationMeta,
   type RegistrationStatus,
+  type RegistrationTicketDeliveryStatus,
 } from "@/services/registrationService";
 
 const STATUS_OPTIONS: { label: string; value: RegistrationStatus }[] = [
@@ -32,21 +34,64 @@ const STATUS_OPTIONS: { label: string; value: RegistrationStatus }[] = [
 
 const getStatusStyles = (status: string) => {
   switch (status) {
-    case "approved":   return "bg-[#9cd3b2] text-[#002112] w-[100px]";
-    case "pending":    return "bg-[#fed174] text-[#785800] w-[100px]";
-    case "rejected":   return "bg-[#f8d7da] text-[#721c24] w-[100px]";
-    case "checked_in": return "bg-[#cfe2ff] text-[#084298] w-[100px]";
-    default:           return "bg-slate-50 text-slate-700 w-[100px]";
+    case "approved":   return "bg-emerald-50 text-emerald-600 border-emerald-200";
+    case "pending":    return "bg-yellow-50 text-yellow-600 border-yellow-200";
+    case "rejected":   return "bg-red-50 text-red-600 border-red-200";
+    case "checked_in": return "bg-blue-50 text-blue-600 border-blue-200";
+    default:           return "bg-slate-50 text-slate-700 border-slate-200";
   }
 };
 
 const formatStatus = (status: string) =>
   status === "checked_in" ? "Checked In" : status.charAt(0).toUpperCase() + status.slice(1);
 
+const getTicketDeliveryStyles = (status: RegistrationTicketDeliveryStatus | undefined) => {
+  switch (status) {
+    case "sent":
+      return "bg-emerald-100 text-emerald-700 border-emerald-200";
+    case "queued":
+      return "bg-amber-100 text-amber-800 border-amber-200";
+    case "processing":
+      return "bg-sky-100 text-sky-700 border-sky-200";
+    case "failed":
+      return "bg-rose-100 text-rose-700 border-rose-200";
+    case "idle":
+      return "bg-slate-100 text-slate-500 border-slate-200";
+    default:
+      return "bg-slate-100 text-slate-600 border-slate-200";
+  }
+};
+
+const formatTicketDeliveryStatus = (
+  status: RegistrationTicketDeliveryStatus | undefined,
+) => {
+  switch (status) {
+    case "idle":
+      return "Idle";
+    case "queued":
+      return "Queued";
+    case "processing":
+      return "Sending";
+    case "sent":
+      return "Sent";
+    case "failed":
+      return "Failed";
+    default:
+      return "Not queued";
+  }
+};
+
+type ActionFeedback = {
+  tone: "success" | "error";
+  message: string;
+};
+
 export function Participants() {
-  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const eventId = searchParams.get("eventId") ?? "";
   const eventTitle = searchParams.get("eventTitle") ?? "Participant Approvals";
+  const selectedRegistrationId = searchParams.get("selectedRegistrationId") ?? "";
 
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -61,6 +106,7 @@ export function Participants() {
   const [totalResults, setTotalResults] = useState(0);
   const [isLoading, setIsLoading]     = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionFeedback, setActionFeedback] = useState<ActionFeedback | null>(null);
   const [refreshKey, setRefreshKey]   = useState(0);
 
   const [searchQuery, setSearchQuery]       = useState("");
@@ -68,6 +114,22 @@ export function Participants() {
   const [statusFilter, setStatusFilter]     = useState<RegistrationStatus | "">("");
   const [currentPage, setCurrentPage]       = useState(1);
   const [rowsPerPage, setRowsPerPage]       = useState(5);
+
+  const updateSearchParams = (updates: Record<string, string | null>) => {
+    setSearchParams((currentParams) => {
+      const nextParams = new URLSearchParams(currentParams);
+
+      for (const [key, value] of Object.entries(updates)) {
+        if (value) {
+          nextParams.set(key, value);
+        } else {
+          nextParams.delete(key);
+        }
+      }
+
+      return nextParams;
+    }, { replace: true });
+  };
 
   // Debounce: wait 400ms after the user stops typing before sending the request
   useEffect(() => {
@@ -100,6 +162,16 @@ export function Participants() {
         setMeta(result.data.meta);
         setTotalPages(result.data.pagination.totalPages);
         setTotalResults(result.data.pagination.total);
+
+        if (selectedRegistrationId) {
+          const selectedFromPage = result.data.items.find(
+            (item) => item._id === selectedRegistrationId,
+          );
+
+          if (selectedFromPage) {
+            setSelectedParticipant(selectedFromPage);
+          }
+        }
       }
       setIsLoading(false);
     })();
@@ -107,12 +179,33 @@ export function Participants() {
     return () => { active = false; };
   }, [eventId, currentPage, rowsPerPage, statusFilter, debouncedSearch, refreshKey]);
 
+  useEffect(() => {
+    if (!selectedRegistrationId) {
+      setSelectedParticipant(null);
+      return;
+    }
+
+    const nextSelectedParticipant = items.find(
+      (item) => item._id === selectedRegistrationId,
+    );
+
+    if (nextSelectedParticipant) {
+      setSelectedParticipant(nextSelectedParticipant);
+      return;
+    }
+
+    if (selectedParticipant?._id !== selectedRegistrationId) {
+      setSelectedParticipant(null);
+    }
+  }, [items, selectedParticipant, selectedRegistrationId]);
+
   // --- Selection ---
 
   const toggleSelectAll = () => {
     if (selectedIds.length === items.length && items.length > 0) {
       setSelectedIds([]);
       setSelectedParticipant(null);
+      updateSearchParams({ selectedRegistrationId: null });
     } else {
       setSelectedIds(items.map((p) => p._id));
     }
@@ -122,51 +215,154 @@ export function Participants() {
     const isSelected = selectedIds.includes(item._id);
     if (isSelected) {
       setSelectedIds((prev) => prev.filter((id) => id !== item._id));
-      if (selectedParticipant?._id === item._id) setSelectedParticipant(null);
+      if (selectedParticipant?._id === item._id) {
+        setSelectedParticipant(null);
+        updateSearchParams({ selectedRegistrationId: null });
+      }
     } else {
       setSelectedIds((prev) => [...prev, item._id]);
       setSelectedParticipant(item);
+      updateSearchParams({ selectedRegistrationId: item._id });
     }
+  };
+
+  const closeSelectedParticipant = () => {
+    setSelectedParticipant(null);
+    setSelectedIds((prev) =>
+      selectedRegistrationId ? prev.filter((id) => id !== selectedRegistrationId) : prev,
+    );
+    updateSearchParams({ selectedRegistrationId: null });
   };
 
   // --- Actions ---
 
   const handleApprove = async (registrationId: string) => {
+    setActionFeedback(null);
     const result = await approveRegistration(eventId, registrationId);
     if (result.error) { setActionError(result.error); return; }
+    setActionError(null);
+    const registrationFromResponse = result.data?.registration;
+    const fallbackParticipant =
+      registrationFromResponse?.participant ??
+      selectedParticipant?.participant ??
+      items.find((item) => item._id === registrationId)?.participant;
+
+    setActionFeedback({
+      tone: "success",
+      message:
+        result.data?.message ?? result.message ?? "Registration approved and QR ticket delivery updated.",
+    });
     setSelectedIds([]);
-    setSelectedParticipant(null);
+    setSelectedParticipant(
+      registrationFromResponse
+        ? {
+            ...registrationFromResponse,
+            participant:
+              fallbackParticipant ?? {
+                _id: registrationFromResponse.participant?._id ?? "",
+                fullName: "Participant",
+                personalEmail: null,
+                companyEmail: null,
+              },
+          }
+        : selectedParticipant,
+    );
+    updateSearchParams({
+      selectedRegistrationId: registrationFromResponse?._id ?? registrationId,
+    });
     setRefreshKey((k) => k + 1);
   };
 
   const handleReject = async (registrationId: string) => {
+    setActionFeedback(null);
     const result = await rejectRegistration(eventId, registrationId);
     if (result.error) { setActionError(result.error); return; }
+    setActionError(null);
+    setActionFeedback({
+      tone: "success",
+      message: result.message || "Registration rejected successfully.",
+    });
     setSelectedIds([]);
-    setSelectedParticipant(null);
+    closeSelectedParticipant();
     setRefreshKey((k) => k + 1);
   };
 
   const handleBulkApprove = async () => {
     if (selectedIds.length === 0) return;
+    setActionFeedback(null);
     const result = await bulkApproveRegistrations(eventId, selectedIds);
     if (result.error) { setActionError(result.error); return; }
+    const data: BulkApproveRegistrationsResult | null = result.data;
+    setActionError(null);
+    setActionFeedback({
+      tone: data?.failedQueueCount ? "error" : "success",
+      message:
+        data?.message ??
+        result.message ??
+        "Selected registrations approved and QR ticket queue updated.",
+    });
     setSelectedIds([]);
-    setSelectedParticipant(null);
     setRefreshKey((k) => k + 1);
   };
 
   const handleBulkReject = async () => {
     if (selectedIds.length === 0) return;
+    setActionFeedback(null);
     const result = await bulkRejectRegistrations(eventId, selectedIds);
     if (result.error) { setActionError(result.error); return; }
+    setActionError(null);
+    setActionFeedback({
+      tone: "success",
+      message: result.message || "Selected registrations rejected successfully.",
+    });
     setSelectedIds([]);
-    setSelectedParticipant(null);
+    closeSelectedParticipant();
     setRefreshKey((k) => k + 1);
   };
 
   const indexOfFirstItem = totalResults === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
   const indexOfLastItem  = Math.min(currentPage * rowsPerPage, totalResults);
+  const selectedParticipantVisible = selectedParticipant
+    ? items.some((item) => item._id === selectedParticipant._id)
+    : false;
+  const selectedParticipantName =
+    selectedParticipant?.participant?.fullName ?? "Participant";
+  const selectedParticipantEmail =
+    selectedParticipant?.participant?.companyEmail ||
+    selectedParticipant?.participant?.personalEmail ||
+    "Email not available";
+
+  if (!eventId) {
+    return (
+      <div className="min-h-screen flex bg-background relative overflow-hidden">
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+        <main className="flex-1 flex flex-col min-w-0 w-full">
+          <Topbar onToggleSidebar={() => setIsSidebarOpen(true)} />
+
+          <div className="px-10 py-8">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-6 text-amber-900">
+              <h1 className="text-2xl font-bold text-[#001a4e]">Event belum dipilih</h1>
+              <p className="mt-2 text-sm leading-6">
+                Halaman manajemen participant butuh konteks event. Buka halaman event dulu,
+                lalu pilih <span className="font-semibold">Manage Participants</span> dari event yang ingin dikelola.
+              </p>
+              <div className="mt-5">
+                <Button
+                  type="button"
+                  onClick={() => navigate("/events")}
+                  className="h-10 rounded-xl bg-[#0f2f78] px-5 text-white hover:bg-[#11265c]"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Back to Events
+                </Button>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[screen] flex bg-background relative overflow-visible">
@@ -184,50 +380,84 @@ export function Participants() {
               </h1>
             </div>
 
-            <div className="flex items-center gap-3 mb-6 pb-2 ml-10 mr-10">
-              <div className="text-right mr-4">
-                <div className="text-2xl font-bold text-primary">
-                  {meta.approvedCount}
-                  <span className="text-sm font-normal text-slate-400">/ {meta.totalCount}</span>
-                </div>
-                <div className="text-xs font-medium text-[#72a688] bg-[#9cd3b2]/20 px-2 py-0.5 rounded">
-                  Approved Participants
-                </div>
+          <div className="flex items-center gap-3 mb-6 pb-2 ml-10 mr-10">
+            <Button
+              asChild
+              variant="outline"
+              className="h-11 rounded-xl border-slate-200 px-4"
+            >
+              <Link to="/events">
+                <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
+                Back to Events
+              </Link>
+            </Button>
+            <Button
+              asChild
+              className="h-11 rounded-xl bg-[#0f2f78] px-5 text-white hover:bg-[#11265c]"
+            >
+              <Link to={`/events/${eventId}/check-in`}>
+                <QrCode className="mr-2 h-4 w-4" aria-hidden="true" />
+                Open Check-In Desk
+              </Link>
+            </Button>
+            <div className="text-right mr-4">
+              <div className="text-2xl font-bold text-primary">
+                {meta.approvedCount}
+                <span className="text-sm font-normal text-slate-400">/ {meta.totalCount}</span>
               </div>
-              <button
-                onClick={handleBulkReject}
-                disabled={selectedIds.length === 0 || isLoading}
-                className="bg-[#e8e7ef]/50 text-primary px-6 py-3 rounded-lg font-bold text-sm shadow-md hover:shadow-xl transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Reject Selected
-              </button>
-              <button
-                onClick={handleBulkApprove}
-                disabled={selectedIds.length === 0 || isLoading}
-                className="bg-[linear-gradient(135deg,#002d7a_0%,#15439f_100%)] text-white px-6 py-3 rounded-lg font-bold text-sm shadow-md hover:shadow-xl transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                Approve Selected
-              </button>
+              <div className="text-xs font-medium text-[#72a688] bg-[#9cd3b2]/20 px-2 py-0.5 rounded">
+                Approved Participants
+              </div>
             </div>
-          </header>
+            <button
+              type="button"
+              onClick={handleBulkReject}
+              disabled={selectedIds.length === 0 || isLoading}
+              className="bg-[#e8e7ef]/50 text-primary px-6 py-3 rounded-lg font-bold text-sm shadow-md hover:shadow-xl transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Reject Selected
+            </button>
+            <button
+              type="button"
+              onClick={handleBulkApprove}
+              disabled={selectedIds.length === 0 || isLoading}
+              className="bg-[linear-gradient(135deg,#002d7a_0%,#15439f_100%)] text-white px-6 py-3 rounded-lg font-bold text-sm shadow-md hover:shadow-xl transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Approve Selected
+            </button>
+          </div>
+        </header>
 
-          <div className="grid grid-cols-12 gap-6 px-10">
-            <div className={`transition-all duration-300 ${selectedParticipant ? "col-span-12 lg:col-span-9" : "col-span-12"}`}>
-              <div className="bg-white p-6 rounded-2xl">
-                {/* Search & Filter */}
-                <div className="flex flex-col md:flex-row gap-4 mb-6">
-                  <div className="relative flex-1">
-                    <span className="absolute inset-y-0 left-3 flex items-center text-slate-400 z-10">
-                      <Search className="h-4 w-4" />
-                    </span>
-                    <Input
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search participants or companies..."
-                      className="pl-10 bg-background border-slate-200 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
-                    />
-                  </div>
+        <div className="grid grid-cols-12 gap-6 px-10">
+          <div className={`transition-all duration-300 ${selectedParticipant ? "col-span-12 lg:col-span-9" : "col-span-12"}`}>
+            <div className="bg-white p-6 rounded-2xl">
+              {(actionError || actionFeedback) ? (
+                <div
+                  aria-live="polite"
+                  className={`mb-5 rounded-2xl border px-4 py-3 text-sm leading-6 ${
+                    actionError || actionFeedback?.tone === "error"
+                      ? "border-rose-200 bg-rose-50 text-rose-700"
+                      : "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  }`}
+                >
+                  {actionError ?? actionFeedback?.message}
+                </div>
+              ) : null}
+
+              {/* Search & Filter */}
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className="relative flex-1">
+                  <span className="absolute inset-y-0 left-3 flex items-center text-slate-400 z-10">
+                    <Search className="h-4 w-4" />
+                  </span>
+                  <Input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search participants or companies..."
+                    className="pl-10 bg-background border-slate-200 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
+                  />
+                </div>
 
                   <Select
                     value={statusFilter}
@@ -248,36 +478,37 @@ export function Participants() {
                   </Select>
                 </div>
 
-                {/* Table */}
-                <div className="overflow-x-auto">
-                  <Table className="w-full border border-sm">
-                    <TableHeader className="bg-slate-50">
-                      <TableRow>
-                        <TableHead className="w-[50px] text-center">
-                          <input
-                            type="checkbox"
-                            checked={items.length > 0 && selectedIds.length === items.length}
-                            onChange={toggleSelectAll}
-                            className="translate-y-[2px] h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                          />
-                        </TableHead>
-                        <TableHead className="font-bold text-primary pl-10">Name</TableHead>
-                        <TableHead className="font-bold text-primary text-center">Company</TableHead>
-                        <TableHead className="font-bold text-primary text-center">Industry</TableHead>
-                        <TableHead className="font-bold text-primary text-center">Role</TableHead>
-                        <TableHead className="font-bold text-primary text-center">Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[50px] text-center">
+                        <input
+                          type="checkbox"
+                          checked={items.length > 0 && selectedIds.length === items.length}
+                          onChange={toggleSelectAll}
+                          className="translate-y-[2px] h-4 w-4 rounded border-gray-300 focus:ring-primary cursor-pointer"
+                        />
+                      </TableHead>
+                      <TableHead className="pl-10">Name</TableHead>
+                      <TableHead className="text-center">Company</TableHead>
+                      <TableHead className="text-center">Industry</TableHead>
+                      <TableHead className="text-center">Role</TableHead>
+                      <TableHead className="text-center">Status</TableHead>
+                      <TableHead className="text-center">QR Delivery</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                       {isLoading ? (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-10 text-slate-400">
+                          <TableCell colSpan={7} className="text-center py-10 text-slate-400">
                             Loading...
                           </TableCell>
                         </TableRow>
                       ) : items.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center py-10 text-slate-400">
+                          <TableCell colSpan={7} className="text-center py-10 text-slate-400">
                             No participants found.
                           </TableCell>
                         </TableRow>
@@ -292,7 +523,7 @@ export function Participants() {
                                 type="checkbox"
                                 checked={selectedIds.includes(item._id)}
                                 onChange={() => toggleSelectOne(item)}
-                                className="translate-y-[2px] h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                className="translate-y-[2px] h-4 w-4 rounded border-gray-300 focus:ring-primary cursor-pointer"
                               />
                             </TableCell>
                             <TableCell className="font-medium pl-10">{item.participant.fullName}</TableCell>
@@ -300,8 +531,13 @@ export function Participants() {
                             <TableCell className="text-center">{item.industrySnapshot?.name ?? "—"}</TableCell>
                             <TableCell className="text-center">{item.jobTitleSnapshot?.name ?? "—"}</TableCell>
                             <TableCell className="text-center">
-                              <span className={`inline-flex items-center justify-center w-24 px-3 py-1 rounded-full text-[13px] font-bold tracking-tight ${getStatusStyles(item.status)}`}>
-                                {formatStatus(item.status)}
+                              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${getStatusStyles(item.status)}`}>
+                                {formatStatus(item.status).toUpperCase()}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span className={`inline-flex min-w-[80px] items-center justify-center rounded-full border px-3 py-1 text-[10px] font-bold ${getTicketDeliveryStyles(item.ticketDelivery?.status)}`}>
+                                {formatTicketDeliveryStatus(item.ticketDelivery?.status)}
                               </span>
                             </TableCell>
                           </TableRow>
@@ -363,63 +599,118 @@ export function Participants() {
               </div>
             </div>
 
-            {/* Detail Sidebar */}
-            <div className={`transition-all duration-300 ${selectedParticipant ? "block lg:block col-span-3" : "hidden lg:hidden"}`}>
-              <div className="bg-white p-6 rounded-2xl relative overflow-hidden shadow-xl shadow-slate-300 h-full">
-                {selectedParticipant && (
-                  <div className="flex flex-col gap-6">
+          {/* Detail Sidebar */}
+          <div className={`transition-all duration-300 ${selectedParticipant ? "block lg:block col-span-3" : "hidden lg:hidden"}`}>
+            <div className="bg-white p-6 rounded-2xl relative overflow-hidden shadow-xl shadow-slate-300 h-full">
+              {selectedParticipant && (
+                <div className="flex flex-col gap-6">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[13px] font-bold text-slate-500">Participant Details</p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={closeSelectedParticipant}
+                      className="h-8 w-8 rounded-full text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-[#15439F]"
+                      aria-label="Close participant details"
+                    >
+                      <X className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                  </div>
+                  {!selectedParticipantVisible ? (
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
+                      Participant ini tetap terbuka untuk direview, tetapi sudah tidak muncul di tabel karena tidak cocok dengan filter saat ini.
+                    </div>
+                  ) : null}
+                  <div className="items-center pt-3">
+                    <h2 className="text-3xl font-bold tracking-loose text-primary text-center">
+                      {selectedParticipantName}
+                    </h2>
+                    <h3 className="text-sm text-[#002D7A] text-center">
+                      {selectedParticipantEmail}
+                    </h3>
+                  </div>
+                  <div className="flex justify-between text-left">
                     <div>
-                      <p className="text-[13px] font-bold text-slate-500">Participant Details</p>
+                      <div className="text-[11px] text-muted-foreground uppercase font-bold">Company</div>
+                      <div className="text-sm font-bold text-primary">{selectedParticipant.companySnapshot?.name ?? "—"}</div>
                     </div>
-                    <div className="items-center pt-3">
-                      <h2 className="text-3xl font-bold tracking-loose text-primary text-center">
-                        {selectedParticipant.participant.fullName}
-                      </h2>
-                      <h3 className="text-sm text-[#002D7A] text-center">
-                        {selectedParticipant.participant.companyEmail || selectedParticipant.participant.personalEmail}
-                      </h3>
-                    </div>
-                    <div className="pt-5 flex justify-between text-left">
-                      <div>
-                        <div className="text-[11px] text-muted-foreground uppercase font-bold">Company</div>
-                        <div className="text-sm font-bold text-primary">{selectedParticipant.companySnapshot?.name ?? "—"}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-[11px] text-muted-foreground uppercase font-bold">Role</div>
-                        <div className="text-sm font-bold text-[#002D7A]">{selectedParticipant.jobTitleSnapshot?.name ?? "—"}</div>
-                      </div>
-                    </div>
-                    <div className="pt-3 flex justify-between text-left">
-                      <div>
-                        <div className="text-[11px] text-muted-foreground uppercase font-bold">Industry</div>
-                        <div className="text-sm font-bold text-primary">{selectedParticipant.industrySnapshot?.name ?? "—"}</div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-[11px] text-muted-foreground uppercase font-bold">City</div>
-                        <div className="text-sm font-bold text-[#002D7A]">{selectedParticipant.citySnapshot?.name ?? "—"}</div>
-                      </div>
-                    </div>
-                    <div className="pt-5 px-3 flex flex-row justify-around">
-                      <button
-                        onClick={() => handleReject(selectedParticipant._id)}
-                        disabled={selectedParticipant.status !== "pending" || isLoading}
-                        className="bg-[#DDDCE3] text-foreground px-6 py-2 rounded-lg font-bold text-sm hover:shadow-xl transition-all active:scale-95 w-[100px] disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        Reject
-                      </button>
-                      <button
-                        onClick={() => handleApprove(selectedParticipant._id)}
-                        disabled={selectedParticipant.status !== "pending" || isLoading}
-                        className="bg-[#15439F] text-white px-6 py-2 rounded-lg font-bold text-sm hover:shadow-xl transition-all active:scale-95 w-[100px] disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        Approve
-                      </button>
+                    <div className="text-right">
+                      <div className="text-[11px] text-muted-foreground uppercase font-bold">Role</div>
+                      <div className="text-sm font-bold text-[#002D7A]">{selectedParticipant.jobTitleSnapshot?.name ?? "—"}</div>
                     </div>
                   </div>
-                )}
-              </div>
+                  <div className="flex justify-between text-left">
+                    <div>
+                      <div className="text-[11px] text-muted-foreground uppercase font-bold">Industry</div>
+                      <div className="text-sm font-bold text-primary">{selectedParticipant.industrySnapshot?.name ?? "—"}</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[11px] text-muted-foreground uppercase font-bold">City</div>
+                      <div className="text-sm font-bold text-[#002D7A]">{selectedParticipant.citySnapshot?.name ?? "—"}</div>
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
+                          QR Ticket Delivery
+                        </div>
+                        <p className="mt-2 text-sm text-slate-500">
+                          Approval will generate a QR ticket and queue the delivery email automatically.
+                        </p>
+                      </div>
+                      <span
+                        className={`inline-flex min-w-[108px] items-center justify-center rounded-full border px-3 py-1 text-[12px] font-semibold ${getTicketDeliveryStyles(
+                          selectedParticipant.ticketDelivery?.status,
+                        )}`}
+                      >
+                        {formatTicketDeliveryStatus(selectedParticipant.ticketDelivery?.status)}
+                      </span>
+                    </div>
+
+                    <div className="mt-4 space-y-3 text-sm text-slate-600">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="font-semibold text-slate-500">Ticket code</span>
+                        <span className="text-right font-mono text-[12px] text-slate-700 max-w-[160px] break-all">
+                          {selectedParticipant.ticket?.qrCode ?? "Generated after approval"}
+                        </span>
+                      </div>
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="font-semibold text-slate-500">Attempts</span>
+                        <span>{selectedParticipant.ticketDelivery?.attempts ?? 0}</span>
+                      </div>
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="font-semibold text-slate-500">Last issue</span>
+                        <span className="max-w-[160px] text-right">
+                          {selectedParticipant.ticketDelivery?.failureReason ?? "No delivery issue recorded"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="pt-5 px-3 flex flex-row justify-around">
+                    <button
+                      type="button"
+                      onClick={() => handleReject(selectedParticipant._id)}
+                      disabled={selectedParticipant.status !== "pending" || isLoading}
+                      className="bg-[#DDDCE3] text-foreground px-6 py-2 rounded-lg font-bold text-sm hover:shadow-xl transition-all active:scale-95 w-[100px] disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Reject
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApprove(selectedParticipant._id)}
+                      disabled={selectedParticipant.status !== "pending" || isLoading}
+                      className="bg-[#15439F] text-white px-6 py-2 rounded-lg font-bold text-sm hover:shadow-xl transition-all active:scale-95 w-[100px] disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      Approve
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
+        </div>
         </main>
       </div>
     </div>

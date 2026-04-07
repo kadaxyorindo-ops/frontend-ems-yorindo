@@ -198,18 +198,18 @@ export function Events() {
         <div ref={tableRef} className="px-10 pb-10">
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm min-h-[400px]">
             <Table>
-              <TableHeader className="bg-slate-50/50">
-                <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-400 py-4 pl-6">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="py-4 pl-6">
                     Event Name & Details
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-400 py-4">
+                  <TableHead className="py-4">
                     Participant / Capacity
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-400 py-4">
+                  <TableHead className="py-4">
                     Status
                   </TableHead>
-                  <TableHead className="text-[11px] font-bold uppercase tracking-wider text-slate-400 py-4 pr-6 text-right">
+                  <TableHead className="py-4 pr-6 text-right">
                     Actions
                   </TableHead>
                 </TableRow>
@@ -345,9 +345,23 @@ export function Events() {
                               </DropdownMenuItem>
 
                               <DropdownMenuItem
-                                className="font-medium cursor-pointer gap-2"
-                                onClick={() =>
-                                  navigate(`/participants?eventId=${event._id}`)
+                                className="font-medium cursor-pointer"
+                                onSelect={() =>
+                                  navigate(`/participants?eventId=${event._id}&eventTitle=${encodeURIComponent(event.title)}`)
+                                }
+                              >
+                                Manage Participants
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="font-medium cursor-pointer"
+                                onSelect={() => navigate(`/events/${event._id}/check-in`)}
+                              >
+                                Open Check-In Desk
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="font-medium text-red-500 focus:text-red-600 cursor-pointer"
+                                onSelect={() =>
+                                  void handleDelete(event._id, event.title)
                                 }
                               >
                                 <UserCog className="w-4 h-4" /> Manage
