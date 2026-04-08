@@ -1683,7 +1683,8 @@ export function Communication() {
                     </Select>
                   </div>
 
-                  <div className="space-y-1.5">
+                  {/* Search */}
+                  {/* <div className="space-y-1.5">
                     <Label
                       htmlFor="communication-search"
                       className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400"
@@ -1710,7 +1711,7 @@ export function Communication() {
                         className="h-11 bg-white pl-10 border-slate-300 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
                       />
                     </div>
-                  </div>
+                  </div> */}
 
                   <div className="space-y-2">
                     <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
@@ -1890,7 +1891,7 @@ export function Communication() {
                   {/* SOURCE CHANNEL */}
                   <div className="space-y-2">
                     <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-4 mb-2">
-                      Souce channel
+                      Source channel
                     </Label>
                     
                     <Select
@@ -1920,6 +1921,35 @@ export function Communication() {
                 </TabsContent>
 
                 <TabsContent value="recipients" className="space-y-4">
+                                    {/* Search */}
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="communication-search"
+                      className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400"
+                    >
+                      Search
+                    </Label>
+                    
+                    <div className="relative">
+                      <Search
+                        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                        aria-hidden="true"
+                      />
+                      <Input
+                        id="communication-search"
+                        name="search"
+                        type="text"
+                        value={searchInput}
+                        autoComplete="off"
+                        placeholder="Search name, email, company…"
+                        onChange={(event) => {
+                          setSearchInput(event.target.value);
+                          if (feedback) setFeedback(null);
+                        }}
+                        className="h-11 bg-white pl-10 border-slate-300 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
+                      />
+                    </div>
+                  </div>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-semibold text-slate-700">
@@ -2219,12 +2249,12 @@ export function Communication() {
                     : "Save the current work as a draft any time before queueing the broadcast."}
                 </p>
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+              {/* <div className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-500">
                 <Mail className="h-4 w-4" aria-hidden="true" />
                 <span className="tabular-nums">
                   {selectedRecipientCount} recipients selected
                 </span>
-              </div>
+              </div> */}
             </div>
 
             <div className="flex flex-1 flex-col space-y-6 px-5 py-5 sm:px-6 sm:py-6">
