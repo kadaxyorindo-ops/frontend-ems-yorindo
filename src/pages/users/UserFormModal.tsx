@@ -7,6 +7,7 @@ import {
   type User,
   type UserFormData,
 } from "@/services/userService";
+import { ROLE_LABELS } from "@/lib/roles";
 
 interface UserFormModalProps {
   mode: "create" | "edit";
@@ -21,14 +22,6 @@ const EMPTY_FORM: UserFormData = {
   email:            "",
   role:             "event_operator",
   organizationName: null,
-};
-
-const ROLE_LABELS: Record<string, string> = {
-  super_admin:            "Super Admin",
-  admin:                  "Admin",
-  event_operator:         "Event Operator",
-  communication_operator: "Communication Operator",
-  survey_analyst:         "Survey Analyst",
 };
 
 export function UserFormModal({ mode, user, isOpen, onClose, onSuccess }: UserFormModalProps) {

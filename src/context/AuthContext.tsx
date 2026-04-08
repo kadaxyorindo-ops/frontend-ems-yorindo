@@ -52,7 +52,7 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   isInitializing: boolean;
   requestOtp: (email: string) => Promise<AuthActionResult<RequestOtpResponse>>;
-  verifyOtp: (email: string, code: string) => Promise<AuthActionResult>;
+  verifyOtp: (email: string, code: string) => Promise<AuthActionResult<AuthUser>>;
   logout: () => void;
 }
 
@@ -144,7 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifyOtp = async (
     email: string,
     code: string,
-  ): Promise<AuthActionResult> => {
+  ): Promise<AuthActionResult<AuthUser>> => {
     const result = await api.post<VerifyOtpResponse>(`${apiPaths.auth}/verify-otp`, {
       email,
       code,
@@ -164,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return {
       ok: true,
       message: result.message,
+      data: result.data.user,
     };
   };
 
