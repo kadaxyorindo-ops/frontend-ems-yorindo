@@ -676,13 +676,26 @@ export function Communication() {
     const nextSearch = searchParams.get("search") ?? "";
     const nextPanel = readLeftPanelTab(searchParams.get("panel"));
     const nextStep = readComposerStep(searchParams.get("step"));
-
+    
     setFilters((currentValue) =>
       areFiltersEqual(currentValue, nextFilters) ? currentValue : nextFilters,
     );
-    setSearchInput((currentValue) =>
-      currentValue === nextSearch ? currentValue : nextSearch,
-    );
+
+    setSearchInput((currentValue) => {
+      // If the URL value is the same as state, do nothing
+      if (currentValue === nextSearch) return currentValue;
+      
+      // CRITICAL: If the user is currently typing in the search box, 
+      // do NOT let the URL overwrite the state. This stops the glitch.
+      if (document.activeElement?.id === "communication-search") {
+        return currentValue;
+      }
+      
+      return nextSearch;
+    });
+    // setSearchInput((currentValue) =>
+    //   currentValue === nextSearch ? currentValue : nextSearch,
+    // );
     setLeftPanelTab((currentValue) =>
       currentValue === nextPanel ? currentValue : nextPanel,
     );
@@ -1385,7 +1398,7 @@ export function Communication() {
               </div>
 
               <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
-                <div className="rounded-2xl border  border-slate-300 bg-slate-50 px-4 py-4">
+                <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     From
                   </p>
@@ -1397,7 +1410,7 @@ export function Communication() {
                   </p>
                 </div>
 
-                <div className="rounded-2xl border  border-slate-300 bg-slate-50 px-4 py-4">
+                <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4">
                   <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
                     To
                   </p>
@@ -1446,7 +1459,7 @@ export function Communication() {
                 </TabsList>
 
                 <TabsContent value="visual">
-                  <div className="overflow-hidden rounded-[24px] border  border-slate-300 bg-slate-100">
+                  <div className="overflow-hidden rounded-[24px] border border-slate-300 bg-slate-100">
                     {isPreviewLoading ? (
                       <div className="flex min-h-[40rem] items-center justify-center gap-3 text-sm text-slate-500">
                         <LoaderCircle
@@ -1487,12 +1500,11 @@ export function Communication() {
               <div className="flex flex-col gap-3 border-t  border-slate-300 pt-5 sm:flex-row sm:justify-between">
                 <div className="space-y-1 text-xs leading-5 text-slate-500">
                   <p>
-                    `Save Draft` menyimpan segment, subject, dan body tanpa
-                    mengirim email.
+                    `Save Draft` saves segment, subject, and body without sending email.
                   </p>
                   <p>
-                    `Confirm & Queue Send` membuat campaign berstatus `queued`,
-                    lalu worker RabbitMQ yang memproses pengiriman broadcast.
+                    `Confirm & Queue Send` make a campaign with status `queued`,
+                    then worker RabbitMQ will process the broadcast delivery.
                   </p>
                 </div>
 
@@ -1671,7 +1683,8 @@ export function Communication() {
                     </Select>
                   </div>
 
-                  <div className="space-y-1.5">
+                  {/* Search */}
+                  {/* <div className="space-y-1.5">
                     <Label
                       htmlFor="communication-search"
                       className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400"
@@ -1687,18 +1700,18 @@ export function Communication() {
                       <Input
                         id="communication-search"
                         name="search"
-                        type="search"
+                        type="text"
                         value={searchInput}
                         autoComplete="off"
                         placeholder="Search name, email, company…"
                         onChange={(event) => {
                           setSearchInput(event.target.value);
-                          setFeedback(null);
+                          if (feedback) setFeedback(null);
                         }}
                         className="h-11 bg-white pl-10 border-slate-300 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
                       />
                     </div>
-                  </div>
+                  </div> */}
 
                   <div className="space-y-2">
                     <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
@@ -1878,7 +1891,7 @@ export function Communication() {
                   {/* SOURCE CHANNEL */}
                   <div className="space-y-2">
                     <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-4 mb-2">
-                      Souce channel
+                      Source channel
                     </Label>
                     
                     <Select
@@ -1908,6 +1921,35 @@ export function Communication() {
                 </TabsContent>
 
                 <TabsContent value="recipients" className="space-y-4">
+                                    {/* Search */}
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="communication-search"
+                      className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400"
+                    >
+                      Search
+                    </Label>
+                    
+                    <div className="relative">
+                      <Search
+                        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                        aria-hidden="true"
+                      />
+                      <Input
+                        id="communication-search"
+                        name="search"
+                        type="text"
+                        value={searchInput}
+                        autoComplete="off"
+                        placeholder="Search name, email, company…"
+                        onChange={(event) => {
+                          setSearchInput(event.target.value);
+                          if (feedback) setFeedback(null);
+                        }}
+                        className="h-11 bg-white pl-10 border-slate-300 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
+                      />
+                    </div>
+                  </div>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-semibold text-slate-700">
@@ -1931,7 +1973,7 @@ export function Communication() {
                   <div className="space-y-3 rounded-[24px] border  border-slate-300 bg-white/60 p-3">
                     <div className="max-h-[30rem] space-y-3 overflow-y-auto pr-1 [contain-intrinsic-size:640px] [content-visibility:auto]">
                       {isLoading ? (
-                        <div className="rounded-2xl border  border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-400">
+                        <div className="rounded-2xl border border-slate-300 bg-white px-4 py-10 text-center text-sm text-slate-400">
                           Loading audience…
                         </div>
                       ) : loadError ? (
@@ -2207,12 +2249,12 @@ export function Communication() {
                     : "Save the current work as a draft any time before queueing the broadcast."}
                 </p>
               </div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-500">
+              {/* <div className="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-500">
                 <Mail className="h-4 w-4" aria-hidden="true" />
                 <span className="tabular-nums">
                   {selectedRecipientCount} recipients selected
                 </span>
-              </div>
+              </div> */}
             </div>
 
             <div className="flex flex-1 flex-col space-y-6 px-5 py-5 sm:px-6 sm:py-6">
@@ -2425,9 +2467,9 @@ export function Communication() {
                 <div className="max-w-md space-y-1 text-xs leading-5 text-slate-500">
                   <p>{hasUnsavedChanges ? "Unsaved changes pending." : "All changes saved."}</p>
                   <p>
-                    `Save Draft` hanya menyimpan composer. `Review &amp; Send`
-                    akan memindahkan Anda ke screen review template, inbox
-                    preview, dan konfirmasi queue RabbitMQ.
+                    `Save Draft` only saves the composer. `Review &amp; Send`
+                    will move you to the review template, inbox
+                    preview, and RabbitMQ queue confirmation screen.
                   </p>
                 </div>
 

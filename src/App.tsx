@@ -14,7 +14,7 @@ import { EventCheckInDesk } from "@/pages/checkin/EventCheckInDesk";
 function FullPageStatus({ label }: { label: string }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6">
-      <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white px-6 py-5 text-center shadow-sm">
+      <div className="rounded-2xl border-2 border-slate-300 bg-white px-6 py-5 text-center shadow-md">
         <p className="text-xs font-bold uppercase tracking-[0.24em] text-slate-400">
           Yorindo EMS
         </p>
