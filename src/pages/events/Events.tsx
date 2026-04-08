@@ -37,12 +37,12 @@ import {
   QrCode,
   Trash2,
   UserCog,
-  ScanLine,
 } from "lucide-react";
 import {
   getEvents,
   getEventStats,
   deleteEvent,
+  hardDeleteEvent,
   type EventItem,
   type EventStats,
 } from "@/services/eventService";
@@ -415,7 +415,7 @@ export function Events() {
                               </AlertDialogCancel>
                               <AlertDialogAction
                                 onClick={async () => {
-                                  await deleteEvent(event._id);
+                                  await hardDeleteEvent(event._id);
                                   refresh();
                                 }}
                                 className="bg-red-500 hover:bg-red-600 text-white rounded-lg"
