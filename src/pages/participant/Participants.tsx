@@ -387,14 +387,14 @@ export function Participants() {
         <Topbar onToggleSidebar={() => setIsSidebarOpen(true)} />
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden mb-6 pb-6">
-          <header className="flex flex-col md:flex-row items-center justify-between p-4 md:px-8 md:pt-8 md:flex-row md:items-end">
-            <div className="flex flex-col justify-between items-start mb-6 pb-2 ml-10 mr-10 gap-3">
+          <header className="flex flex-col md:flex-row items-center justify-between p-4 md:px-8 mx-10 md:pt-8 md:items-end">
+            <div className="flex flex-col justify-between items-start mb-6 pb-2 gap-3">
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[#001a4e]">
                 {/* Event name can be added here once fetched */}
                 {eventTitle}
               </h1>
             </div>
-            <div className="flex flex-col lg:flex-row items-center gap-3 mb-6 pb-2 ml-10 mr-10">
+            <div className="flex flex-col lg:flex-row items-center gap-3 mb-6 pb-2">
               <div className="text-right mr-4">
                 <div className="text-2xl font-bold text-primary">
                   {meta.approvedCount}
@@ -444,7 +444,7 @@ export function Participants() {
             </div>
           </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 px-4 md:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 p-4 md:px-8 mx-10">
             {/* Table */}
             <div className={`transition-all duration-300 ${selectedParticipant ? "col-span-12 lg:col-span-8 xl:col-span-9" : "col-span-12"}`}>
               <div className="bg-white p-6 rounded-2xl">

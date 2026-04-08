@@ -94,3 +94,7 @@ export function updateEvent(id: string, body: UpdateEventBody) {
 export function deleteEvent(id: string) {
   return api.delete<EventItem>(`${apiPaths.events}/${id}`);
 }
+
+export function hardDeleteEvent(id: string) {
+  return api.delete<EventItem>(`${apiPaths.events}/${id}/hard`);
+}
