@@ -116,7 +116,7 @@ export function Events() {
         <header className="flex flex-col p-4 md:px-10 md:pt-8 md:flex-row md:items-end justify-between">
           <div className="flex flex-col justify-between items-start mb-6 gap-3">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[#001a4e]">
-              Events
+              Event Management
             </h1>
           </div>
 
