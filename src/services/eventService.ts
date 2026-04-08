@@ -98,3 +98,7 @@ export function deleteEvent(id: string) {
 export function hardDeleteEvent(id: string) {
   return api.delete<EventItem>(`${apiPaths.events}/${id}/hard`);
 }
+
+export function createIndustry(name: string) {
+  return api.post<Industry>(`${API_V1_PREFIX}/industries`, { name });
+}

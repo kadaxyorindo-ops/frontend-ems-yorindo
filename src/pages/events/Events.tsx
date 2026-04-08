@@ -17,6 +17,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -41,7 +42,6 @@ import {
 import {
   getEvents,
   getEventStats,
-  deleteEvent,
   hardDeleteEvent,
   type EventItem,
   type EventStats,
@@ -151,7 +151,6 @@ export function Events() {
         {/* MILESTONE CARD */}
         <div className="px-10 mb-8">
           <Card className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-orange-50/30 p-6 shadow-sm transition-all hover:shadow-md hover:border-amber-200">
-           
             <div className="flex items-center justify-between gap-8">
               {/* GROUP 1: TEXT */}
               <div className="space-y-1.5">
@@ -221,12 +220,8 @@ export function Events() {
                   <TableHead className="py-4 pl-6">
                     Event Name & Details
                   </TableHead>
-                  <TableHead className="py-4">
-                    Participant / Capacity
-                  </TableHead>
-                  <TableHead className="py-4">
-                    Status
-                  </TableHead>
+                  <TableHead className="py-4">Participant / Capacity</TableHead>
+                  <TableHead className="py-4">Status</TableHead>
                   <TableHead className="py-4 pr-6 text-right">
                     Actions
                   </TableHead>
@@ -252,9 +247,7 @@ export function Events() {
                   const isFull = pct >= 100;
 
                   return (
-                    <TableRow
-                      key={event._id}
-                    >
+                    <TableRow key={event._id}>
                       <TableCell className="py-5 pl-6">
                         <div className="font-bold text-[#001a4e] text-sm mb-1.5">
                           {event.title}
@@ -334,12 +327,19 @@ export function Events() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className="rounded-xl shadow-xl border-slate-100 w-48"
+                              className="rounded-xl shadow-xl border-slate-100 w-52 p-1.5"
                             >
+                              {/* Label */}
+                              <div className="px-2 py-1 mb-1">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                                  Select Action
+                                </p>
+                              </div>
+
                               {canEdit && (
                                 <DropdownMenuItem
                                   onSelect={(e) => e.preventDefault()}
-                                  className="p-0"
+                                  className="p-0 rounded-lg focus:bg-transparent"
                                 >
                                   <EventDialog
                                     mode="edit"
@@ -366,33 +366,43 @@ export function Events() {
 
                               {canViewRegistrations && (
                                 <DropdownMenuItem
-                                  className="font-medium cursor-pointer"
+                                  className="font-medium cursor-pointer rounded-lg gap-2 text-slate-600"
                                   onSelect={() =>
-                                    navigate(`/participants?eventId=${event._id}&eventTitle=${encodeURIComponent(event.title)}`)
+                                    navigate(
+                                      `/participants?eventId=${event._id}&eventTitle=${encodeURIComponent(event.title)}`,
+                                    )
                                   }
                                 >
-                                  <UserCog className="w-4 h-4" /> Manage Participants
+                                  <UserCog className="w-4 h-4 text-slate-400" />
+                                  Manage Participants
                                 </DropdownMenuItem>
                               )}
 
                               {canCheckIn && (
                                 <DropdownMenuItem
-                                  className="font-medium cursor-pointer"
-                                  onSelect={() => navigate(`/events/${event._id}/check-in`)}
+                                  className="font-medium cursor-pointer rounded-lg gap-2 text-slate-600"
+                                  onSelect={() =>
+                                    navigate(`/events/${event._id}/check-in`)
+                                  }
                                 >
-                                  <QrCode className="w-4 h-4" /> Open Check-In Desk
+                                  <QrCode className="w-4 h-4 text-slate-400" />
+                                  Open Check-In Desk
                                 </DropdownMenuItem>
                               )}
 
                               {canDelete && (
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem
-                                    variant="destructive"
-                                    className="font-medium text-red-500 focus:text-red-600 cursor-pointer gap-2"
-                                  >
-                                    <Trash2 className="w-4 h-4" /> Delete Event
-                                  </DropdownMenuItem>
-                                </AlertDialogTrigger>
+                                <>
+                                  <DropdownMenuSeparator className="my-1.5 bg-slate-100" />
+                                  <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem
+                                      variant="destructive"
+                                      className="font-medium cursor-pointer rounded-lg gap-2 text-red-500 focus:text-red-600 focus:bg-red-50"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                      Delete Event
+                                    </DropdownMenuItem>
+                                  </AlertDialogTrigger>
+                                </>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
