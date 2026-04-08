@@ -22,6 +22,15 @@ import {
   deleteUser,
   type User,
 } from "@/services/userService";
+import { MoreHorizontal, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const ROLE_LABELS: Record<string, string> = {
   super_admin:            "Super Admin",
@@ -153,33 +162,33 @@ export function Users() {
         {/* Filters */}
         <div className="flex gap-3">
           <div className="relative flex-1 max-w-sm">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-              width="15" height="15" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
-            </svg>
-            <input
+            <span className="absolute left-3 top-1/5 text-slate-400 pointer-events-none">
+              <Search className="h-4 w-4" />
+            </span>
+            <Input
               type="text"
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search name or email..."
-              className="w-full h-10 rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-4 text-sm outline-none transition focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-100"
+              className="w-full pl-10 bg-background border-slate-200 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
             />
           </div>
 
-          <select
-            value={roleFilter}
-            onChange={(e) => handleRoleChange(e.target.value)}
-            className="h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
+          <Select
+            value={roleFilter || "all"} // Select usually expects a string, so we map "" to "all"
+            onValueChange={(value) => handleRoleChange(value === "all" ? "" : value)}
           >
-            <option value="">All Roles</option>
-            <option value="super_admin">Super Admin</option>
-            <option value="event_operator">Event Operator</option>
-            <option value="communication_operator">Communication Operator</option>
-            <option value="survey_analyst">Survey Analyst</option>
-          </select>
+            <SelectTrigger className="h-10 w-[200px] rounded-lg border-slate-200 bg-slate-50 text-slate-700 focus:ring-2 focus:ring-slate-100 transition">
+              <SelectValue placeholder="All Roles" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Roles</SelectItem>
+              <SelectItem value="super_admin">Super Admin</SelectItem>
+              <SelectItem value="event_operator">Event Operator</SelectItem>
+              <SelectItem value="communication_operator">Communication Operator</SelectItem>
+              <SelectItem value="survey_analyst">Survey Analyst</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Delete error */}
@@ -192,14 +201,14 @@ export function Users() {
         {/* Table */}
         <div className="border rounded-lg overflow-hidden">
           <Table>
-            <TableHeader className="bg-slate-50">
+            <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
+                <TableHead className="pl-6">Name</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last Login</TableHead>
-                <TableHead className="w-[80px] text-right">Actions</TableHead>
+                <TableHead className="text-center">Role</TableHead>
+                <TableHead className="text-center">Status</TableHead>
+                <TableHead className="text-center">Last Login</TableHead>
+                <TableHead className="w-[80px] text-right pr-6">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -222,7 +231,7 @@ export function Users() {
               ) : (
                 users.map((user) => (
                   <TableRow key={user._id}>
-                    <TableCell className="font-semibold text-slate-800">
+                    <TableCell className="pl-6 font-semibold text-slate-800 w-[250px]">
                       {user.name}
                       {user.organizationName && (
                         <span className="block text-xs font-normal text-slate-400">
@@ -230,31 +239,33 @@ export function Users() {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="text-slate-500 text-sm">{user.email}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-slate-500 text-sm w-[120px]">{user.email}</TableCell>
+                    <TableCell className="text-center">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${ROLE_COLORS[user.role] ?? "bg-slate-100 text-slate-600"}`}>
                         {ROLE_LABELS[user.role] ?? user.role}
                       </span>
                     </TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center gap-1.5 text-sm">
-                        <span className={`w-2 h-2 rounded-full ${user.isActive ? "bg-emerald-500" : "bg-slate-300"}`} />
+                    <TableCell className="text-center w-[120px]">
+                      <span className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border 
+                        ${user.isActive ? "bg-emerald-50 border-emerald-200" 
+                        : "bg-slate-50 border-slate-200"}
+                      `}>
+                        <span className={`w-1 h-1 rounded-full ${user.isActive ? "bg-emerald-500" : "bg-slate-300"}`} />
                         <span className={user.isActive ? "text-emerald-700" : "text-slate-400"}>
-                          {user.isActive ? "Active" : "Inactive"}
+                          {user.isActive ? "ACTIVE" : "INACTIVE"}
                         </span>
                       </span>
                     </TableCell>
-                    <TableCell className="text-slate-400 text-sm">
+                    <TableCell className="text-slate-400 text-sm text-center">
                       {user.lastLoginAt
                         ? new Date(user.lastLoginAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
                         : <span className="italic">Never</span>}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right pr-6">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <span className="text-xl font-bold pb-2">...</span>
+                          <Button variant="ghost" className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-slate-600">
+                            <MoreHorizontal className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -286,32 +297,36 @@ export function Users() {
               )}
             </TableBody>
           </Table>
-        </div>
 
-        {/* Pagination */}
-        {!isLoading && total > 0 && (
-          <div className="flex items-center justify-between text-sm text-slate-500">
-            <span>Showing {startItem}–{endItem} of {total} users</span>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                className="h-8 px-3 border border-dashed border-slate-300"
-                disabled={page <= 1}
-                onClick={() => handlePageChange(page - 1)}
-              >
-                ← Prev
-              </Button>
-              <Button
-                variant="ghost"
-                className="h-8 px-3 border border-dashed border-slate-300"
-                disabled={page >= totalPages}
-                onClick={() => handlePageChange(page + 1)}
-              >
-                Next →
-              </Button>
+          {/* Pagination */}
+          {!isLoading && total > 0 && (
+            <div className="px-6 py-4 flex flex-col md:flex-row items-center justify-between flex items-center gap-4 bg-slate-50/30 border-t border-slate-100">
+              <div className="text-[13px] font-medium text-slate-400">
+                Showing <span className="text-[#001a4e] font-bold">{startItem}</span>–<span className="text-[#001a4e] font-bold">{endItem}</span> of <span className="text-[#001a4e] font-bold">{total}</span> users
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page - 1)}
+                  disabled={page <= 1}
+                  className="h-8 rounded-lg text-[11px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef]"
+                >
+                  PREVIOUS
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handlePageChange(page + 1)}
+                  disabled={page >= totalPages}
+                  className="h-8 rounded-lg text-[11px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef]"
+                >
+                  NEXT
+                </Button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <UserFormModal

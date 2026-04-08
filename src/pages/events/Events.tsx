@@ -246,7 +246,6 @@ export function Events() {
                   return (
                     <TableRow
                       key={event._id}
-                      className="hover:bg-slate-50/40 transition-colors border-slate-100"
                     >
                       <TableCell className="py-5 pl-6">
                         <div className="font-bold text-[#001a4e] text-sm mb-1.5">
@@ -420,7 +419,7 @@ export function Events() {
 
             {/* PAGINATION */}
             <div className="flex flex-col md:flex-row items-center justify-between px-6 py-4 bg-slate-50/30 border-t border-slate-100 gap-4">
-              <div className="text-[11px] font-medium text-slate-400">
+              <div className="text-[13px] font-medium text-slate-400">
                 Showing{" "}
                 <span className="text-[#001a4e] font-bold">
                   {total > 0 ? (currentPage - 1) * LIMIT + 1 : 0}
@@ -434,7 +433,7 @@ export function Events() {
               </div>
 
               <div className="flex items-center gap-4">
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                   Page {currentPage} of {totalPages || 1}
                 </div>
                 <div className="flex gap-2">
@@ -445,7 +444,7 @@ export function Events() {
                       setCurrentPage((prev) => Math.max(prev - 1, 1))
                     }
                     disabled={currentPage === 1}
-                    className="h-8 rounded-lg text-[10px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef]"
+                    className="h-8 rounded-lg text-[11px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef]"
                   >
                     PREVIOUS
                   </Button>
@@ -456,7 +455,7 @@ export function Events() {
                       setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                     }
                     disabled={currentPage === totalPages || totalPages === 0}
-                    className="h-8 rounded-lg text-[10px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef]"
+                    className="h-8 rounded-lg text-[11px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef]"
                   >
                     NEXT
                   </Button>

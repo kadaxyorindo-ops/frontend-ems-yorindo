@@ -35,11 +35,11 @@ const STATUS_OPTIONS: { label: string; value: RegistrationStatus }[] = [
 
 const getStatusStyles = (status: string) => {
   switch (status) {
-    case "approved":   return "bg-emerald-50 text-emerald-600 border-emerald-200";
-    case "pending":    return "bg-yellow-50 text-yellow-600 border-yellow-200";
-    case "rejected":   return "bg-red-50 text-red-600 border-red-200";
-    case "checked_in": return "bg-blue-50 text-blue-600 border-blue-200";
-    default:           return "bg-slate-50 text-slate-700 border-slate-200";
+    case "approved":   return "bg-emerald-50 text-emerald-600 border-emerald-200 w-[90px]";
+    case "pending":    return "bg-yellow-50 text-yellow-600 border-yellow-200 w-[90px]";
+    case "rejected":   return "bg-red-50 text-red-600 border-red-200 w-[90px]";
+    case "checked_in": return "bg-blue-50 text-blue-600 border-blue-200 w-[90px]";
+    default:           return "bg-slate-50 text-slate-700 border-slate-200 w-[90px]";
   }
 };
 
@@ -49,17 +49,17 @@ const formatStatus = (status: string) =>
 const getTicketDeliveryStyles = (status: RegistrationTicketDeliveryStatus | undefined) => {
   switch (status) {
     case "sent":
-      return "bg-emerald-100 text-emerald-700 border-emerald-200";
+      return "bg-emerald-100 text-emerald-700 border-emerald-200 w-[90px]";
     case "queued":
-      return "bg-amber-100 text-amber-800 border-amber-200";
+      return "bg-amber-100 text-amber-800 border-amber-200 w-[90px]";
     case "processing":
-      return "bg-sky-100 text-sky-700 border-sky-200";
+      return "bg-sky-100 text-sky-700 border-sky-200 w-[90px]";
     case "failed":
-      return "bg-rose-100 text-rose-700 border-rose-200";
+      return "bg-rose-100 text-rose-700 border-rose-200 w-[90px]";
     case "idle":
-      return "bg-slate-100 text-slate-500 border-slate-200";
+      return "bg-slate-100 text-slate-500 border-slate-200 w-[90px]";
     default:
-      return "bg-slate-100 text-slate-600 border-slate-200";
+      return "bg-slate-100 text-slate-600 border-slate-200 w-[90px]";
   }
 };
 
@@ -498,9 +498,9 @@ export function Participants() {
                         />
                       </TableHead>
                       <TableHead className="pl-10">Name</TableHead>
-                      <TableHead className="text-center">Company</TableHead>
-                      <TableHead className="text-center">Industry</TableHead>
-                      <TableHead className="text-center">Role</TableHead>
+                      <TableHead className="text-left">Company</TableHead>
+                      <TableHead className="text-left">Industry</TableHead>
+                      <TableHead className="text-left">Role</TableHead>
                       <TableHead className="text-center">Status</TableHead>
                       <TableHead className="text-center">QR Delivery</TableHead>
                     </TableRow>
@@ -522,57 +522,58 @@ export function Participants() {
                         items.map((item) => (
                           <TableRow
                             key={item._id}
-                            className={selectedIds.includes(item._id) ? "bg-blue-50/50" : ""}
+                            onClick={() => toggleSelectOne(item)}
+                            className={`cursor-pointer transition-colors ${selectedIds.includes(item._id) ? "bg-blue-50/50" : ""}`}
                           >
                             <TableCell className="w-[50px] text-center">
                               <input
                                 type="checkbox"
                                 checked={selectedIds.includes(item._id)}
+                                onClick={(e) => e.stopPropagation()} //to stop propagation to row click which also toggles selection
                                 onChange={() => toggleSelectOne(item)}
                                 className="translate-y-[2px] h-4 w-4 rounded border-gray-300 focus:ring-primary cursor-pointer"
                               />
                             </TableCell>
                             <TableCell className="font-medium pl-10">{item.participant.fullName}</TableCell>
-                            <TableCell className="text-center">
+                            <TableCell className="text-left">
                               {resolveSnapshotName(
                                 item.companySnapshot?.name,
                                 item.participant.company?.name,
                               )}
                             </TableCell>
-                            <TableCell className="text-center">
+                            <TableCell className="text-left">
                               {resolveSnapshotName(
                                 item.industrySnapshot?.name,
                                 item.participant.industry?.name,
                               )}
                             </TableCell>
-                            <TableCell className="text-center">
+                            <TableCell className="text-left">
                               {resolveSnapshotName(
                                 item.jobTitleSnapshot?.name,
                                 item.participant.jobTitle?.name,
                               )}
                             </TableCell>
                             <TableCell className="text-center">
-                              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${getStatusStyles(item.status)}`}>
+                              <span className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${getStatusStyles(item.status)}`}>
                                 {formatStatus(item.status).toUpperCase()}
                               </span>
                             </TableCell>
                             <TableCell className="text-center">
-                              <span className={`inline-flex min-w-[80px] items-center justify-center rounded-full border px-3 py-1 text-[10px] font-bold ${getTicketDeliveryStyles(item.ticketDelivery?.status)}`}>
-                                {formatTicketDeliveryStatus(item.ticketDelivery?.status)}
+                              <span className={`inline-flex items-center justify-center rounded-full border px-3 py-1 text-[10px] font-bold ${getTicketDeliveryStyles(item.ticketDelivery?.status)}`}>
+                                {formatTicketDeliveryStatus(item.ticketDelivery?.status).toUpperCase()}
                               </span>
                             </TableCell>
                           </TableRow>
                         ))
                       )}
-                    </TableBody>
-                  </Table>
-                </div>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Pagination */}
-              <div className="flex items-center justify-between px-6 py-3 bg-background">
+              <div className="flex flex-col md:flex-row items-center justify-between px-6 pt-5 bg-slate-50/30 border-t border-slate-100 gap-4">
                 <div className="flex items-center gap-2">
-                  <p className="text-sm font-medium text-slate-500">Rows per page</p>
+                  <p className="text-[13px] font-medium text-slate-400">Rows per page</p>
                   <Select
                     value={rowsPerPage.toString()}
                     onValueChange={(value) => { setRowsPerPage(Number(value)); setCurrentPage(1); }}
@@ -588,37 +589,40 @@ export function Participants() {
                   </Select>
                 </div>
 
-                <div className="text-sm text-slate-500">
-                  Showing <span className="font-medium text-slate-700">{indexOfFirstItem}</span> to{" "}
-                  <span className="font-medium text-slate-700">{indexOfLastItem}</span> of{" "}
-                  <span className="font-medium text-slate-700">{totalResults}</span> results
+                <div className="text-[13px] font-medium text-slate-400">
+                  Showing <span className="text-[#001a4e] font-bold">{indexOfFirstItem}</span> to{" "}
+                  <span className="text-[#001a4e] font-bold">{indexOfLastItem}</span> of{" "}
+                  <span className="text-[#001a4e] font-bold">{totalResults}</span> results
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <div className="text-sm font-medium text-slate-600">
+                  <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                     Page {currentPage} of {totalPages || 1}
                   </div>
                   <div className="flex gap-2">
                     <Button
-                      variant="outline" size="sm"
+                      variant="outline" 
+                      size="sm"
                       onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                       disabled={currentPage === 1}
-                      className="border border-md border-slate-500"
+                      className="h-8 rounded-lg text-[11px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef]"
                     >
-                      Previous
+                      PREVIOUS
                     </Button>
                     <Button
-                      variant="outline" size="sm"
+                      variant="outline" 
+                      size="sm"
                       onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                       disabled={currentPage === totalPages || totalPages === 0}
-                      className="border border-md border-slate-500"
+                      className="h-8 rounded-lg text-[11px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef]"
                     >
-                      Next
+                      NEXT
                     </Button>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
           {/* Detail Sidebar */}
           <div className={`transition-all duration-300 ${selectedParticipant ? "block lg:block col-span-3" : "hidden lg:hidden"}`}>
@@ -697,7 +701,7 @@ export function Participants() {
                         <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
                           QR Ticket Delivery
                         </div>
-                        <p className="mt-2 text-sm text-slate-500">
+                        <p className="mt-2 text-[12px] text-slate-500 pr-3">
                           Approval will generate a QR ticket and queue the delivery email automatically.
                         </p>
                       </div>
@@ -713,7 +717,7 @@ export function Participants() {
                     <div className="mt-4 space-y-3 text-sm text-slate-600">
                       <div className="flex items-start justify-between gap-3">
                         <span className="font-semibold text-slate-500">Ticket code</span>
-                        <span className="text-right font-mono text-[12px] text-slate-700 max-w-[160px] break-all">
+                        <span className="text-right font-mono text-[12px] text-slate-700 max-w-[108px] break-all">
                           {selectedParticipant.ticket?.qrCode ?? "Generated after approval"}
                         </span>
                       </div>
@@ -723,7 +727,7 @@ export function Participants() {
                       </div>
                       <div className="flex items-start justify-between gap-3">
                         <span className="font-semibold text-slate-500">Last issue</span>
-                        <span className="max-w-[160px] text-right">
+                        <span className="max-w-[108px] text-right text-[12px]">
                           {selectedParticipant.ticketDelivery?.failureReason ?? "No delivery issue recorded"}
                         </span>
                       </div>
