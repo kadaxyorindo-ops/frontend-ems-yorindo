@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -36,9 +36,11 @@ import {
   createEvent,
   updateEvent,
   getIndustries,
+  createIndustry,
   type Industry,
   type CreateEventBody,
 } from "@/services/eventService";
+import { ChevronsUpDown, Check } from "lucide-react";
 
 interface EventDialogProps {
   mode: "create" | "edit";
@@ -87,6 +89,25 @@ export function EventDialog({
   const [selectedStatus, setSelectedStatus] = useState<string>(
     defaultData?.status ?? "",
   );
+  const [addingIndustry, setAddingIndustry] = useState(false);
+  const [newIndustryName, setNewIndustryName] = useState("");
+  const [industryError, setIndustryError] = useState<string | null>(null);
+  const [industryOpen, setIndustryOpen] = useState(false);
+
+  const industryRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!industryOpen) return;
+    function handleClickOutside(e: MouseEvent) {
+      if (industryRef.current && !industryRef.current.contains(e.target as Node)) {
+        setIndustryOpen(false);
+        setNewIndustryName("");
+        setIndustryError(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [industryOpen]);
 
   useEffect(() => {
     if (!open) return;
@@ -94,6 +115,39 @@ export function EventDialog({
       if (result.data) setIndustries(result.data);
     });
   }, [open]);
+
+  const handleAddIndustry = async () => {
+    const trimmed = newIndustryName.trim();
+    if (!trimmed) return;
+
+    // Client-side similarity check before hitting the API.
+    const normalized = trimmed.toLowerCase();
+    const similar = industries.find(
+      (i) =>
+        i.name.toLowerCase() === normalized ||
+        i.name.toLowerCase().includes(normalized) ||
+        normalized.includes(i.name.toLowerCase()),
+    );
+    if (similar) {
+      setIndustryError(`Too similar to existing industry: "${similar.name}"`);
+      return;
+    }
+
+    const result = await createIndustry(trimmed);
+    if (result.error) {
+      setIndustryError(result.error);
+      return;
+    }
+
+    const created = result.data!;
+    setIndustries((prev) =>
+      [...prev, created].sort((a, b) => a.name.localeCompare(b.name)),
+    );
+    setSelectedIndustry(created);
+    setAddingIndustry(false);
+    setNewIndustryName("");
+    setIndustryError(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -282,7 +336,11 @@ export function EventDialog({
 
             {/* Dropdown Row: Status & Industry */}
             <div className="grid grid-cols-2 gap-3">
-              <FieldRow icon={<Tag className="w-3.5 h-3.5" />} label="Status" required>
+              <FieldRow
+                icon={<Tag className="w-3.5 h-3.5" />}
+                label="Status"
+                required
+              >
                 <Select
                   name="eventStatus"
                   value={selectedStatus}
@@ -361,26 +419,101 @@ export function EventDialog({
                 label="Industry"
                 required
               >
-                <Select
-                  name="eventIndustry"
-                  required
-                  value={selectedIndustry?._id ?? ""}
-                  onValueChange={(val) => {
-                    const found = industries.find((i) => i._id === val) ?? null;
-                    setSelectedIndustry(found);
-                  }}
-                >
-                  <SelectTrigger className="w-full h-10! flex items-center rounded-lg border-slate-200 bg-slate-50 text-sm focus:ring-1 focus:ring-[#1a3fa8]/40">
-                    <SelectValue placeholder="Select industry" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {industries.map((industry) => (
-                      <SelectItem key={industry._id} value={industry._id}>
-                        {industry.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="relative" ref={industryRef}>
+                  {/* Trigger */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIndustryOpen((v) => !v);
+                      setIndustryError(null);
+                    }}
+                    className="w-full h-10 flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 focus:outline-none focus:ring-1 focus:ring-[#1a3fa8]/40"
+                  >
+                    <span className={selectedIndustry ? "" : "text-slate-400"}>
+                      {selectedIndustry?.name ?? "Select industry"}
+                    </span>
+                    <ChevronsUpDown className="w-4 h-4 text-slate-400 shrink-0" />
+                  </button>
+
+                  {/* Inline dropdown */}
+                  {industryOpen && (
+                    <div className="absolute z-10 bottom-full mb-1 w-full rounded-lg border border-slate-200 bg-white shadow-md">
+                      {/* Search / add input */}
+                      <div className="p-2 border-b border-slate-100">
+                        <Input
+                          autoFocus
+                          placeholder="Search or type new industry..."
+                          value={newIndustryName}
+                          onChange={(e) => {
+                            setNewIndustryName(e.target.value);
+                            setIndustryError(null);
+                          }}
+                          onKeyDown={(e) => {
+                            e.stopPropagation();
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              void handleAddIndustry();
+                            }
+                            if (e.key === "Escape") {
+                              setIndustryOpen(false);
+                              setNewIndustryName("");
+                            }
+                          }}
+                          className="h-8 text-sm rounded-lg border-slate-200"
+                        />
+                        {industryError && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {industryError}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* List */}
+                      <ul className="max-h-44 overflow-y-auto py-1">
+                        {industries
+                          .filter(
+                            (i) =>
+                              newIndustryName.trim() === "" ||
+                              i.name
+                                .toLowerCase()
+                                .includes(newIndustryName.toLowerCase()),
+                          )
+                          .map((industry) => (
+                            <li
+                              key={industry._id}
+                              onClick={() => {
+                                setSelectedIndustry(industry);
+                                setIndustryOpen(false);
+                                setNewIndustryName("");
+                                setIndustryError(null);
+                              }}
+                              className="flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-slate-50"
+                            >
+                              <Check
+                                className={`w-4 h-4 shrink-0 ${selectedIndustry?._id === industry._id ? "text-[#1a3fa8]" : "opacity-0"}`}
+                              />
+                              {industry.name}
+                            </li>
+                          ))}
+                        {/* No match — show Add button */}
+                        {newIndustryName.trim() !== "" &&
+                          !industries.some(
+                            (i) =>
+                              i.name.toLowerCase() ===
+                              newIndustryName.toLowerCase(),
+                          ) && (
+                            <li
+                              onClick={() => void handleAddIndustry()}
+                              className="flex items-center gap-2 px-3 py-1.5 text-sm cursor-pointer hover:bg-slate-50 text-[#1a3fa8] font-semibold"
+                            >
+                              <Plus className="w-4 h-4 shrink-0" />
+                              Add "{newIndustryName.trim()}"
+                            </li>
+                          )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </FieldRow>
             </div>
 

@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { LoaderCircle, MoreHorizontal, Search, UserPlus, Users2 } from "lucide-react";
+import {
+  LoaderCircle,
+  MoreHorizontal,
+  Search,
+  UserPlus,
+  Users2,
+  Pencil,
+  PowerOff,
+  Trash2,
+} from "lucide-react";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +32,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { UserFormModal } from "./UserFormModal";
 import {
@@ -35,28 +45,32 @@ import {
 import { ROLE_LABELS, ROLE_COLORS } from "@/lib/roles";
 
 export function Users() {
-  const [users, setUsers]               = useState<User[]>([]);
-  const [isLoading, setIsLoading]       = useState(true);
-  const [search, setSearch]             = useState("");
-  const [roleFilter, setRoleFilter]     = useState("");
-  const [page, setPage]                 = useState(1);
-  const [totalPages, setTotalPages]     = useState(1);
-  const [total, setTotal]               = useState(0);
-  const [isModalOpen, setIsModalOpen]   = useState(false);
-  const [editingUser, setEditingUser]   = useState<User | undefined>(undefined);
-  const [togglingId, setTogglingId]     = useState<string | null>(null);
-  const [deletingId, setDeletingId]     = useState<string | null>(null);
-  const [deleteError, setDeleteError]   = useState<string | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | undefined>(undefined);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchUsers = async (opts?: { page?: number; search?: string; role?: string }) => {
+  const fetchUsers = async (opts?: {
+    page?: number;
+    search?: string;
+    role?: string;
+  }) => {
     setIsLoading(true);
     const result = await getUsers({
-      page:   opts?.page   ?? page,
-      limit:  20,
+      page: opts?.page ?? page,
+      limit: 20,
       search: (opts?.search ?? search) || undefined,
-      role:   (opts?.role   ?? roleFilter) || undefined,
+      role: (opts?.role ?? roleFilter) || undefined,
     });
     if (result.data) {
       setUsers(result.data.items);
@@ -127,13 +141,11 @@ export function Users() {
 
   const limit = 20;
   const startItem = (page - 1) * limit + 1;
-  const endItem   = Math.min(page * limit, total);
-
+  const endItem = Math.min(page * limit, total);
 
   return (
     <DashboardLayout>
       <div className="space-y-8">
-
         {/* Header */}
         <div className="flex flex-col gap-4 border-b border-dashed border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2">
@@ -144,7 +156,8 @@ export function Users() {
               Users
             </h1>
             <p className="max-w-2xl text-sm leading-6 text-slate-500">
-              Manage who can access the EMS dashboard and control their role-based permissions.
+              Manage who can access the EMS dashboard and control their
+              role-based permissions.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -168,13 +181,14 @@ export function Users() {
 
         {/* Main section card */}
         <section className="rounded-[28px] border border-slate-200 bg-white p-5 sm:p-6">
-
           {/* Filters bar */}
           <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
             {/* Role dropdown */}
             <Select
               value={roleFilter || "all"}
-              onValueChange={(value) => handleRoleChange(value === "all" ? "" : value)}
+              onValueChange={(value) =>
+                handleRoleChange(value === "all" ? "" : value)
+              }
             >
               <SelectTrigger className="h-11 w-52 bg-white border-slate-200 rounded-xl focus:ring-1 focus:ring-indigo-400">
                 <SelectValue placeholder="Filter by role" />
@@ -215,7 +229,9 @@ export function Users() {
                   <TableHead className="px-4">Role</TableHead>
                   <TableHead className="px-4">Status</TableHead>
                   <TableHead className="px-4">Last Login</TableHead>
-                  <TableHead className="w-[80px] px-6 text-right">Actions</TableHead>
+                  <TableHead className="w-[80px] px-6 text-right">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -223,7 +239,10 @@ export function Users() {
                   <TableRow className="hover:bg-white">
                     <TableCell colSpan={6} className="h-48 text-center">
                       <div className="flex items-center justify-center gap-3 text-sm text-slate-500">
-                        <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        <LoaderCircle
+                          className="h-4 w-4 animate-spin"
+                          aria-hidden="true"
+                        />
                         Loading users…
                       </div>
                     </TableCell>
@@ -251,52 +270,88 @@ export function Users() {
                           </span>
                         )}
                       </TableCell>
-                      <TableCell className="px-4 text-slate-500 text-sm">{user.email}</TableCell>
+                      <TableCell className="px-4 text-slate-500 text-sm">
+                        {user.email}
+                      </TableCell>
                       <TableCell className="px-4">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${ROLE_COLORS[user.role] ?? "bg-slate-100 text-slate-600"}`}>
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${ROLE_COLORS[user.role] ?? "bg-slate-100 text-slate-600"}`}
+                        >
                           {ROLE_LABELS[user.role] ?? user.role}
                         </span>
                       </TableCell>
                       <TableCell className="px-4">
                         <span className="inline-flex items-center gap-1.5 text-sm">
-                          <span className={`w-2 h-2 rounded-full ${user.isActive ? "bg-emerald-500" : "bg-slate-300"}`} />
-                          <span className={user.isActive ? "text-emerald-700" : "text-slate-400"}>
+                          <span
+                            className={`w-2 h-2 rounded-full ${user.isActive ? "bg-emerald-500" : "bg-slate-300"}`}
+                          />
+                          <span
+                            className={
+                              user.isActive
+                                ? "text-emerald-700"
+                                : "text-slate-400"
+                            }
+                          >
                             {user.isActive ? "Active" : "Inactive"}
                           </span>
                         </span>
                       </TableCell>
                       <TableCell className="px-4 text-slate-400 text-sm">
-                        {user.lastLoginAt
-                          ? new Date(user.lastLoginAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
-                          : <span className="italic">Never</span>}
+                        {user.lastLoginAt ? (
+                          new Date(user.lastLoginAt).toLocaleDateString(
+                            "en-GB",
+                            { day: "numeric", month: "short", year: "numeric" },
+                          )
+                        ) : (
+                          <span className="italic">Never</span>
+                        )}
                       </TableCell>
                       <TableCell className="px-6 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-slate-600">
+                            <Button
+                              variant="ghost"
+                              className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-slate-600"
+                            >
                               <span className="sr-only">Open menu</span>
                               <MoreHorizontal className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="rounded-xl shadow-xl border-slate-100 w-44">
+                          <DropdownMenuContent
+                            align="end"
+                            className="rounded-xl shadow-xl border-slate-100 w-52 p-1.5"
+                          >
+                            <div className="px-2 py-1 mb-1">
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                Select Action
+                              </p>
+                            </div>
+
                             <DropdownMenuItem
-                              className="cursor-pointer"
+                              className="font-medium cursor-pointer rounded-lg gap-2 text-slate-600"
                               onClick={() => handleOpenEdit(user)}
                             >
+                              <Pencil className="w-4 h-4 text-slate-400" />
                               Edit User
                             </DropdownMenuItem>
+
                             <DropdownMenuItem
-                              className="cursor-pointer"
+                              className="font-medium cursor-pointer rounded-lg gap-2 text-slate-600"
                               disabled={togglingId === user._id}
                               onClick={() => handleToggleActive(user)}
                             >
+                              <PowerOff className="w-4 h-4 text-slate-400" />
                               {user.isActive ? "Deactivate" : "Activate"}
                             </DropdownMenuItem>
+
+                            <DropdownMenuSeparator className="my-1.5 bg-slate-100" />
+
                             <DropdownMenuItem
-                              className="cursor-pointer text-rose-600 focus:text-rose-600"
+                              className="font-medium cursor-pointer rounded-lg gap-2 text-red-500 focus:text-red-600 focus:bg-red-50"
                               disabled={deletingId === user._id}
                               onClick={() => handleDelete(user)}
                             >
+                              <Trash2 className="w-4 h-4" />
                               Delete User
                             </DropdownMenuItem>
                           </DropdownMenuContent>
