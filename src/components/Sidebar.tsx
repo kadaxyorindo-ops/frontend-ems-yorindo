@@ -62,7 +62,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 to="/communication"
                 onClick={onClose}
                 className={`h-12 font-semibold flex items-center px-4 font-mono text-sm transition-colors ${
-                  isActive('/communication')
+                  location.pathname === '/communication'
                     ? 'bg-[#eaedff] border-slate-400 text-[#002a85]'
                     : 'text-slate-600 hover:bg-[#eaedff] hover:translate-x-1'
                 }`}

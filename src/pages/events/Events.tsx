@@ -37,6 +37,7 @@ import {
   QrCode,
   Trash2,
   UserCog,
+  ScanLine,
 } from "lucide-react";
 import {
   getEvents,
@@ -53,6 +54,15 @@ const statusStyles: Record<string, string> = {
   registration: "bg-yellow-50 text-yellow-600 border-yellow-200",
   draft: "bg-slate-50 text-slate-400 border-slate-200",
   cancelled: "bg-red-50 text-red-600 border-red-200",
+};
+
+const dotStyles: Record<string, string> = {
+  ongoing: "bg-emerald-400",
+  done: "bg-slate-400",
+  upcoming: "bg-blue-400",
+  registration: "bg-yellow-400",
+  draft: "bg-slate-300",
+  cancelled: "bg-red-400",
 };
 
 const calculateDaysToEvent = (
@@ -114,7 +124,7 @@ export function Events() {
         <header className="flex flex-col p-4 md:px-10 md:pt-8 md:flex-row md:items-end justify-between">
           <div className="flex flex-col justify-between items-start mb-6 gap-3">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[#001a4e]">
-              Events
+              Event Management
             </h1>
           </div>
 
@@ -244,7 +254,6 @@ export function Events() {
                   return (
                     <TableRow
                       key={event._id}
-                      className="hover:bg-slate-50/40 transition-colors border-slate-100"
                     >
                       <TableCell className="py-5 pl-6">
                         <div className="font-bold text-[#001a4e] text-sm mb-1.5">
@@ -299,14 +308,14 @@ export function Events() {
                           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${statusStyles[event.status]}`}
                         >
                           <span
-                            className={`w-1 h-1 rounded-full ${event.status === "ongoing" ? "bg-emerald-400" : "bg-blue-400"}`}
+                            className={`w-1 h-1 rounded-full ${dotStyles[event.status] ?? "bg-slate-300"}`}
                           />
                           {event.status.toUpperCase()}
                         </span>
                       </TableCell>
 
                       <TableCell className="pr-6 text-right">
-                        {/* WRAPPER UNTUK ACTIONS */}
+                        {/* WRAPPER FOR ACTIONS */}
                         <AlertDialog>
                           <DropdownMenu
                             open={openMenuId === event._id}
@@ -317,6 +326,7 @@ export function Events() {
                             <DropdownMenuTrigger asChild>
                               <Button
                                 variant="ghost"
+                                disabled={event.status === "cancelled"}
                                 className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-slate-600"
                               >
                                 <MoreHorizontal className="w-4 h-4" />
@@ -424,7 +434,7 @@ export function Events() {
 
             {/* PAGINATION */}
             <div className="flex flex-col md:flex-row items-center justify-between px-6 py-4 bg-slate-50/30 border-t border-slate-100 gap-4">
-              <div className="text-[11px] font-medium text-slate-400">
+              <div className="text-[13px] font-medium text-slate-400">
                 Showing{" "}
                 <span className="text-[#001a4e] font-bold">
                   {total > 0 ? (currentPage - 1) * LIMIT + 1 : 0}
@@ -438,7 +448,7 @@ export function Events() {
               </div>
 
               <div className="flex items-center gap-4">
-                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">
                   Page {currentPage} of {totalPages || 1}
                 </div>
                 <div className="flex gap-2">
@@ -449,7 +459,7 @@ export function Events() {
                       setCurrentPage((prev) => Math.max(prev - 1, 1))
                     }
                     disabled={currentPage === 1}
-                    className="h-8 rounded-lg text-[10px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef]"
+                    className="h-8 rounded-lg text-[11px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef]"
                   >
                     PREVIOUS
                   </Button>
@@ -460,7 +470,7 @@ export function Events() {
                       setCurrentPage((prev) => Math.min(prev + 1, totalPages))
                     }
                     disabled={currentPage === totalPages || totalPages === 0}
-                    className="h-8 rounded-lg text-[10px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef]"
+                    className="h-8 rounded-lg text-[11px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef]"
                   >
                     NEXT
                   </Button>

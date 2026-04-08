@@ -56,7 +56,14 @@ interface EventDialogProps {
   onSuccess?: () => void;
 }
 
-const VALID_STATUSES = ["draft", "upcoming", "registration", "ongoing", "done", "cancelled"]; 
+const VALID_STATUSES = [
+  "draft",
+  "upcoming",
+  "registration",
+  "ongoing",
+  "done",
+  "cancelled",
+];
 
 export function EventDialog({
   mode,
@@ -104,7 +111,9 @@ export function EventDialog({
           description: (formData.get("eventDescription") as string) || null,
           location: (formData.get("eventLocation") as string) || null,
           eventDate,
-          status: VALID_STATUSES.includes(selectedStatus) ? selectedStatus : undefined,
+          status: VALID_STATUSES.includes(selectedStatus)
+            ? selectedStatus
+            : undefined,
           industry: selectedIndustry
             ? {
                 refId: selectedIndustry._id,
@@ -144,14 +153,24 @@ export function EventDialog({
     }
   };
 
+  const STATUS_TRANSITIONS: Record<string, string[]> = {
+    draft: ["draft", "upcoming", "cancelled"],
+    upcoming: ["upcoming", "registration", "cancelled"],
+    registration: ["registration", "ongoing"],
+    ongoing: ["ongoing", "done"],
+    done: ["done"],
+    cancelled: ["cancelled"],
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         {isEdit ? (
-          <button 
+          <button
             type="button"
             onClick={onOpen}
-            className=" flex items-center gap-2 w-full text-left px-2 py-1.5 font-medium hover:bg-slate-100 rounded-sm cursor-pointer">
+            className=" flex items-center gap-2 w-full text-left px-2 py-1.5 font-medium hover:bg-slate-100 rounded-sm cursor-pointer"
+          >
             <SquarePen className="w-4 h-4" />
             Edit Event
           </button>
@@ -215,12 +234,13 @@ export function EventDialog({
             <FieldRow
               icon={<MapPin className="w-3.5 h-3.5" />}
               label="Location"
+              required
             >
               <Input
                 id="event-location"
                 name="eventLocation"
                 defaultValue={defaultData?.location}
-                placeholder="Enter event location"
+                placeholder="Location, City"
                 required
                 onKeyDown={(e) => e.stopPropagation()}
                 className="h-9 rounded-lg border-slate-200 bg-slate-50 placeholder:text-slate-300 text-sm text-slate-700 focus-visible:ring-1 focus-visible:ring-[#1a3fa8]/40 focus-visible:border-[#1a3fa8]/50"
@@ -232,6 +252,7 @@ export function EventDialog({
               <FieldRow
                 icon={<CalendarDays className="w-3.5 h-3.5" />}
                 label="Date"
+                required
               >
                 <Input
                   id="event-date"
@@ -239,76 +260,98 @@ export function EventDialog({
                   type="date"
                   defaultValue={defaultData?.date}
                   required
-                  className="h-9 rounded-lg border-slate-200 bg-slate-50 text-sm text-slate-700 focus-visible:ring-1 focus-visible:ring-[#1a3fa8]/40 focus-visible:border-[#1a3fa8]/50"
+                  className="h-10! leading-none py-0 rounded-lg border-slate-200 bg-slate-50 text-sm text-slate-700 focus-visible:ring-1 focus-visible:ring-[#1a3fa8]/40 focus-visible:border-[#1a3fa8]/50"
                 />
               </FieldRow>
 
-              <FieldRow icon={<Clock className="w-3.5 h-3.5" />} label="Time">
+              <FieldRow
+                icon={<Clock className="w-3.5 h-3.5" />}
+                label="Time"
+                required
+              >
                 <Input
                   id="event-time"
                   name="eventTime"
                   type="time"
                   defaultValue={defaultData?.time}
                   required
-                  className="h-9 rounded-lg border-slate-200 bg-slate-50 text-sm text-slate-700 focus-visible:ring-1 focus-visible:ring-[#1a3fa8]/40 focus-visible:border-[#1a3fa8]/50"
+                  className="h-10! leading-none py-0 rounded-lg border-slate-200 bg-slate-50 text-sm text-slate-700 focus-visible:ring-1 focus-visible:ring-[#1a3fa8]/40 focus-visible:border-[#1a3fa8]/50"
                 />
               </FieldRow>
             </div>
 
             {/* Dropdown Row: Status & Industry */}
             <div className="grid grid-cols-2 gap-3">
-              <FieldRow icon={<Tag className="w-3.5 h-3.5" />} label="Status">
+              <FieldRow icon={<Tag className="w-3.5 h-3.5" />} label="Status" required>
                 <Select
                   name="eventStatus"
                   value={selectedStatus}
                   onValueChange={setSelectedStatus}
                   required
                 >
-                  <SelectTrigger className="w-full h-9 rounded-lg border-slate-200 bg-slate-50 text-sm foucs:ring-1 focus:ring-[#1a3fa8]/40">
+                  <SelectTrigger className="w-full h-10! flex items-center rounded-lg border-slate-200 bg-slate-50 text-sm foucs:ring-1 focus:ring-[#1a3fa8]/40">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem
-                      value="draft"
-                      className="bg-slate-50 text-slate-900 border-slate-200"
-                    >
-                      Draft
-                    </SelectItem>
+                    {(() => {
+                      const currentStatus = defaultData?.status || "draft";
+                      const allowedStatuses = STATUS_TRANSITIONS[
+                        currentStatus
+                      ] || ["draft"];
 
-                    <SelectItem
-                      value="upcoming"
-                      className="bg-blue-50 text-blue-600 border-blue-200"
-                    >
-                      Upcoming
-                    </SelectItem>
-
-                    <SelectItem
-                      value="registration"
-                      className="bg-yellow-50 text-yellow-600 border-yellow-200"
-                    >
-                      Registration
-                    </SelectItem>
-
-                    <SelectItem
-                      value="ongoing"
-                      className="bg-emerald-50 text-emerald-600 border-emerald-200"
-                    >
-                      Ongoing
-                    </SelectItem>
-
-                    <SelectItem
-                      value="done"
-                      className="bg-slate-100 text-slate-700 border-slate-200"
-                    >
-                      Done
-                    </SelectItem>
-
-                    <SelectItem
-                      value="cancelled"
-                      className="bg-red-50 text-red-600 border-red-200"
-                    >
-                      Cancelled
-                    </SelectItem>
+                      return (
+                        <>
+                          {allowedStatuses.includes("draft") && (
+                            <SelectItem
+                              value="draft"
+                              className="bg-slate-50 text-slate-900 border-slate-200"
+                            >
+                              Draft
+                            </SelectItem>
+                          )}
+                          {allowedStatuses.includes("upcoming") && (
+                            <SelectItem
+                              value="upcoming"
+                              className="bg-blue-50 text-blue-600 border-blue-200"
+                            >
+                              Upcoming
+                            </SelectItem>
+                          )}
+                          {allowedStatuses.includes("registration") && (
+                            <SelectItem
+                              value="registration"
+                              className="bg-yellow-50 text-yellow-600 border-yellow-200"
+                            >
+                              Registration
+                            </SelectItem>
+                          )}
+                          {allowedStatuses.includes("ongoing") && (
+                            <SelectItem
+                              value="ongoing"
+                              className="bg-emerald-50 text-emerald-600 border-emerald-200"
+                            >
+                              Ongoing
+                            </SelectItem>
+                          )}
+                          {allowedStatuses.includes("done") && (
+                            <SelectItem
+                              value="done"
+                              className="bg-slate-100 text-slate-700 border-slate-200"
+                            >
+                              Done
+                            </SelectItem>
+                          )}
+                          {allowedStatuses.includes("cancelled") && (
+                            <SelectItem
+                              value="cancelled"
+                              className="bg-red-50 text-red-600 border-red-200"
+                            >
+                              Cancelled
+                            </SelectItem>
+                          )}
+                        </>
+                      );
+                    })()}
                   </SelectContent>
                 </Select>
               </FieldRow>
@@ -316,6 +359,7 @@ export function EventDialog({
               <FieldRow
                 icon={<Briefcase className="w-3.5 h-3.5" />}
                 label="Industry"
+                required
               >
                 <Select
                   name="eventIndustry"
@@ -326,7 +370,7 @@ export function EventDialog({
                     setSelectedIndustry(found);
                   }}
                 >
-                  <SelectTrigger className="w-full h-9 rounded-lg border-slate-200 bg-slate-50 text-sm focus:ring-1 focus:ring-[#1a3fa8]/40">
+                  <SelectTrigger className="w-full h-10! flex items-center rounded-lg border-slate-200 bg-slate-50 text-sm focus:ring-1 focus:ring-[#1a3fa8]/40">
                     <SelectValue placeholder="Select industry" />
                   </SelectTrigger>
                   <SelectContent>
@@ -350,7 +394,6 @@ export function EventDialog({
                 name="eventDescription"
                 defaultValue={defaultData?.description}
                 placeholder="Enter event description"
-                required
                 onKeyDown={(e) => e.stopPropagation()}
                 className="min-h-[88px] rounded-lg border-slate-200 bg-slate-50 placeholder:text-slate-300 text-sm text-slate-700 focus-visible:ring-1 focus-visible:ring-[#1a3fa8]/40 focus-visible:border-[#1a3fa8]/50 resize-none p-3"
               />

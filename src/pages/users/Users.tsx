@@ -33,6 +33,29 @@ import {
   type User,
 } from "@/services/userService";
 import { ROLE_LABELS, ROLE_COLORS } from "@/lib/roles";
+import { MoreHorizontal, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const ROLE_LABELS: Record<string, string> = {
+  super_admin:            "Super Admin",
+  event_operator:         "Event Operator",
+  communication_operator: "Communication Operator",
+  survey_analyst:         "Survey Analyst",
+};
+
+const ROLE_COLORS: Record<string, string> = {
+  super_admin:            "bg-violet-100 text-violet-700",
+  event_operator:         "bg-blue-100 text-blue-700",
+  communication_operator: "bg-amber-100 text-amber-700",
+  survey_analyst:         "bg-emerald-100 text-emerald-700",
+};
 
 export function Users() {
   const [users, setUsers]               = useState<User[]>([]);
@@ -319,20 +342,20 @@ export function Users() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-dashed"
-                  disabled={page <= 1}
                   onClick={() => handlePageChange(page - 1)}
+                  disabled={page <= 1}
+                  className="h-8 rounded-lg text-[11px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef]"
                 >
-                  ← Prev
+                  PREVIOUS
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-dashed"
-                  disabled={page >= totalPages}
                   onClick={() => handlePageChange(page + 1)}
+                  disabled={page >= totalPages}
+                  className="h-8 rounded-lg text-[11px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef]"
                 >
-                  Next →
+                  NEXT
                 </Button>
               </div>
             </div>
