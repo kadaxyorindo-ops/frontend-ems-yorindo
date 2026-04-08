@@ -35,13 +35,22 @@ const STATUS_OPTIONS: { label: string; value: RegistrationStatus }[] = [
 
 const getStatusStyles = (status: string) => {
   switch (status) {
-    case "approved":   return "bg-emerald-50 text-emerald-600 border-emerald-200 w-[90px]";
-    case "pending":    return "bg-yellow-50 text-yellow-600 border-yellow-200 w-[90px]";
-    case "rejected":   return "bg-red-50 text-red-600 border-red-200 w-[90px]";
-    case "checked_in": return "bg-blue-50 text-blue-600 border-blue-200 w-[90px]";
-    default:           return "bg-slate-50 text-slate-700 border-slate-200 w-[90px]";
+    case "approved":   return "bg-emerald-50 text-emerald-600 border-emerald-200 w-[100px]";
+    case "pending":    return "bg-yellow-50 text-yellow-600 border-yellow-200 w-[100px]";
+    case "rejected":   return "bg-red-50 text-red-600 border-red-200 w-[100px]";
+    case "checked_in": return "bg-blue-50 text-blue-600 border-blue-200 w-[100px]";
+    default:           return "bg-slate-50 text-slate-700 border-slate-200 w-[100px]";
   }
 };
+
+const dotStyles: Record<string, string> = {
+  approved: "bg-emerald-600",
+  checked_in: "bg-blue-600",
+  pending: "bg-yellow-600",
+  rejected: "bg-red-600",
+};
+
+
 
 const formatStatus = (status: string) =>
   status === "checked_in" ? "Checked In" : status.charAt(0).toUpperCase() + status.slice(1);
@@ -555,6 +564,7 @@ export function Participants() {
                             </TableCell>
                             <TableCell className="text-center">
                               <span className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${getStatusStyles(item.status)}`}>
+                                <span className={`w-1 h-1 rounded-full ${dotStyles[item.status]} ?? "bg-slate-300"`}/>
                                 {formatStatus(item.status).toUpperCase()}
                               </span>
                             </TableCell>
