@@ -6,6 +6,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
+import { ROLE_LABELS } from "@/lib/roles";
 
 interface TopbarProps {
   onToggleSidebar: () => void;
@@ -20,7 +21,7 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
     navigate("/", { replace: true });
   };
 
-  // const userInitial = user?.name.trim().charAt(0).toUpperCase() ?? "U";
+  const userInitial = user?.name.trim().charAt(0).toUpperCase() ?? "U";
 
   return (
     <header className="h-20 bg-[#faf8ff]/10 shadow-sm backdrop-blur-xl px-4 md:px-8 flex items-center justify-between sticky top-0 z-30">
@@ -41,22 +42,20 @@ export function Topbar({ onToggleSidebar }: TopbarProps) {
             {user?.name ?? "User"}
           </p>
           <p className="text-xs font-mono text-slate-400">
-            {user?.organizationName ?? user?.role ?? "EMS Staff"}
+            {user?.role ? (ROLE_LABELS[user.role] ?? "EMS Staff") : "EMS Staff"}
           </p>
         </div>
-        <div className="w-8 h-8 hidden sm:flex rounded-full border border-dashed border-slate-300 items-center justify-center text-slate-400 font-mono text-xs cursor-help">?</div>
-        
         <DropdownMenu>
           <DropdownMenuTrigger className="outline-none">
-            <div className="w-10 h-10 rounded-full bg-background border border-slate-200 flex items-center justify-center text-slate-500 font-mono text-xs hover:bg-[#eaedff] transition-colors cursor-pointer">
-              U
+            <div className="w-10 h-10 rounded-full bg-[#1a40a8] flex items-center justify-center text-white font-semibold text-sm hover:bg-[#162454] transition-colors cursor-pointer select-none">
+              {userInitial}
             </div>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 bg-background">
-            <DropdownMenuItem className="cursor-pointer">
-              {user?.email ?? "Profile"}
+          <DropdownMenuContent align="end" className="w-48 bg-background rounded-xl shadow-xl border-slate-100">
+            <DropdownMenuItem className="cursor-default select-text text-slate-500 text-xs focus:bg-transparent">
+              {user?.email ?? ""}
             </DropdownMenuItem>
-            <DropdownMenuItem 
+            <DropdownMenuItem
               onClick={handleLogout}
               className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
             >

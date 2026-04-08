@@ -6,8 +6,12 @@ import { Users } from "@/pages/users/Users";
 import { Communication } from "@/pages/communication/Communication";
 import { CampaignHistory } from "@/pages/communication/CampaignHistory";
 import { Settings } from "@/pages/settings/Settings";
+import { Surveys } from "@/pages/surveys/Surveys";
 import { NotFound } from "@/pages/NotFound";
+import { Forbidden } from "@/pages/Forbidden";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermission } from "@/hooks/usePermission";
+import { getHomePage } from "@/lib/auth";
 import { Participants } from "@/pages/participant/Participants";
 import { EventCheckInDesk } from "@/pages/checkin/EventCheckInDesk";
 
@@ -38,6 +42,36 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * Route guard that checks both authentication and a feature permission.
+ * Renders a 403 Forbidden page in place if the user lacks the permission —
+ * the URL does not change, and no redirect loop is possible.
+ */
+function PermissionRoute({
+  permission,
+  children,
+}: {
+  permission: string;
+  children: ReactNode;
+}) {
+  const { isAuthenticated, isInitializing } = useAuth();
+  const hasPermission = usePermission(permission);
+
+  if (isInitializing) {
+    return <FullPageStatus label="Loading..." />;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (!hasPermission) {
+    return <Forbidden />;
+  }
+
+  return <>{children}</>;
+}
+
 function SuperAdminRoute({ children }: { children: ReactNode }) {
   const { user, isAuthenticated, isInitializing } = useAuth();
 
@@ -50,21 +84,21 @@ function SuperAdminRoute({ children }: { children: ReactNode }) {
   }
 
   if (user?.role !== "super_admin") {
-    return <Navigate to="/events" replace />;
+    return <Forbidden />;
   }
 
   return <>{children}</>;
 }
 
 function GuestRoute({ children }: { children: ReactNode }) {
-  const { isAuthenticated, isInitializing } = useAuth();
+  const { user, isAuthenticated, isInitializing } = useAuth();
 
   if (isInitializing) {
     return <FullPageStatus label="Preparing login page..." />;
   }
 
-  if (isAuthenticated) {
-    return <Navigate to="/events" replace />;
+  if (isAuthenticated && user) {
+    return <Navigate to={getHomePage(user)} replace />;
   }
 
   return <>{children}</>;
@@ -85,9 +119,9 @@ function App() {
         <Route
           path="/events"
           element={
-            <ProtectedRoute>
+            <PermissionRoute permission="events:view">
               <Events />
-            </ProtectedRoute>
+            </PermissionRoute>
           }
         />
         <Route
@@ -101,33 +135,41 @@ function App() {
         <Route
           path="/communication"
           element={
-            <ProtectedRoute>
+            <PermissionRoute permission="communication:view">
               <Communication />
-            </ProtectedRoute>
+            </PermissionRoute>
           }
         />
         <Route
           path="/communication/history"
           element={
-            <ProtectedRoute>
+            <PermissionRoute permission="communication:view">
               <CampaignHistory />
-            </ProtectedRoute>
+            </PermissionRoute>
+          }
+        />
+        <Route
+          path="/surveys"
+          element={
+            <PermissionRoute permission="surveys:view">
+              <Surveys />
+            </PermissionRoute>
           }
         />
         <Route
           path="/participants"
           element={
-            <ProtectedRoute>
+            <PermissionRoute permission="registrations:view">
               <Participants />
-            </ProtectedRoute>
+            </PermissionRoute>
           }
         />
         <Route
           path="/events/:eventId/check-in"
           element={
-            <ProtectedRoute>
+            <PermissionRoute permission="registrations:checkin">
               <EventCheckInDesk />
-            </ProtectedRoute>
+            </PermissionRoute>
           }
         />
         <Route

@@ -2,6 +2,7 @@ import { startTransition, useEffect, useState } from "react";
 import { AuthLayout } from "@/layouts/AuthLayout";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { getHomePage } from "@/lib/auth";
 import { OtpInput } from "@/components/auth/OtpInput";
 
 const EMPTY_OTP = ["", "", "", "", "", ""];
@@ -85,7 +86,7 @@ export function Login() {
     }
 
     startTransition(() => {
-      navigate("/events", { replace: true });
+      navigate(getHomePage(result.data!), { replace: true });
     });
   };
 

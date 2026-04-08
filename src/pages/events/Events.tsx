@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { usePermission } from "@/hooks/usePermission";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -33,6 +34,7 @@ import {
   CalendarClock,
   MapPin,
   MoreHorizontal,
+  QrCode,
   Trash2,
   UserCog,
 } from "lucide-react";
@@ -75,6 +77,12 @@ export function Events() {
   const tableRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const LIMIT = 5;
+
+  const canCreate = usePermission("events:create");
+  const canEdit = usePermission("events:edit");
+  const canDelete = usePermission("events:delete");
+  const canViewRegistrations = usePermission("registrations:view");
+  const canCheckIn = usePermission("registrations:checkin");
 
   useEffect(() => {
     void getEventStats().then((result) => {
@@ -126,7 +134,7 @@ export function Events() {
               placeholder="Search events..."
               className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#1a3fa8]/50 focus:ring-1 focus:ring-[#1a3fa8]/20 placeholder:text-slate-300"
             />
-            <EventDialog mode="create" onSuccess={refresh} />
+            {canCreate && <EventDialog mode="create" onSuccess={refresh} />}
           </div>
         </header>
 
@@ -318,65 +326,64 @@ export function Events() {
                               align="end"
                               className="rounded-xl shadow-xl border-slate-100 w-48"
                             >
-                              <DropdownMenuItem
-                                onSelect={(e) => e.preventDefault()}
-                                className="p-0"
-                              >
-                                <EventDialog
-                                  mode="edit"
-                                  eventId={event._id}
-                                  onSuccess={() => {
-                                    refresh();
-                                    setOpenMenuId(null);
-                                  }}
-                                  defaultData={{
-                                    name: event.title,
-                                    date: event.eventDate.split("T")[0] ?? "",
-                                    time: "10:00",
-                                    location: event.location ?? "",
-                                    description: event.description ?? "",
-                                    status: event.status,
-                                    industry: event.industry ?? {
-                                      refId: null,
-                                      name: null,
-                                    },
-                                  }}
-                                />
-                              </DropdownMenuItem>
-
-                              <DropdownMenuItem
-                                className="font-medium cursor-pointer"
-                                onSelect={() =>
-                                  navigate(`/participants?eventId=${event._id}&eventTitle=${encodeURIComponent(event.title)}`)
-                                }
-                              >
-                                Manage Participants
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="font-medium cursor-pointer"
-                                onSelect={() => navigate(`/events/${event._id}/check-in`)}
-                              >
-                                Open Check-In Desk
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="font-medium text-red-500 focus:text-red-600 cursor-pointer"
-                                onSelect={() =>
-                                  void handleDelete(event._id, event.title)
-                                }
-                              >
-                                <UserCog className="w-4 h-4" /> Manage
-                                Participants
-                              </DropdownMenuItem>
-
-                              {/* TRIGGER ALERT DIALOG DI DALAM MENU */}
-                              <AlertDialogTrigger asChild>
+                              {canEdit && (
                                 <DropdownMenuItem
-                                  variant="destructive"
-                                  className="font-medium text-red-500 focus:text-red-600 cursor-pointer gap-2"
+                                  onSelect={(e) => e.preventDefault()}
+                                  className="p-0"
                                 >
-                                  <Trash2 className="w-4 h-4" /> Delete Event
+                                  <EventDialog
+                                    mode="edit"
+                                    eventId={event._id}
+                                    onSuccess={() => {
+                                      refresh();
+                                      setOpenMenuId(null);
+                                    }}
+                                    defaultData={{
+                                      name: event.title,
+                                      date: event.eventDate.split("T")[0] ?? "",
+                                      time: "10:00",
+                                      location: event.location ?? "",
+                                      description: event.description ?? "",
+                                      status: event.status,
+                                      industry: event.industry ?? {
+                                        refId: null,
+                                        name: null,
+                                      },
+                                    }}
+                                  />
                                 </DropdownMenuItem>
-                              </AlertDialogTrigger>
+                              )}
+
+                              {canViewRegistrations && (
+                                <DropdownMenuItem
+                                  className="font-medium cursor-pointer"
+                                  onSelect={() =>
+                                    navigate(`/participants?eventId=${event._id}&eventTitle=${encodeURIComponent(event.title)}`)
+                                  }
+                                >
+                                  <UserCog className="w-4 h-4" /> Manage Participants
+                                </DropdownMenuItem>
+                              )}
+
+                              {canCheckIn && (
+                                <DropdownMenuItem
+                                  className="font-medium cursor-pointer"
+                                  onSelect={() => navigate(`/events/${event._id}/check-in`)}
+                                >
+                                  <QrCode className="w-4 h-4" /> Open Check-In Desk
+                                </DropdownMenuItem>
+                              )}
+
+                              {canDelete && (
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    className="font-medium text-red-500 focus:text-red-600 cursor-pointer gap-2"
+                                  >
+                                    <Trash2 className="w-4 h-4" /> Delete Event
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
 

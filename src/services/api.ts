@@ -6,6 +6,8 @@ export const apiPaths = {
   communications: `${API_V1_PREFIX}/communications`,
   events: `${API_V1_PREFIX}/events`,
   users: `${API_V1_PREFIX}/users`,
+  surveys: `${API_V1_PREFIX}/surveys`,
+  analytics: `${API_V1_PREFIX}/analytics`,
 } as const;
 
 export const AUTH_TOKEN_STORAGE_KEY = "ems_auth_token";

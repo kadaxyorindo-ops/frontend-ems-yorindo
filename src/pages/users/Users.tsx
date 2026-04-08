@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from "react";
+import { LoaderCircle, MoreHorizontal, Search, UserPlus, Users2 } from "lucide-react";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -20,22 +29,10 @@ import {
   getUsers,
   toggleUserActive,
   deleteUser,
+  SYSTEM_ROLES,
   type User,
 } from "@/services/userService";
-
-const ROLE_LABELS: Record<string, string> = {
-  super_admin:            "Super Admin",
-  event_operator:         "Event Operator",
-  communication_operator: "Communication Operator",
-  survey_analyst:         "Survey Analyst",
-};
-
-const ROLE_COLORS: Record<string, string> = {
-  super_admin:            "bg-violet-100 text-violet-700",
-  event_operator:         "bg-blue-100 text-blue-700",
-  communication_operator: "bg-amber-100 text-amber-700",
-  survey_analyst:         "bg-emerald-100 text-emerald-700",
-};
+import { ROLE_LABELS, ROLE_COLORS } from "@/lib/roles";
 
 export function Users() {
   const [users, setUsers]               = useState<User[]>([]);
@@ -132,186 +129,215 @@ export function Users() {
   const startItem = (page - 1) * limit + 1;
   const endItem   = Math.min(page * limit, total);
 
+
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-8">
 
         {/* Header */}
-        <div className="flex justify-between items-start pb-2 border-b border-dashed border-slate-200">
-          <div>
-            <h1 className="text-3xl font-bold">Users</h1>
-            <p className="text-gray-500">Manage who can access the EMS dashboard.</p>
+        <div className="flex flex-col gap-4 border-b border-dashed border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
+              System Administration
+            </p>
+            <h1 className="text-4xl font-bold tracking-tight text-[#001a4e]">
+              Users
+            </h1>
+            <p className="max-w-2xl text-sm leading-6 text-slate-500">
+              Manage who can access the EMS dashboard and control their role-based permissions.
+            </p>
           </div>
-          <Button
-            className="bg-[#1a40a8] hover:bg-blue-800"
-            onClick={handleOpenCreate}
-          >
-            + Invite User
-          </Button>
-        </div>
-
-        {/* Filters */}
-        <div className="flex gap-3">
-          <div className="relative flex-1 max-w-sm">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-              width="15" height="15" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button
+              size="lg"
+              className="h-11 px-5 bg-[#1a40a8] hover:bg-blue-800 text-white border border-sm border-[#002d7a]"
+              onClick={handleOpenCreate}
             >
-              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
-            </svg>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Search name or email..."
-              className="w-full h-10 rounded-lg border border-slate-200 bg-slate-50 pl-9 pr-4 text-sm outline-none transition focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-100"
-            />
+              <UserPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+              Invite User
+            </Button>
           </div>
-
-          <select
-            value={roleFilter}
-            onChange={(e) => handleRoleChange(e.target.value)}
-            className="h-10 rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-700 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100"
-          >
-            <option value="">All Roles</option>
-            <option value="super_admin">Super Admin</option>
-            <option value="event_operator">Event Operator</option>
-            <option value="communication_operator">Communication Operator</option>
-            <option value="survey_analyst">Survey Analyst</option>
-          </select>
         </div>
 
         {/* Delete error */}
         {deleteError && (
-          <div className="rounded-lg border border-dashed border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-600">
+          <div className="rounded-2xl border border-dashed border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-600">
             {deleteError}
           </div>
         )}
 
-        {/* Table */}
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader className="bg-slate-50">
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last Login</TableHead>
-                <TableHead className="w-[80px] text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    {Array.from({ length: 6 }).map((__, j) => (
-                      <TableCell key={j}>
-                        <div className="h-4 bg-slate-100 rounded animate-pulse" />
-                      </TableCell>
-                    ))}
-                  </TableRow>
-                ))
-              ) : users.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12 text-slate-400 font-mono text-sm">
-                    No users found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                users.map((user) => (
-                  <TableRow key={user._id}>
-                    <TableCell className="font-semibold text-slate-800">
-                      {user.name}
-                      {user.organizationName && (
-                        <span className="block text-xs font-normal text-slate-400">
-                          {user.organizationName}
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-slate-500 text-sm">{user.email}</TableCell>
-                    <TableCell>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${ROLE_COLORS[user.role] ?? "bg-slate-100 text-slate-600"}`}>
-                        {ROLE_LABELS[user.role] ?? user.role}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center gap-1.5 text-sm">
-                        <span className={`w-2 h-2 rounded-full ${user.isActive ? "bg-emerald-500" : "bg-slate-300"}`} />
-                        <span className={user.isActive ? "text-emerald-700" : "text-slate-400"}>
-                          {user.isActive ? "Active" : "Inactive"}
-                        </span>
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-slate-400 text-sm">
-                      {user.lastLoginAt
-                        ? new Date(user.lastLoginAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
-                        : <span className="italic">Never</span>}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <span className="text-xl font-bold pb-2">...</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            className="cursor-pointer"
-                            onClick={() => handleOpenEdit(user)}
-                          >
-                            Edit User
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="cursor-pointer"
-                            disabled={togglingId === user._id}
-                            onClick={() => handleToggleActive(user)}
-                          >
-                            {user.isActive ? "Deactivate" : "Activate"}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="cursor-pointer text-rose-600 focus:text-rose-600"
-                            disabled={deletingId === user._id}
-                            onClick={() => handleDelete(user)}
-                          >
-                            Delete User
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
+        {/* Main section card */}
+        <section className="rounded-[28px] border border-slate-200 bg-white p-5 sm:p-6">
 
-        {/* Pagination */}
-        {!isLoading && total > 0 && (
-          <div className="flex items-center justify-between text-sm text-slate-500">
-            <span>Showing {startItem}–{endItem} of {total} users</span>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                className="h-8 px-3 border border-dashed border-slate-300"
-                disabled={page <= 1}
-                onClick={() => handlePageChange(page - 1)}
-              >
-                ← Prev
-              </Button>
-              <Button
-                variant="ghost"
-                className="h-8 px-3 border border-dashed border-slate-300"
-                disabled={page >= totalPages}
-                onClick={() => handlePageChange(page + 1)}
-              >
-                Next →
-              </Button>
+          {/* Filters bar */}
+          <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-center sm:justify-between">
+            {/* Role dropdown */}
+            <Select
+              value={roleFilter || "all"}
+              onValueChange={(value) => handleRoleChange(value === "all" ? "" : value)}
+            >
+              <SelectTrigger className="h-11 w-52 bg-white border-slate-200 rounded-xl focus:ring-1 focus:ring-indigo-400">
+                <SelectValue placeholder="Filter by role" />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                <SelectItem value="all">All Roles</SelectItem>
+                {SYSTEM_ROLES.map((role) => (
+                  <SelectItem key={role} value={role}>
+                    {ROLE_LABELS[role] ?? role}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Search */}
+            <div className="relative w-full lg:max-w-sm">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                aria-hidden="true"
+              />
+              <Input
+                type="search"
+                value={search}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder="Search name or email…"
+                className="h-11 pl-10 bg-background border-slate-200 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
+              />
             </div>
           </div>
-        )}
+
+          {/* Table */}
+          <div className="mt-5 overflow-hidden rounded-[24px] border border-slate-300">
+            <Table>
+              <TableHeader className="bg-slate-50">
+                <TableRow className="hover:bg-slate-50">
+                  <TableHead className="px-6">Name</TableHead>
+                  <TableHead className="px-4">Email</TableHead>
+                  <TableHead className="px-4">Role</TableHead>
+                  <TableHead className="px-4">Status</TableHead>
+                  <TableHead className="px-4">Last Login</TableHead>
+                  <TableHead className="w-[80px] px-6 text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow className="hover:bg-white">
+                    <TableCell colSpan={6} className="h-48 text-center">
+                      <div className="flex items-center justify-center gap-3 text-sm text-slate-500">
+                        <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        Loading users…
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : users.length === 0 ? (
+                  <TableRow className="hover:bg-white">
+                    <TableCell colSpan={6} className="h-48 text-center">
+                      <div className="space-y-3 text-sm text-slate-500">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
+                          <Users2 className="h-3.5 w-3.5" aria-hidden="true" />
+                          No users found
+                        </div>
+                        <p>Try adjusting your search or role filter.</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  users.map((user) => (
+                    <TableRow key={user._id} className="align-top">
+                      <TableCell className="px-6 font-semibold text-slate-800">
+                        {user.name}
+                        {user.organizationName && (
+                          <span className="block text-xs font-normal text-slate-400">
+                            {user.organizationName}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell className="px-4 text-slate-500 text-sm">{user.email}</TableCell>
+                      <TableCell className="px-4">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold ${ROLE_COLORS[user.role] ?? "bg-slate-100 text-slate-600"}`}>
+                          {ROLE_LABELS[user.role] ?? user.role}
+                        </span>
+                      </TableCell>
+                      <TableCell className="px-4">
+                        <span className="inline-flex items-center gap-1.5 text-sm">
+                          <span className={`w-2 h-2 rounded-full ${user.isActive ? "bg-emerald-500" : "bg-slate-300"}`} />
+                          <span className={user.isActive ? "text-emerald-700" : "text-slate-400"}>
+                            {user.isActive ? "Active" : "Inactive"}
+                          </span>
+                        </span>
+                      </TableCell>
+                      <TableCell className="px-4 text-slate-400 text-sm">
+                        {user.lastLoginAt
+                          ? new Date(user.lastLoginAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })
+                          : <span className="italic">Never</span>}
+                      </TableCell>
+                      <TableCell className="px-6 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0 rounded-lg text-slate-400 hover:text-slate-600">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="rounded-xl shadow-xl border-slate-100 w-44">
+                            <DropdownMenuItem
+                              className="cursor-pointer"
+                              onClick={() => handleOpenEdit(user)}
+                            >
+                              Edit User
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="cursor-pointer"
+                              disabled={togglingId === user._id}
+                              onClick={() => handleToggleActive(user)}
+                            >
+                              {user.isActive ? "Deactivate" : "Activate"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="cursor-pointer text-rose-600 focus:text-rose-600"
+                              disabled={deletingId === user._id}
+                              onClick={() => handleDelete(user)}
+                            >
+                              Delete User
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Pagination */}
+          {!isLoading && total > 0 && (
+            <div className="mt-5 flex items-center justify-between text-sm text-slate-500">
+              <span>
+                Showing {startItem}–{endItem} of {total} users
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-dashed"
+                  disabled={page <= 1}
+                  onClick={() => handlePageChange(page - 1)}
+                >
+                  ← Prev
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-dashed"
+                  disabled={page >= totalPages}
+                  onClick={() => handlePageChange(page + 1)}
+                >
+                  Next →
+                </Button>
+              </div>
+            </div>
+          )}
+        </section>
       </div>
 
       <UserFormModal
