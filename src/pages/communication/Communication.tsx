@@ -1,14 +1,5 @@
-import {
-  useDeferredValue,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import {
-  Link,
-  useLocation,
-  useSearchParams,
-} from "react-router-dom";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   LoaderCircle,
   Mail,
@@ -21,18 +12,16 @@ import { TiptapEmailEditor } from "@/components/communication/TiptapEmailEditor"
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
+import { api, apiPaths } from "@/services/api";
 import {
-  api,
-  apiPaths,
-} from "@/services/api";
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 
 type FilterOption = {
   id: string;
@@ -96,10 +85,7 @@ type EmailEditorValue = {
   text: string;
 };
 
-type EmailTemplateId =
-  | "executive_brief"
-  | "event_spotlight"
-  | "minimal_notice";
+type EmailTemplateId = "executive_brief" | "event_spotlight" | "minimal_notice";
 
 type EmailPreviewResponse = {
   templateId: EmailTemplateId;
@@ -142,19 +128,22 @@ const EMAIL_TEMPLATE_OPTIONS = [
   {
     value: "executive_brief",
     label: "Executive Brief",
-    description: "Formal update layout for logistics, approvals, and event ops.",
+    description:
+      "Formal update layout for logistics, approvals, and event ops.",
     accentClass: "from-[#e7efff] to-white",
   },
   {
     value: "event_spotlight",
     label: "Event Spotlight",
-    description: "Warmer, campaign-style presentation for announcements and invites.",
+    description:
+      "Warmer, campaign-style presentation for announcements and invites.",
     accentClass: "from-amber-100 to-white",
   },
   {
     value: "minimal_notice",
     label: "Minimal Notice",
-    description: "Compact template for direct, low-friction informational blasts.",
+    description:
+      "Compact template for direct, low-friction informational blasts.",
     accentClass: "from-slate-200 to-white",
   },
 ] as const satisfies ReadonlyArray<{
@@ -217,7 +206,9 @@ type FeedbackState = {
   message: string;
 };
 
-type ComposerErrors = Partial<Record<"recipients" | "subject" | "body", string>>;
+type ComposerErrors = Partial<
+  Record<"recipients" | "subject" | "body", string>
+>;
 type ComposerStep = "compose" | "review";
 type LeftPanelTab = "segment" | "recipients" | "review";
 
@@ -226,7 +217,9 @@ function readOptionValue<T extends string>(
   options: ReadonlyArray<{ value: T }>,
   fallback: T,
 ) {
-  return options.some((option) => option.value === value) ? (value as T) : fallback;
+  return options.some((option) => option.value === value)
+    ? (value as T)
+    : fallback;
 }
 
 function readLeftPanelTab(value: string | null): LeftPanelTab {
@@ -413,7 +406,8 @@ function createFiltersStateFromDraft(
   return {
     eventId: input?.eventId ?? "",
     status:
-      input?.status && STATUS_OPTIONS.some((option) => option.value === input.status)
+      input?.status &&
+      STATUS_OPTIONS.some((option) => option.value === input.status)
         ? input.status
         : "all",
     participantType:
@@ -514,11 +508,11 @@ function FilterSelect({
 
 const LOCAL_STORAGE_KEY = "pending_email_campaign";
 
-  // Helper untuk mengambil data dari local storage
-  function getLocalDraft() {
-    const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
-    return saved ? JSON.parse(saved) : null;
-  }
+// Helper untuk mengambil data dari local storage
+function getLocalDraft() {
+  const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
+  return saved ? JSON.parse(saved) : null;
+}
 
 export function Communication() {
   const location = useLocation();
@@ -535,18 +529,16 @@ export function Communication() {
   const [searchInput, setSearchInput] = useState(
     () => searchParams.get("search") ?? "",
   );
-  const [audience, setAudience] = useState<CommunicationAudienceResponse | null>(
-    null,
-  );
-  const [selectedRegistrationIds, setSelectedRegistrationIds] = useState<string[]>(
-    [],
-  );
-  const [templateId, setTemplateId] = useState<EmailTemplateId>(
-    "executive_brief",
-  );
+  const [audience, setAudience] =
+    useState<CommunicationAudienceResponse | null>(null);
+  const [selectedRegistrationIds, setSelectedRegistrationIds] = useState<
+    string[]
+  >([]);
+  const [templateId, setTemplateId] =
+    useState<EmailTemplateId>("executive_brief");
   const [previewText, setPreviewText] = useState("");
   const [subject, setSubject] = useState("");
-  
+
   const [editorValue, setEditorValue] = useState<EmailEditorValue>(
     createEmptyEditorValue,
   );
@@ -667,7 +659,8 @@ export function Communication() {
     setLastCommittedSignature("");
     setFeedback({
       tone: "success",
-      message: "The current content is now detached. The next Save Draft will create a new draft copy.",
+      message:
+        "The current content is now detached. The next Save Draft will create a new draft copy.",
     });
   };
 
@@ -676,7 +669,7 @@ export function Communication() {
     const nextSearch = searchParams.get("search") ?? "";
     const nextPanel = readLeftPanelTab(searchParams.get("panel"));
     const nextStep = readComposerStep(searchParams.get("step"));
-    
+
     setFilters((currentValue) =>
       areFiltersEqual(currentValue, nextFilters) ? currentValue : nextFilters,
     );
@@ -684,13 +677,13 @@ export function Communication() {
     setSearchInput((currentValue) => {
       // If the URL value is the same as state, do nothing
       if (currentValue === nextSearch) return currentValue;
-      
-      // CRITICAL: If the user is currently typing in the search box, 
+
+      // CRITICAL: If the user is currently typing in the search box,
       // do NOT let the URL overwrite the state. This stops the glitch.
       if (document.activeElement?.id === "communication-search") {
         return currentValue;
       }
-      
+
       return nextSearch;
     });
     // setSearchInput((currentValue) =>
@@ -800,7 +793,9 @@ export function Communication() {
         }
 
         if (!result.data) {
-          setLoadError(result.error ?? "Failed to load communication audience.");
+          setLoadError(
+            result.error ?? "Failed to load communication audience.",
+          );
           setAudience(null);
           setIsLoading(false);
           return;
@@ -836,7 +831,10 @@ export function Communication() {
         visibleIdSet.has(value),
       );
 
-      if (preservedSelection.length > 0 || hasUserAdjustedSelectionRef.current) {
+      if (
+        preservedSelection.length > 0 ||
+        hasUserAdjustedSelectionRef.current
+      ) {
         return preservedSelection;
       }
 
@@ -852,7 +850,8 @@ export function Communication() {
   const selectedRecipientCount = selectedRegistrationIds.length;
   const isReviewingSend = composerStep === "review";
   const samplePreviewRecipient = selectedRecipients[0] ?? null;
-  const samplePreviewRegistrationId = samplePreviewRecipient?.registrationId ?? "";
+  const samplePreviewRegistrationId =
+    samplePreviewRecipient?.registrationId ?? "";
   const currentEvent =
     audience?.events.find((event) => event.id === filters.eventId) ?? null;
   const activeFilterBadges = summarizeActiveFilters(
@@ -1099,7 +1098,7 @@ export function Communication() {
       tone: "success",
       message: result.message,
     });
-    
+
     setLastCommittedSignature(signatureAtSubmit);
     await loadDrafts();
 
@@ -1122,7 +1121,7 @@ export function Communication() {
   const [localDraftData, setLocalDraftData] = useState<any>(null);
 
   useEffect(() => {
-  // Jangan simpan jika sedang loading draft dari server atau sedang review
+    // Jangan simpan jika sedang loading draft dari server atau sedang review
     if (loadingDraftId || isReviewingSend) return;
 
     const timeoutId = setTimeout(() => {
@@ -1135,15 +1134,27 @@ export function Communication() {
         selectedRegistrationIds,
         timestamp: new Date().toISOString(),
       };
-      
+
       // Hanya simpan jika ada konten yang berarti
-      if (subject.trim() || editorValue.text.trim() || selectedRegistrationIds.length > 0) {
+      if (
+        subject.trim() ||
+        editorValue.text.trim() ||
+        selectedRegistrationIds.length > 0
+      ) {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
       }
     }, 1000); // Debounce 1 detik agar tidak terlalu sering menulis ke disk
 
     return () => clearTimeout(timeoutId);
-  }, [subject, previewText, editorValue, templateId, filters, selectedRegistrationIds, loadingDraftId]);
+  }, [
+    subject,
+    previewText,
+    editorValue,
+    templateId,
+    filters,
+    selectedRegistrationIds,
+    loadingDraftId,
+  ]);
 
   useEffect(() => {
     const savedData = getLocalDraft();
@@ -1156,14 +1167,14 @@ export function Communication() {
 
   const handleRestoreLocalDraft = () => {
     if (!localDraftData) return;
-    
+
     setSubject(localDraftData.subject);
     setPreviewText(localDraftData.previewText);
     setEditorValue(localDraftData.editorValue);
     setTemplateId(localDraftData.templateId);
     setFilters(localDraftData.filters);
     setSelectedRegistrationIds(localDraftData.selectedRegistrationIds);
-    
+
     setShowRestorePrompt(false);
     localStorage.removeItem(LOCAL_STORAGE_KEY); // Hapus setelah direstore
   };
@@ -1172,8 +1183,6 @@ export function Communication() {
     localStorage.removeItem(LOCAL_STORAGE_KEY);
     setShowRestorePrompt(false);
   };
-  
-  
 
   if (isReviewingSend) {
     return (
@@ -1188,9 +1197,9 @@ export function Communication() {
                 Review Template & Queue Broadcast
               </h1>
               <p className="max-w-2xl text-sm leading-6 text-slate-500">
-                Template email, inbox preview, dan konfirmasi RabbitMQ sekarang ada
-                di screen terpisah supaya admin benar-benar tahu apa yang akan
-                dikirim.
+                Template email, inbox preview, dan konfirmasi RabbitMQ sekarang
+                ada di screen terpisah supaya admin benar-benar tahu apa yang
+                akan dikirim.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -1325,7 +1334,9 @@ export function Communication() {
 
                   {selectedRecipientCount > selectedRecipientPreview.length ? (
                     <p className="text-xs text-slate-500">
-                      +{selectedRecipientCount - selectedRecipientPreview.length} more recipients
+                      +
+                      {selectedRecipientCount - selectedRecipientPreview.length}{" "}
+                      more recipients
                     </p>
                   ) : null}
                 </div>
@@ -1363,8 +1374,8 @@ export function Communication() {
                   Choose the Email Template
                 </h2>
                 <p className="text-sm leading-6 text-slate-500">
-                  Ini adalah screen review final sebelum campaign masuk ke worker
-                  RabbitMQ.
+                  Ini adalah screen review final sebelum campaign masuk ke
+                  worker RabbitMQ.
                 </p>
               </div>
 
@@ -1418,7 +1429,8 @@ export function Communication() {
                     {samplePreviewRecipient?.fullName ?? "No sample recipient"}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
-                    {samplePreviewRecipient?.email ?? "Choose at least one recipient"}
+                    {samplePreviewRecipient?.email ??
+                      "Choose at least one recipient"}
                   </p>
                 </div>
 
@@ -1477,7 +1489,8 @@ export function Communication() {
                       />
                     ) : (
                       <div className="flex min-h-[40rem] items-center justify-center text-sm text-slate-500">
-                        The preview will appear here after the message is prepared.
+                        The preview will appear here after the message is
+                        prepared.
                       </div>
                     )}
                   </div>
@@ -1500,7 +1513,8 @@ export function Communication() {
               <div className="flex flex-col gap-3 border-t  border-slate-300 pt-5 sm:flex-row sm:justify-between">
                 <div className="space-y-1 text-xs leading-5 text-slate-500">
                   <p>
-                    `Save Draft` saves segment, subject, and body without sending email.
+                    `Save Draft` saves segment, subject, and body without
+                    sending email.
                   </p>
                   <p>
                     `Confirm & Queue Send` make a campaign with status `queued`,
@@ -1532,7 +1546,10 @@ export function Communication() {
                     onClick={() => void handleSubmitCampaign("send")}
                     className="h-12 bg-[#0f2f78] px-6 text-white hover:bg-[#11265c]"
                   >
-                    <SendHorizontal className="mr-2 h-4 w-4" aria-hidden="true" />
+                    <SendHorizontal
+                      className="mr-2 h-4 w-4"
+                      aria-hidden="true"
+                    />
                     {submissionMode === "send"
                       ? "Queueing…"
                       : "Confirm & Queue Send"}
@@ -1548,34 +1565,43 @@ export function Communication() {
 
   return (
     <DashboardLayout>
-    {showRestorePrompt && (
-      <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-amber-100 p-2 text-amber-600">
-              <Mail size={20} />
+      {showRestorePrompt && (
+        <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="rounded-full bg-amber-100 p-2 text-amber-600">
+                <Mail size={20} />
+              </div>
+              <div>
+                <p className="text-[13.5px] text-amber-700">
+                  We found unsaved draft from your last session.
+                </p>
+                <h4 className="font-semibold text-amber-900 text-md ">
+                  Restore and continue your draft?
+                </h4>
+              </div>
             </div>
-            <div>
-              <p className="text-[13.5px] text-amber-700">
-                We found unsaved draft from your last session.
-              </p>
-              <h4 className="font-semibold text-amber-900 text-md ">Restore and continue your draft?</h4>
-              
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleDiscardLocalDraft}
+                className="text-amber-700 text-sm font-semibold hover:bg-amber-100"
+              >
+                Discard
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleRestoreLocalDraft}
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                Restore
+              </Button>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" variant="ghost" onClick={handleDiscardLocalDraft} className="text-amber-700 text-sm font-semibold hover:bg-amber-100">
-              Discard
-            </Button>
-            <Button size="sm" onClick={handleRestoreLocalDraft} className="bg-amber-600 hover:bg-amber-700 text-white">
-              Restore
-            </Button>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
-    
       <div className="space-y-8">
         <div className="flex flex-col gap-4 border-b  border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2">
@@ -1583,8 +1609,8 @@ export function Communication() {
               Communication Hub
             </h1>
             <p className="max-w-2xl text-sm leading-6 text-slate-500">
-              Build the audience on the left, compose the email on the right, then
-              review everything once before sending.
+              Build the audience on the left, compose the email on the right,
+              then review everything once before sending.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -1609,7 +1635,9 @@ export function Communication() {
         <div className="grid gap-6 lg:grid-cols-[minmax(320px,360px)_minmax(0,1fr)] lg:items-start">
           <section className="self-start rounded-[28px] border border-slate-300 bg-sidebar p-5 sm:p-6">
             <div className="space-y-1">
-              <p className="text-sm font-bold text-[#1d376b]">Audience Builder</p>
+              <p className="text-sm font-bold text-[#1d376b]">
+                Audience Builder
+              </p>
               <p className="text-sm text-slate-500">
                 Narrow the target audience, then choose who should receive the
                 message.
@@ -1637,14 +1665,17 @@ export function Communication() {
                     {selectedRecipientCount}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
-                    These recipients will be included in the draft or send review.
+                    These recipients will be included in the draft or send
+                    review.
                   </p>
                 </div>
               </div>
 
               <Tabs
                 value={leftPanelTab}
-                onValueChange={(value) => setLeftPanelTab(value as LeftPanelTab)}
+                onValueChange={(value) =>
+                  setLeftPanelTab(value as LeftPanelTab)
+                }
                 className="space-y-4"
               >
                 <TabsList className="grid grid-cols-3">
@@ -1655,8 +1686,8 @@ export function Communication() {
 
                 <TabsContent value="segment" className="space-y-4">
                   <p className="text-xs leading-5 text-slate-500">
-                    Adjust segment filters here. Open the `Recipients` tab when you
-                    want to focus on who will actually receive the email.
+                    Adjust segment filters here. Open the `Recipients` tab when
+                    you want to focus on who will actually receive the email.
                   </p>
 
                   <div className="space-y-2">
@@ -1665,13 +1696,18 @@ export function Communication() {
                     </Label>
 
                     <Select
-                    value={filters.eventId}
-                    onValueChange={(value) => updateFilter("eventId", value === "all" ? "" : value)}
+                      value={filters.eventId}
+                      onValueChange={(value) =>
+                        updateFilter("eventId", value === "all" ? "" : value)
+                      }
                     >
-                      <SelectTrigger id="communication-event" className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400">
+                      <SelectTrigger
+                        id="communication-event"
+                        className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
+                      >
                         <SelectValue placeholder="Choose event" />
                       </SelectTrigger>
-                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">        
+                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
                         {audience?.events.map((event) => (
                           <SelectItem key={event.id} value={event.id}>
                             <div className="flex flex-col">
@@ -1720,7 +1756,8 @@ export function Communication() {
                     <div className="grid grid-cols-2 gap-2">
                       {STATUS_OPTIONS.map((status) => {
                         const isActive = filters.status === status.value;
-                        const count = audience?.summary.statusCounts[status.value] ?? 0;
+                        const count =
+                          audience?.summary.statusCounts[status.value] ?? 0;
 
                         return (
                           <button
@@ -1747,7 +1784,7 @@ export function Communication() {
                       })}
                     </div>
                   </div>
-                  
+
                   {/* participant type */}
                   <div className="space-y-2">
                     <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">
@@ -1756,10 +1793,18 @@ export function Communication() {
 
                     <Select
                       value={filters.participantType}
-                      onValueChange={(value) => updateFilter("participantType", value as ParticipantTypeValue)}
+                      onValueChange={(value) =>
+                        updateFilter(
+                          "participantType",
+                          value as ParticipantTypeValue,
+                        )
+                      }
                     >
-                      <SelectTrigger id="communication-participant-type" className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400">
-                          <SelectValue placeholder="Participant Type" />
+                      <SelectTrigger
+                        id="communication-participant-type"
+                        className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
+                      >
+                        <SelectValue placeholder="Participant Type" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-slate-100 shadow-xl">
                         {PARTICIPANT_TYPE_OPTIONS.map((option) => (
@@ -1777,11 +1822,16 @@ export function Communication() {
                       Company
                     </Label>
 
-                    <Select 
-                    value={filters.companyId || "all"} 
-                    onValueChange={(value) => updateFilter("companyId", value === "all" ? "" : value)}
+                    <Select
+                      value={filters.companyId || "all"}
+                      onValueChange={(value) =>
+                        updateFilter("companyId", value === "all" ? "" : value)
+                      }
                     >
-                      <SelectTrigger id="communication-company" className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400">
+                      <SelectTrigger
+                        id="communication-company"
+                        className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
+                      >
                         <SelectValue placeholder="All companies" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border-slate-100 shadow-xl">
@@ -1800,15 +1850,15 @@ export function Communication() {
                     <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-4 mb-2">
                       Industry
                     </Label>
-                    
+
                     <Select
                       value={filters.industryId || "all"}
-                      onValueChange={(value) => 
+                      onValueChange={(value) =>
                         updateFilter("industryId", value === "all" ? "" : value)
                       }
                     >
-                      <SelectTrigger 
-                        id="communication-industry" 
+                      <SelectTrigger
+                        id="communication-industry"
                         className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
                       >
                         <SelectValue placeholder="All industries" />
@@ -1816,7 +1866,7 @@ export function Communication() {
 
                       <SelectContent className="rounded-xl border-slate-100 shadow-xl">
                         <SelectItem value="all">All industries</SelectItem>
-                        
+
                         {audience?.filterOptions.industries.map((industry) => (
                           <SelectItem key={industry.id} value={industry.id}>
                             {industry.label}
@@ -1825,21 +1875,21 @@ export function Communication() {
                       </SelectContent>
                     </Select>
                   </div>
-                  
+
                   {/* JOBTITLE */}
                   <div className="space-y-2">
                     <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-4 mb-2">
                       Job title
                     </Label>
-                    
+
                     <Select
                       value={filters.jobTitleId || "all"}
-                      onValueChange={(value) => 
+                      onValueChange={(value) =>
                         updateFilter("jobTitleId", value === "all" ? "" : value)
                       }
                     >
-                      <SelectTrigger 
-                        id="communication-job-title" 
+                      <SelectTrigger
+                        id="communication-job-title"
                         className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
                       >
                         <SelectValue placeholder="All job titles" />
@@ -1847,7 +1897,7 @@ export function Communication() {
 
                       <SelectContent className="rounded-xl border-slate-100 shadow-xl">
                         <SelectItem value="all">All job titles</SelectItem>
-                        
+
                         {audience?.filterOptions.jobTitles.map((jobTitle) => (
                           <SelectItem key={jobTitle.id} value={jobTitle.id}>
                             {jobTitle.label}
@@ -1862,15 +1912,15 @@ export function Communication() {
                     <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-4 mb-2">
                       City
                     </Label>
-                    
+
                     <Select
                       value={filters.cityId || "all"}
-                      onValueChange={(value) => 
+                      onValueChange={(value) =>
                         updateFilter("cityId", value === "all" ? "" : value)
                       }
                     >
-                      <SelectTrigger 
-                        id="communication-city" 
+                      <SelectTrigger
+                        id="communication-city"
                         className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
                       >
                         <SelectValue placeholder="All cities" />
@@ -1878,7 +1928,7 @@ export function Communication() {
 
                       <SelectContent className="rounded-xl border-slate-100 shadow-xl">
                         <SelectItem value="all">All cities</SelectItem>
-                        
+
                         {audience?.filterOptions.cities.map((city) => (
                           <SelectItem key={city.id} value={city.id}>
                             {city.label}
@@ -1893,15 +1943,18 @@ export function Communication() {
                     <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-4 mb-2">
                       Source channel
                     </Label>
-                    
+
                     <Select
                       value={filters.sourceChannelCode || "all"}
-                      onValueChange={(value) => 
-                        updateFilter("sourceChannelCode", value === "all" ? "" : value)
+                      onValueChange={(value) =>
+                        updateFilter(
+                          "sourceChannelCode",
+                          value === "all" ? "" : value,
+                        )
                       }
                     >
-                      <SelectTrigger 
-                        id="communication-source-channel" 
+                      <SelectTrigger
+                        id="communication-source-channel"
                         className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
                       >
                         <SelectValue placeholder="All source channels" />
@@ -1909,10 +1962,10 @@ export function Communication() {
 
                       <SelectContent className="rounded-xl border-slate-100 shadow-xl">
                         <SelectItem value="all">All source channels</SelectItem>
-                        
-                        {audience?.filterOptions.sourceChannels.map((sourceChannel) => (
-                          <SelectItem key={sourceChannel.code} value={sourceChannel.code}>
-                            {sourceChannel.label}
+
+                        {audience?.filterOptions.sourceChannels.map((code) => (
+                          <SelectItem key={code} value={code}>
+                            {code}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -1921,7 +1974,7 @@ export function Communication() {
                 </TabsContent>
 
                 <TabsContent value="recipients" className="space-y-4">
-                                    {/* Search */}
+                  {/* Search */}
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="communication-search"
@@ -1929,7 +1982,7 @@ export function Communication() {
                     >
                       Search
                     </Label>
-                    
+
                     <div className="relative">
                       <Search
                         className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
@@ -1966,7 +2019,9 @@ export function Communication() {
                       onClick={handleToggleAllVisible}
                       className="h-auto p-0 text-[#1d376b]"
                     >
-                      {allVisibleSelected ? "Clear Selection" : "Select Visible"}
+                      {allVisibleSelected
+                        ? "Clear Selection"
+                        : "Select Visible"}
                     </Button>
                   </div>
 
@@ -2011,7 +2066,9 @@ export function Communication() {
                                     type="checkbox"
                                     checked={isChecked}
                                     onChange={() =>
-                                      handleToggleRecipient(recipient.registrationId)
+                                      handleToggleRecipient(
+                                        recipient.registrationId,
+                                      )
                                     }
                                     className="mt-1 h-4 w-4 rounded border-slate-300 text-[#1d376b] focus-visible:ring-2 focus-visible:ring-[#1d376b]/30"
                                   />
@@ -2021,7 +2078,8 @@ export function Communication() {
                                     {recipient.status}
                                   </span>
                                   <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-500">
-                                    {recipient.companyName ?? recipient.participantType}
+                                    {recipient.companyName ??
+                                      recipient.participantType}
                                   </span>
                                 </div>
                               </div>
@@ -2116,9 +2174,13 @@ export function Communication() {
                         </p>
                       )}
 
-                      {selectedRecipientCount > selectedRecipientPreview.length ? (
+                      {selectedRecipientCount >
+                      selectedRecipientPreview.length ? (
                         <p className="text-xs text-slate-500">
-                          +{selectedRecipientCount - selectedRecipientPreview.length} more recipients
+                          +
+                          {selectedRecipientCount -
+                            selectedRecipientPreview.length}{" "}
+                          more recipients
                         </p>
                       ) : null}
                     </div>
@@ -2129,8 +2191,8 @@ export function Communication() {
                       {visibleRecipients.length} visible recipients
                     </p>
                     <p className="mt-1 text-xs leading-5 text-slate-500">
-                      Filters are synced to the URL so you can refresh or share the
-                      same audience segment later.
+                      Filters are synced to the URL so you can refresh or share
+                      the same audience segment later.
                     </p>
                   </div>
                 </TabsContent>
@@ -2214,7 +2276,9 @@ export function Communication() {
                                 onClick={() => void handleLoadDraft(draft.id)}
                                 className=""
                               >
-                                {loadingDraftId === draft.id ? "Opening…" : "Open"}
+                                {loadingDraftId === draft.id
+                                  ? "Opening…"
+                                  : "Open"}
                               </Button>
                             )}
                           </div>
@@ -2223,8 +2287,8 @@ export function Communication() {
                     })
                   ) : (
                     <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-500">
-                      No saved drafts yet. Save the current composer once to create
-                      your first reusable draft.
+                      No saved drafts yet. Save the current composer once to
+                      create your first reusable draft.
                     </div>
                   )}
                 </div>
@@ -2372,6 +2436,7 @@ export function Communication() {
                   className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400"
                 >
                   Subject Line
+                  <span className="text-rose-400 text-[10px] leading-none">*</span>
                 </Label>
                 <Input
                   ref={subjectInputRef}
@@ -2392,7 +2457,9 @@ export function Communication() {
                   className="h-12 bg-slate-50 border-slate-200 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
                 />
                 {composerErrors.subject ? (
-                  <p className="text-sm text-rose-600">{composerErrors.subject}</p>
+                  <p className="text-sm text-rose-600">
+                    {composerErrors.subject}
+                  </p>
                 ) : null}
               </div>
 
@@ -2404,9 +2471,6 @@ export function Communication() {
                   >
                     Inbox Preview Text
                   </Label>
-                  <p className="text-xs text-slate-400">
-                    Optional preheader shown beside the subject in inbox previews.
-                  </p>
                 </div>
                 <Input
                   id="communication-preview-text"
@@ -2429,6 +2493,7 @@ export function Communication() {
                   className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400"
                 >
                   Message Body
+                  <span className="text-rose-400 text-[10px] leading-none">*</span>
                 </Label>
                 <div
                   className={
@@ -2465,11 +2530,10 @@ export function Communication() {
 
               <div className="mt-auto flex flex-col gap-4 border-t  border-slate-300 pt-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="max-w-md space-y-1 text-xs leading-5 text-slate-500">
-                  <p>{hasUnsavedChanges ? "Unsaved changes pending." : "All changes saved."}</p>
                   <p>
-                    `Save Draft` only saves the composer. `Review &amp; Send`
-                    will move you to the review template, inbox
-                    preview, and RabbitMQ queue confirmation screen.
+                    {hasUnsavedChanges
+                      ? "Unsaved changes pending."
+                      : "All changes saved."}
                   </p>
                 </div>
 
@@ -2492,7 +2556,10 @@ export function Communication() {
                     onClick={handleOpenReview}
                     className="h-12 bg-[#0f2f78] px-6 text-white hover:bg-[#11265c]"
                   >
-                    <SendHorizontal className="mr-2 h-4 w-4" aria-hidden="true" />
+                    <SendHorizontal
+                      className="mr-2 h-4 w-4"
+                      aria-hidden="true"
+                    />
                     Review &amp; Send
                   </Button>
                 </div>

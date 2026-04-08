@@ -51,7 +51,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               }`}
             >
               <CalendarDays className={`mr-3 h-5 w-5 ${isActive('/events') ? 'text-[#002a85]' : ''}`} />
-              Event List
+              Event Management
             </Link>
           )}
 

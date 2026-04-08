@@ -98,7 +98,11 @@ function formatCheckInTime(value: string | null) {
 }
 
 function getDisplayEmail(item: CheckInRegistrationItem | CheckInRecentItem) {
-  return item.participant.personalEmail ?? item.participant.companyEmail ?? "No email";
+  return (
+    item.participant.personalEmail ??
+    item.participant.companyEmail ??
+    "No email"
+  );
 }
 
 export function EventCheckInDesk() {
@@ -123,7 +127,8 @@ export function EventCheckInDesk() {
 
   const effectiveLookupQuery = useDeferredValue(lookupQuery);
   const workspaceMode =
-    WORKSPACE_MODES.find((mode) => mode === searchParams.get("mode")) ?? "scanner";
+    WORKSPACE_MODES.find((mode) => mode === searchParams.get("mode")) ??
+    "scanner";
 
   const selectedEventTitle = stats?.event.title ?? "Check-In Desk";
 
@@ -133,25 +138,30 @@ export function EventCheckInDesk() {
     }
 
     if ("isSecureContext" in window && !window.isSecureContext) {
-      return window.location.hostname === "localhost" ||
-        window.location.hostname === "127.0.0.1";
+      return (
+        window.location.hostname === "localhost" ||
+        window.location.hostname === "127.0.0.1"
+      );
     }
 
     return true;
   }, []);
 
   const updateWorkspaceMode = (mode: WorkspaceMode) => {
-    setSearchParams((currentParams) => {
-      const nextParams = new URLSearchParams(currentParams);
+    setSearchParams(
+      (currentParams) => {
+        const nextParams = new URLSearchParams(currentParams);
 
-      if (mode === "scanner") {
-        nextParams.delete("mode");
-      } else {
-        nextParams.set("mode", mode);
-      }
+        if (mode === "scanner") {
+          nextParams.delete("mode");
+        } else {
+          nextParams.set("mode", mode);
+        }
 
-      return nextParams;
-    }, { replace: true });
+        return nextParams;
+      },
+      { replace: true },
+    );
   };
 
   async function destroyScanner(scanner: Html5QrCodeInstance | null) {
@@ -336,7 +346,11 @@ export function EventCheckInDesk() {
   }, [workspaceMode]);
 
   const handleStartScanner = async () => {
-    if (!canUseCamera || scannerState === "starting" || scannerState === "running") {
+    if (
+      !canUseCamera ||
+      scannerState === "starting" ||
+      scannerState === "running"
+    ) {
       return;
     }
 
@@ -351,9 +365,12 @@ export function EventCheckInDesk() {
       scannerRef.current = scanner;
 
       const config = {
-        fps: 10,
-        qrbox: { width: 320, height: 320 },
-        aspectRatio: 1,
+        fps: 15,
+        qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+          const size = Math.floor(minEdge * 0.7);
+          return { width: size, height: size };
+        },
         rememberLastUsedCamera: true,
       };
 
@@ -438,7 +455,11 @@ export function EventCheckInDesk() {
     await loadDeskData();
 
     if (effectiveLookupQuery.trim().length >= 2) {
-      const lookupResult = await lookupCheckInCandidates(eventId, effectiveLookupQuery, 8);
+      const lookupResult = await lookupCheckInCandidates(
+        eventId,
+        effectiveLookupQuery,
+        8,
+      );
       setLookupItems(lookupResult.data?.items ?? []);
     }
 
@@ -464,8 +485,9 @@ export function EventCheckInDesk() {
                 QR Check-In Desk
               </h1>
               <p className="max-w-3xl text-sm leading-6 text-slate-600">
-                Operate arrival check-in from one desk. Use the live scanner for the fast lane,
-                then switch to manual lookup only when an attendee cannot present a readable QR ticket.
+                Operate arrival check-in from one desk. Use the live scanner for
+                the fast lane, then switch to manual lookup only when an
+                attendee cannot present a readable QR ticket.
               </p>
             </div>
 
@@ -536,7 +558,9 @@ export function EventCheckInDesk() {
                   Active Workspace
                 </p>
                 <p className="mt-3 text-lg font-semibold text-[#001a4e]">
-                  {workspaceMode === "scanner" ? "Live Scanner" : "Manual Lookup"}
+                  {workspaceMode === "scanner"
+                    ? "Live Scanner"
+                    : "Manual Lookup"}
                 </p>
                 <p className="mt-1 text-sm text-slate-500">
                   Switch mode without losing the event context.
@@ -562,8 +586,9 @@ export function EventCheckInDesk() {
                         Choose the fastest way to record attendance
                       </h2>
                       <p className="max-w-2xl text-sm leading-6 text-slate-500">
-                        Keep staff in one primary workflow at a time. Scanner is the default lane,
-                        while manual lookup handles edge cases without crowding the main camera area.
+                        Keep staff in one primary workflow at a time. Scanner is
+                        the default lane, while manual lookup handles edge cases
+                        without crowding the main camera area.
                       </p>
                     </div>
 
@@ -585,7 +610,8 @@ export function EventCheckInDesk() {
                           Scan attendee QR ticket
                         </h3>
                         <p className="mt-2 text-sm leading-6 text-slate-500">
-                          Keep the attendee’s QR code centered in the frame. The desk records attendance instantly after a valid scan.
+                          Keep the attendee’s QR code centered in the frame. The
+                          desk records attendance instantly after a valid scan.
                         </p>
                       </div>
 
@@ -599,7 +625,10 @@ export function EventCheckInDesk() {
                           }}
                           className="h-11 shrink-0 rounded-2xl border-slate-200 px-4"
                         >
-                          <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
+                          <RotateCcw
+                            className="mr-2 h-4 w-4"
+                            aria-hidden="true"
+                          />
                           Clear Result
                         </Button>
                         {scannerState === "running" ? (
@@ -609,40 +638,51 @@ export function EventCheckInDesk() {
                             onClick={() => void handleStopScanner()}
                             className="h-11 shrink-0 rounded-2xl border-slate-200 px-4"
                           >
-                            <Camera className="mr-2 h-4 w-4" aria-hidden="true" />
+                            <Camera
+                              className="mr-2 h-4 w-4"
+                              aria-hidden="true"
+                            />
                             Stop Camera
                           </Button>
                         ) : (
                           <Button
                             type="button"
                             onClick={() => void handleStartScanner()}
-                            disabled={!canUseCamera || scannerState === "starting"}
+                            disabled={
+                              !canUseCamera || scannerState === "starting"
+                            }
                             className="h-11 shrink-0 rounded-2xl bg-[#0f2f78] px-5 text-white hover:bg-[#11265c]"
                           >
                             {scannerState === "starting" ? (
-                              <LoaderCircle className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                              <LoaderCircle
+                                className="mr-2 h-4 w-4 animate-spin"
+                                aria-hidden="true"
+                              />
                             ) : (
-                              <QrCode className="mr-2 h-4 w-4" aria-hidden="true" />
+                              <QrCode
+                                className="mr-2 h-4 w-4"
+                                aria-hidden="true"
+                              />
                             )}
-                            {scannerState === "starting" ? "Starting Camera…" : "Start Camera"}
+                            {scannerState === "starting"
+                              ? "Starting Camera…"
+                              : "Start Camera"}
                           </Button>
                         )}
                       </div>
                     </div>
 
                     <div className="rounded-[26px] border border-slate-200 bg-[#f8fbff] p-4 shadow-sm">
-                      <div
-                        className="relative min-h-[560px] overflow-hidden rounded-[24px] border border-dashed border-[#c8d8f2] bg-[radial-gradient(circle_at_top,_rgba(15,47,120,0.08),_transparent_50%),linear-gradient(180deg,_#fbfdff_0%,_#f1f6ff_100%)]"
-                      >
-                        <div
-                          id={SCANNER_REGION_ID}
-                          className="min-h-[560px]"
-                        />
+                      <div className="relative min-h-[560px] overflow-hidden rounded-[24px] border border-dashed border-[#c8d8f2] bg-[radial-gradient(circle_at_top,_rgba(15,47,120,0.08),_transparent_50%),linear-gradient(180deg,_#fbfdff_0%,_#f1f6ff_100%)]">
+                        <div id={SCANNER_REGION_ID} className="min-h-[560px]" />
                         {scannerState !== "running" && (
                           <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
                             <div className="mx-auto flex max-w-sm flex-col items-center text-center">
                               <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/85 text-[#0f2f78] shadow-sm">
-                                <Ticket className="h-8 w-8" aria-hidden="true" />
+                                <Ticket
+                                  className="h-8 w-8"
+                                  aria-hidden="true"
+                                />
                               </div>
                               <h3 className="mt-5 text-lg font-semibold text-[#001a4e]">
                                 {scannerState === "starting"
@@ -673,12 +713,15 @@ export function EventCheckInDesk() {
                               : "Waiting to start"}
                         </h3>
                         <p className="mt-2 text-sm leading-6 text-slate-500">
-                          Keep the attendee’s QR email centered inside the camera frame for the fastest result.
+                          Keep the attendee’s QR email centered inside the
+                          camera frame for the fastest result.
                         </p>
                         <div className="mt-4 space-y-2">
                           {!canUseCamera && (
                             <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                              Camera access needs a secure browser context. Use `localhost` or HTTPS, or continue with manual lookup.
+                              Camera access needs a secure browser context. Use
+                              `localhost` or HTTPS, or continue with manual
+                              lookup.
                             </p>
                           )}
 
@@ -695,9 +738,17 @@ export function EventCheckInDesk() {
                           Scan Tips
                         </p>
                         <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
-                          <li>Hold the QR email about 20-30 cm from the camera.</li>
-                          <li>Use manual lookup when an inbox image is dim or broken.</li>
-                          <li>Duplicate scans stay safe and will not double-count attendance.</li>
+                          <li>
+                            Hold the QR email about 20-30 cm from the camera.
+                          </li>
+                          <li>
+                            Use manual lookup when an inbox image is dim or
+                            broken.
+                          </li>
+                          <li>
+                            Duplicate scans stay safe and will not double-count
+                            attendance.
+                          </li>
                         </ul>
                       </Card>
                     </div>
@@ -715,12 +766,17 @@ export function EventCheckInDesk() {
                           Search Approved Attendees
                         </Label>
                         <div className="relative mt-3">
-                          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+                          <Search
+                            className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                            aria-hidden="true"
+                          />
                           <Input
                             id="manual-lookup"
                             name="manualLookup"
                             value={lookupQuery}
-                            onChange={(event) => setLookupQuery(event.target.value)}
+                            onChange={(event) =>
+                              setLookupQuery(event.target.value)
+                            }
                             placeholder="Search name, email, company, or ticket code…"
                             className="h-12 rounded-2xl border-slate-200 pl-11"
                             autoComplete="off"
@@ -728,7 +784,8 @@ export function EventCheckInDesk() {
                           />
                         </div>
                         <p className="mt-3 text-sm leading-6 text-slate-500">
-                          Search by attendee name, email, company, or QR code when the live camera lane is not practical.
+                          Search by attendee name, email, company, or QR code
+                          when the live camera lane is not practical.
                         </p>
                       </div>
 
@@ -737,17 +794,23 @@ export function EventCheckInDesk() {
                           Manual Notes
                         </p>
                         <p className="mt-2 text-sm leading-6 text-slate-500">
-                          Record exceptional cases, such as badge issues or manual identity verification.
+                          Record exceptional cases, such as badge issues or
+                          manual identity verification.
                         </p>
                         <div className="mt-4 space-y-2">
-                          <Label htmlFor="manual-notes" className="text-sm font-medium text-slate-700">
+                          <Label
+                            htmlFor="manual-notes"
+                            className="text-sm font-medium text-slate-700"
+                          >
                             Check-In Notes
                           </Label>
                           <textarea
                             id="manual-notes"
                             name="manualNotes"
                             value={manualNotes}
-                            onChange={(event) => setManualNotes(event.target.value)}
+                            onChange={(event) =>
+                              setManualNotes(event.target.value)
+                            }
                             rows={5}
                             className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#1a3fa8]/50 focus:ring-2 focus:ring-[#1a3fa8]/15"
                             placeholder="Example: badge printed manually after identity check…"
@@ -760,28 +823,35 @@ export function EventCheckInDesk() {
                     <div className="space-y-3">
                       {lookupLoading && (
                         <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-                          <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+                          <LoaderCircle
+                            className="h-4 w-4 animate-spin"
+                            aria-hidden="true"
+                          />
                           Looking up eligible attendees…
                         </div>
                       )}
 
-                      {!lookupLoading && effectiveLookupQuery.trim().length < 2 && (
-                        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-5 text-sm text-slate-500">
-                          Type at least 2 characters to search approved attendees for this event.
-                        </div>
-                      )}
+                      {!lookupLoading &&
+                        effectiveLookupQuery.trim().length < 2 && (
+                          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-5 text-sm text-slate-500">
+                            Type at least 2 characters to search approved
+                            attendees for this event.
+                          </div>
+                        )}
 
                       {!lookupLoading &&
                         effectiveLookupQuery.trim().length >= 2 &&
                         lookupItems.length === 0 && (
                           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-5 text-sm text-slate-500">
-                            No approved attendee matched that search. Try a different name, email, company, or ticket code.
+                            No approved attendee matched that search. Try a
+                            different name, email, company, or ticket code.
                           </div>
                         )}
 
                       {lookupItems.map((item) => {
                         const isCheckedIn =
-                          item.status === "checked_in" || item.checkIn.isAttended;
+                          item.status === "checked_in" ||
+                          item.checkIn.isAttended;
 
                         return (
                           <div
@@ -796,10 +866,14 @@ export function EventCheckInDesk() {
                                 <span
                                   className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] ${badgeStyles[item.status] ?? "border-slate-200 bg-slate-50 text-slate-600"}`}
                                 >
-                                  {item.status === "checked_in" ? "Checked In" : "Approved"}
+                                  {item.status === "checked_in"
+                                    ? "Checked In"
+                                    : "Approved"}
                                 </span>
                               </div>
-                              <p className="mt-2 text-sm text-slate-500">{getDisplayEmail(item)}</p>
+                              <p className="mt-2 text-sm text-slate-500">
+                                {getDisplayEmail(item)}
+                              </p>
                               <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
                                 {item.companySnapshot?.name && (
                                   <span className="rounded-full bg-slate-100 px-3 py-1">
@@ -832,16 +906,28 @@ export function EventCheckInDesk() {
                               </div>
                               <Button
                                 type="button"
-                                disabled={isCheckedIn || pendingManualId === item._id}
-                                onClick={() => void handleManualCheckIn(item._id)}
+                                disabled={
+                                  isCheckedIn || pendingManualId === item._id
+                                }
+                                onClick={() =>
+                                  void handleManualCheckIn(item._id)
+                                }
                                 className="h-11 rounded-2xl bg-[#0f2f78] px-5 text-white hover:bg-[#11265c] disabled:bg-slate-300"
                               >
                                 {pendingManualId === item._id ? (
-                                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+                                  <LoaderCircle
+                                    className="mr-2 h-4 w-4 animate-spin"
+                                    aria-hidden="true"
+                                  />
                                 ) : (
-                                  <UserCheck className="mr-2 h-4 w-4" aria-hidden="true" />
+                                  <UserCheck
+                                    className="mr-2 h-4 w-4"
+                                    aria-hidden="true"
+                                  />
                                 )}
-                                {isCheckedIn ? "Checked In" : "Record Manual Check-In"}
+                                {isCheckedIn
+                                  ? "Checked In"
+                                  : "Record Manual Check-In"}
                               </Button>
                             </div>
                           </div>
@@ -941,7 +1027,9 @@ export function EventCheckInDesk() {
                           {latestRegistration.checkIn.scanMethod.toUpperCase()}
                         </span>
                         <span className="rounded-full border border-slate-200 bg-white px-3 py-1">
-                          {formatCheckInTime(latestRegistration.checkIn.checkedInAt)}
+                          {formatCheckInTime(
+                            latestRegistration.checkIn.checkedInAt,
+                          )}
                         </span>
                       </div>
                     </div>
@@ -964,7 +1052,8 @@ export function EventCheckInDesk() {
                     Attendance already recorded
                   </h2>
                   <p className="mt-2 text-sm leading-6 text-slate-500">
-                    A scrollable table keeps the page compact even when the event has many checked-in attendees.
+                    A scrollable table keeps the page compact even when the
+                    event has many checked-in attendees.
                   </p>
                 </div>
 
@@ -1022,7 +1111,9 @@ export function EventCheckInDesk() {
                                 {item.participant.fullName}
                               </p>
                               <p className="truncate text-xs text-slate-400">
-                                {item.jobTitleSnapshot?.name ?? item.companySnapshot?.name ?? "Participant"}
+                                {item.jobTitleSnapshot?.name ??
+                                  item.companySnapshot?.name ??
+                                  "Participant"}
                               </p>
                             </div>
                           </TableCell>
