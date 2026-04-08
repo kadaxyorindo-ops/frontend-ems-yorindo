@@ -2437,9 +2437,9 @@ export function Communication() {
                 <div className="max-w-md space-y-1 text-xs leading-5 text-slate-500">
                   <p>{hasUnsavedChanges ? "Unsaved changes pending." : "All changes saved."}</p>
                   <p>
-                    `Save Draft` hanya menyimpan composer. `Review &amp; Send`
-                    akan memindahkan Anda ke screen review template, inbox
-                    preview, dan konfirmasi queue RabbitMQ.
+                    `Save Draft` only saves the composer. `Review &amp; Send`
+                    will move you to the review template, inbox
+                    preview, and RabbitMQ queue confirmation screen.
                   </p>
                 </div>
 
