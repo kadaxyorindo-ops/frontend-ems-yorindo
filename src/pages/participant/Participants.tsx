@@ -1,3 +1,4 @@
+// Participants.tsx
 import { Sidebar } from "@/components/Sidebar";
 import { Topbar } from "@/components/Topbar";
 import { useState, useEffect } from "react";
@@ -80,6 +81,11 @@ const formatTicketDeliveryStatus = (
       return "Not queued";
   }
 };
+
+const resolveSnapshotName = (
+  snapshotName?: string | null,
+  fallbackName?: string | null,
+) => snapshotName ?? fallbackName ?? "—";
 
 type ActionFeedback = {
   tone: "success" | "error";
@@ -527,9 +533,24 @@ export function Participants() {
                               />
                             </TableCell>
                             <TableCell className="font-medium pl-10">{item.participant.fullName}</TableCell>
-                            <TableCell className="text-center">{item.companySnapshot?.name ?? "—"}</TableCell>
-                            <TableCell className="text-center">{item.industrySnapshot?.name ?? "—"}</TableCell>
-                            <TableCell className="text-center">{item.jobTitleSnapshot?.name ?? "—"}</TableCell>
+                            <TableCell className="text-center">
+                              {resolveSnapshotName(
+                                item.companySnapshot?.name,
+                                item.participant.company?.name,
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {resolveSnapshotName(
+                                item.industrySnapshot?.name,
+                                item.participant.industry?.name,
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {resolveSnapshotName(
+                                item.jobTitleSnapshot?.name,
+                                item.participant.jobTitle?.name,
+                              )}
+                            </TableCell>
                             <TableCell className="text-center">
                               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${getStatusStyles(item.status)}`}>
                                 {formatStatus(item.status).toUpperCase()}
@@ -633,21 +654,41 @@ export function Participants() {
                   <div className="flex justify-between text-left">
                     <div>
                       <div className="text-[11px] text-muted-foreground uppercase font-bold">Company</div>
-                      <div className="text-sm font-bold text-primary">{selectedParticipant.companySnapshot?.name ?? "—"}</div>
+                      <div className="text-sm font-bold text-primary">
+                        {resolveSnapshotName(
+                          selectedParticipant.companySnapshot?.name,
+                          selectedParticipant.participant.company?.name,
+                        )}
+                      </div>
                     </div>
                     <div className="text-right">
                       <div className="text-[11px] text-muted-foreground uppercase font-bold">Role</div>
-                      <div className="text-sm font-bold text-[#002D7A]">{selectedParticipant.jobTitleSnapshot?.name ?? "—"}</div>
+                      <div className="text-sm font-bold text-[#002D7A]">
+                        {resolveSnapshotName(
+                          selectedParticipant.jobTitleSnapshot?.name,
+                          selectedParticipant.participant.jobTitle?.name,
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex justify-between text-left">
                     <div>
                       <div className="text-[11px] text-muted-foreground uppercase font-bold">Industry</div>
-                      <div className="text-sm font-bold text-primary">{selectedParticipant.industrySnapshot?.name ?? "—"}</div>
+                      <div className="text-sm font-bold text-primary">
+                        {resolveSnapshotName(
+                          selectedParticipant.industrySnapshot?.name,
+                          selectedParticipant.participant.industry?.name,
+                        )}
+                      </div>
                     </div>
                     <div className="text-right">
                       <div className="text-[11px] text-muted-foreground uppercase font-bold">City</div>
-                      <div className="text-sm font-bold text-[#002D7A]">{selectedParticipant.citySnapshot?.name ?? "—"}</div>
+                      <div className="text-sm font-bold text-[#002D7A]">
+                        {resolveSnapshotName(
+                          selectedParticipant.citySnapshot?.name,
+                          selectedParticipant.participant.city?.name,
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
