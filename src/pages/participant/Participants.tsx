@@ -4,7 +4,14 @@ import { Topbar } from "@/components/Topbar";
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, QrCode, Search, X } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -29,17 +36,22 @@ import {
 
 const STATUS_OPTIONS: { label: string; value: RegistrationStatus }[] = [
   { label: "Approved", value: "approved" },
-  { label: "Pending",  value: "pending"  },
+  { label: "Pending", value: "pending" },
   { label: "Rejected", value: "rejected" },
 ];
 
 const getStatusStyles = (status: string) => {
   switch (status) {
-    case "approved":   return "bg-emerald-50 text-emerald-600 border-emerald-200 w-[100px]";
-    case "pending":    return "bg-yellow-50 text-yellow-600 border-yellow-200 w-[100px]";
-    case "rejected":   return "bg-red-50 text-red-600 border-red-200 w-[100px]";
-    case "checked_in": return "bg-blue-50 text-blue-600 border-blue-200 w-[100px]";
-    default:           return "bg-slate-50 text-slate-700 border-slate-200 w-[100px]";
+    case "approved":
+      return "bg-emerald-50 text-emerald-600 border-emerald-200 w-[100px]";
+    case "pending":
+      return "bg-yellow-50 text-yellow-600 border-yellow-200 w-[100px]";
+    case "rejected":
+      return "bg-red-50 text-red-600 border-red-200 w-[100px]";
+    case "checked_in":
+      return "bg-blue-50 text-blue-600 border-blue-200 w-[100px]";
+    default:
+      return "bg-slate-50 text-slate-700 border-slate-200 w-[100px]";
   }
 };
 
@@ -50,12 +62,14 @@ const dotStyles: Record<string, string> = {
   rejected: "bg-red-600",
 };
 
-
-
 const formatStatus = (status: string) =>
-  status === "checked_in" ? "Checked In" : status.charAt(0).toUpperCase() + status.slice(1);
+  status === "checked_in"
+    ? "Checked In"
+    : status.charAt(0).toUpperCase() + status.slice(1);
 
-const getTicketDeliveryStyles = (status: RegistrationTicketDeliveryStatus | undefined) => {
+const getTicketDeliveryStyles = (
+  status: RegistrationTicketDeliveryStatus | undefined,
+) => {
   switch (status) {
     case "sent":
       return "bg-emerald-100 text-emerald-700 border-emerald-200 w-[90px]";
@@ -106,44 +120,54 @@ export function Participants() {
   const [searchParams, setSearchParams] = useSearchParams();
   const eventId = searchParams.get("eventId") ?? "";
   const eventTitle = searchParams.get("eventTitle") ?? "Participant Approvals";
-  const selectedRegistrationId = searchParams.get("selectedRegistrationId") ?? "";
-
+  const selectedRegistrationId =
+    searchParams.get("selectedRegistrationId") ?? "";
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [selectedParticipant, setSelectedParticipant] = useState<RegistrationItem | null>(null);
+  const [selectedParticipant, setSelectedParticipant] =
+    useState<RegistrationItem | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const [items, setItems] = useState<RegistrationItem[]>([]);
   const [meta, setMeta] = useState<RegistrationMeta>({
-    approvedCount: 0, pendingCount: 0, rejectedCount: 0, checkedInCount: 0, totalCount: 0,
+    approvedCount: 0,
+    pendingCount: 0,
+    rejectedCount: 0,
+    checkedInCount: 0,
+    totalCount: 0,
   });
-  const [totalPages, setTotalPages]   = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [totalResults, setTotalResults] = useState(0);
-  const [isLoading, setIsLoading]     = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [actionFeedback, setActionFeedback] = useState<ActionFeedback | null>(null);
-  const [refreshKey, setRefreshKey]   = useState(0);
+  const [actionFeedback, setActionFeedback] = useState<ActionFeedback | null>(
+    null,
+  );
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const [searchQuery, setSearchQuery]       = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [statusFilter, setStatusFilter]     = useState<RegistrationStatus | "">("");
-  const [currentPage, setCurrentPage]       = useState(1);
-  const [rowsPerPage, setRowsPerPage]       = useState(5);
+  const [statusFilter, setStatusFilter] = useState<RegistrationStatus | "">("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const updateSearchParams = (updates: Record<string, string | null>) => {
-    setSearchParams((currentParams) => {
-      const nextParams = new URLSearchParams(currentParams);
+    setSearchParams(
+      (currentParams) => {
+        const nextParams = new URLSearchParams(currentParams);
 
-      for (const [key, value] of Object.entries(updates)) {
-        if (value) {
-          nextParams.set(key, value);
-        } else {
-          nextParams.delete(key);
+        for (const [key, value] of Object.entries(updates)) {
+          if (value) {
+            nextParams.set(key, value);
+          } else {
+            nextParams.delete(key);
+          }
         }
-      }
 
-      return nextParams;
-    }, { replace: true });
+        return nextParams;
+      },
+      { replace: true },
+    );
   };
 
   // Debounce: wait 400ms after the user stops typing before sending the request
@@ -166,9 +190,9 @@ export function Participants() {
       setIsLoading(true);
       setActionError(null);
       const result = await getRegistrations(eventId, {
-        page:  currentPage,
+        page: currentPage,
         limit: rowsPerPage,
-        ...(statusFilter    ? { status: statusFilter }    : {}),
+        ...(statusFilter ? { status: statusFilter } : {}),
         ...(debouncedSearch ? { search: debouncedSearch } : {}),
       });
       if (!active) return;
@@ -191,8 +215,17 @@ export function Participants() {
       setIsLoading(false);
     })();
 
-    return () => { active = false; };
-  }, [eventId, currentPage, rowsPerPage, statusFilter, debouncedSearch, refreshKey]);
+    return () => {
+      active = false;
+    };
+  }, [
+    eventId,
+    currentPage,
+    rowsPerPage,
+    statusFilter,
+    debouncedSearch,
+    refreshKey,
+  ]);
 
   useEffect(() => {
     if (!selectedRegistrationId) {
@@ -244,7 +277,9 @@ export function Participants() {
   const closeSelectedParticipant = () => {
     setSelectedParticipant(null);
     setSelectedIds((prev) =>
-      selectedRegistrationId ? prev.filter((id) => id !== selectedRegistrationId) : prev,
+      selectedRegistrationId
+        ? prev.filter((id) => id !== selectedRegistrationId)
+        : prev,
     );
     updateSearchParams({ selectedRegistrationId: null });
   };
@@ -254,7 +289,10 @@ export function Participants() {
   const handleApprove = async (registrationId: string) => {
     setActionFeedback(null);
     const result = await approveRegistration(eventId, registrationId);
-    if (result.error) { setActionError(result.error); return; }
+    if (result.error) {
+      setActionError(result.error);
+      return;
+    }
     setActionError(null);
     const registrationFromResponse = result.data?.registration;
     const fallbackParticipant =
@@ -265,20 +303,21 @@ export function Participants() {
     setActionFeedback({
       tone: "success",
       message:
-        result.data?.message ?? result.message ?? "Registration approved and QR ticket delivery updated.",
+        result.data?.message ??
+        result.message ??
+        "Registration approved and QR ticket delivery updated.",
     });
     setSelectedIds([]);
     setSelectedParticipant(
       registrationFromResponse
         ? {
             ...registrationFromResponse,
-            participant:
-              fallbackParticipant ?? {
-                _id: registrationFromResponse.participant?._id ?? "",
-                fullName: "Participant",
-                personalEmail: null,
-                companyEmail: null,
-              },
+            participant: fallbackParticipant ?? {
+              _id: registrationFromResponse.participant?._id ?? "",
+              fullName: "Participant",
+              personalEmail: null,
+              companyEmail: null,
+            },
           }
         : selectedParticipant,
     );
@@ -291,7 +330,10 @@ export function Participants() {
   const handleReject = async (registrationId: string) => {
     setActionFeedback(null);
     const result = await rejectRegistration(eventId, registrationId);
-    if (result.error) { setActionError(result.error); return; }
+    if (result.error) {
+      setActionError(result.error);
+      return;
+    }
     setActionError(null);
     setActionFeedback({
       tone: "success",
@@ -306,7 +348,10 @@ export function Participants() {
     if (selectedIds.length === 0) return;
     setActionFeedback(null);
     const result = await bulkApproveRegistrations(eventId, selectedIds);
-    if (result.error) { setActionError(result.error); return; }
+    if (result.error) {
+      setActionError(result.error);
+      return;
+    }
     const data: BulkApproveRegistrationsResult | null = result.data;
     setActionError(null);
     setActionFeedback({
@@ -324,19 +369,24 @@ export function Participants() {
     if (selectedIds.length === 0) return;
     setActionFeedback(null);
     const result = await bulkRejectRegistrations(eventId, selectedIds);
-    if (result.error) { setActionError(result.error); return; }
+    if (result.error) {
+      setActionError(result.error);
+      return;
+    }
     setActionError(null);
     setActionFeedback({
       tone: "success",
-      message: result.message || "Selected registrations rejected successfully.",
+      message:
+        result.message || "Selected registrations rejected successfully.",
     });
     setSelectedIds([]);
     closeSelectedParticipant();
     setRefreshKey((k) => k + 1);
   };
 
-  const indexOfFirstItem = totalResults === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
-  const indexOfLastItem  = Math.min(currentPage * rowsPerPage, totalResults);
+  const indexOfFirstItem =
+    totalResults === 0 ? 0 : (currentPage - 1) * rowsPerPage + 1;
+  const indexOfLastItem = Math.min(currentPage * rowsPerPage, totalResults);
   const selectedParticipantVisible = selectedParticipant
     ? items.some((item) => item._id === selectedParticipant._id)
     : false;
@@ -350,17 +400,24 @@ export function Participants() {
   if (!eventId) {
     return (
       <div className="min-h-screen flex bg-background relative overflow-hidden">
-        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+        <Sidebar
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
 
         <main className="flex-1 flex flex-col min-w-0 w-full">
           <Topbar onToggleSidebar={() => setIsSidebarOpen(true)} />
 
           <div className="px-10 py-8">
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-6 py-6 text-amber-900">
-              <h1 className="text-2xl font-bold text-[#001a4e]">No event is selected</h1>
+              <h1 className="text-2xl font-bold text-[#001a4e]">
+                No event is selected
+              </h1>
               <p className="mt-2 text-sm leading-6">
-                Event management page needs selected event. Open Events Page first,
-                then choose <span className="font-semibold">Manage Participants</span> from the selected event.
+                Event management page needs selected event. Open Events Page
+                first, then choose{" "}
+                <span className="font-semibold">Manage Participants</span> from
+                the selected event.
               </p>
               <div className="mt-5">
                 <Button
@@ -387,68 +444,132 @@ export function Participants() {
         <Topbar onToggleSidebar={() => setIsSidebarOpen(true)} />
 
         <main className="flex-1 overflow-y-auto overflow-x-hidden mb-6 pb-6">
-          <header className="flex flex-col md:flex-row items-center justify-between p-4 md:px-8 mx-10 md:pt-8 md:items-end">
-            <div className="flex flex-col justify-between items-start mb-6 pb-2 gap-3">
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[#001a4e]">
-                {/* Event name can be added here once fetched */}
-                {eventTitle}
-              </h1>
-            </div>
-            <div className="flex flex-col lg:flex-row items-center gap-3 mb-6 pb-2">
-              <div className="text-right mr-4">
-                <div className="text-2xl font-bold text-primary">
-                  {meta.approvedCount}
-                  <span className="text-sm font-normal text-slate-400">/ {meta.totalCount}</span>
-                </div>
-                <div className="text-xs font-medium text-[#72a688] bg-[#9cd3b2]/20 px-2 py-0.5 rounded">
-                  Approved Participants
-                </div>
+          <header className="px-4 md:px-10 md:pt-8 mb-8">
+            <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
+              {/* Left side */}
+              <div className="space-y-1.5">
+                <h1 className="text-4xl font-bold tracking-tight text-[#001a4e]">
+                  {eventTitle}
+                </h1>
+                <p className="max-w-2xl text-sm leading-6 text-slate-500">
+                  Manage participants and approve registrations.
+                </p>
               </div>
-              {/* <Button
-                asChild
-                variant="outline"
-                className="h-11 rounded-xl border-slate-200 px-4"
-              >
-                <Link to="/events">
-                  <ArrowLeft className="mr-2 h-4 w-4" aria-hidden="true" />
-                  Back to Events
-                </Link>
-              </Button> */}
-              <Button
-                variant="default"
-                asChild
-                className="h-11"
-              >
-                <Link to={`/events/${eventId}/check-in`}>
-                  <QrCode className="mr-2 h-4 w-4" aria-hidden="true" />
-                  Open Check-In Desk
-                </Link>
-              </Button>
 
-              <Button
-                variant="outline"
-                onClick={handleBulkReject}
-                disabled={selectedIds.length === 0 || isLoading}
-                className="h-11"
-              >
-                Reject Selected
-              </Button>
-              <Button
-                variant="default"
-                onClick={handleBulkApprove}
-                disabled={selectedIds.length === 0 || isLoading}
-                className="h-11"
-              >
-                Approve Selected
-              </Button>
+              {/* Right side */}
+              <div className="flex items-center gap-3 flex-wrap">
+                {/* Stats */}
+                <div className="flex items-center gap-4 mr-2 border-r pr-4 border-slate-200">
+                  {/* Progress bar */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-3">
+                      <div className="relative w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
+                        {/* Checked-in (green) */}
+                        <div
+                          className="absolute left-0 top-0 h-full bg-emerald-500"
+                          style={{
+                            width: `${Math.min(
+                              Math.round(
+                                ((meta.checkedInCount ?? 0) /
+                                  (meta.totalCount || 1)) *
+                                  100,
+                              ),
+                              100,
+                            )}%`,
+                          }}
+                        />
+
+                        {/* Approved (blue) */}
+                        <div
+                          className="absolute top-0 h-full bg-[#1a3fa8]"
+                          style={{
+                            left: `${Math.min(
+                              Math.round(
+                                ((meta.checkedInCount ?? 0) /
+                                  (meta.totalCount || 1)) *
+                                  100,
+                              ),
+                              100,
+                            )}%`,
+                            width: `${Math.min(
+                              Math.round(
+                                (meta.approvedCount / (meta.totalCount || 1)) *
+                                  100,
+                              ),
+                              100 -
+                                Math.round(
+                                  ((meta.checkedInCount ?? 0) /
+                                    (meta.totalCount || 1)) *
+                                    100,
+                                ),
+                            )}%`,
+                          }}
+                        />
+                      </div>
+
+                      {/* Total count */}
+                      <span className="text-sm font-semibold text-slate-700 tabular-nums">
+                        {(
+                          meta.approvedCount + (meta.checkedInCount ?? 0)
+                        ).toLocaleString()}
+                        <span className="text-slate-400 font-normal">
+                          {" / "}
+                          {meta.totalCount.toLocaleString()}
+                        </span>
+                      </span>
+                    </div>
+
+                    {/* Breakdown */}
+                    <div className="flex items-center gap-4 text-xs text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        {meta.checkedInCount ?? 0} checked in
+                      </span>
+
+                      <span className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-[#1a3fa8]" />
+                        {meta.approvedCount} approved
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <Button variant="default" asChild className="h-10">
+                  <Link to={`/events/${eventId}/check-in`}>
+                    <QrCode className="mr-2 h-4 w-4" aria-hidden="true" />
+                    Check-In Desk
+                  </Link>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  onClick={handleBulkReject}
+                  disabled={selectedIds.length === 0 || isLoading}
+                  className="h-10"
+                >
+                  Reject
+                </Button>
+
+                <Button
+                  variant="default"
+                  onClick={handleBulkApprove}
+                  disabled={selectedIds.length === 0 || isLoading}
+                  className="h-10"
+                >
+                  Approve
+                </Button>
+              </div>
             </div>
           </header>
 
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 p-4 md:px-8 mx-10">
             {/* Table */}
-            <div className={`transition-all duration-300 ${selectedParticipant ? "col-span-12 lg:col-span-8 xl:col-span-9" : "col-span-12"}`}>
+            <div
+              className={`transition-all duration-300 ${selectedParticipant ? "col-span-12 lg:col-span-8 xl:col-span-9" : "col-span-12"}`}
+            >
               <div className="bg-white p-6 rounded-2xl">
-                {(actionError || actionFeedback) ? (
+                {actionError || actionFeedback ? (
                   <div
                     aria-live="polite"
                     className={`mb-5 rounded-2xl border px-4 py-3 text-sm leading-6 ${
@@ -476,24 +597,28 @@ export function Participants() {
                     />
                   </div>
 
-                    <Select
-                      value={statusFilter}
-                      onValueChange={(value) => {
-                        setStatusFilter(value === "all" ? "" : value as RegistrationStatus);
-                        setCurrentPage(1);
-                      }}
-                    >
-                      <SelectTrigger className="w-[180px] rounded-xl border-slate-200 bg-background focus:ring-1 focus:ring-indigo-400 transition-all">
-                        <SelectValue placeholder="All Status" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                        <SelectItem value="all">All Status</SelectItem>
-                        {STATUS_OPTIONS.map((s) => (
-                          <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(value) => {
+                      setStatusFilter(
+                        value === "all" ? "" : (value as RegistrationStatus),
+                      );
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-[180px] rounded-xl border-slate-200 bg-background focus:ring-1 focus:ring-indigo-400 transition-all">
+                      <SelectValue placeholder="All Status" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+                      <SelectItem value="all">All Status</SelectItem>
+                      {STATUS_OPTIONS.map((s) => (
+                        <SelectItem key={s.value} value={s.value}>
+                          {s.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
                 {/* Table */}
                 <div className="overflow-x-auto">
@@ -503,7 +628,10 @@ export function Participants() {
                         <TableHead className="w-[50px] text-center">
                           <input
                             type="checkbox"
-                            checked={items.length > 0 && selectedIds.length === items.length}
+                            checked={
+                              items.length > 0 &&
+                              selectedIds.length === items.length
+                            }
                             onChange={toggleSelectAll}
                             className="translate-y-[2px] h-4 w-4 rounded border-gray-300 focus:ring-primary cursor-pointer"
                           />
@@ -513,71 +641,89 @@ export function Participants() {
                         <TableHead className="text-left">Industry</TableHead>
                         <TableHead className="text-left">Role</TableHead>
                         <TableHead className="text-center">Status</TableHead>
-                        <TableHead className="text-center">QR Delivery</TableHead>
+                        <TableHead className="text-center">
+                          QR Delivery
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {isLoading ? (
-                          <TableRow>
-                            <TableCell colSpan={7} className="text-center py-10 text-slate-400">
-                              Loading...
+                      {isLoading ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={7}
+                            className="text-center py-10 text-slate-400"
+                          >
+                            Loading...
+                          </TableCell>
+                        </TableRow>
+                      ) : items.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={7}
+                            className="text-center py-10 text-slate-400"
+                          >
+                            No participants found.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        items.map((item) => (
+                          <TableRow
+                            key={item._id}
+                            onClick={() => toggleSelectOne(item)}
+                            className={`cursor-pointer transition-colors ${selectedIds.includes(item._id) ? "bg-blue-50/50" : ""}`}
+                          >
+                            <TableCell className="w-[50px] text-center">
+                              <input
+                                type="checkbox"
+                                checked={selectedIds.includes(item._id)}
+                                onClick={(e) => e.stopPropagation()} //to stop propagation to row click which also toggles selection
+                                onChange={() => toggleSelectOne(item)}
+                                className="translate-y-[2px] h-4 w-4 rounded border-gray-300 focus:ring-primary cursor-pointer"
+                              />
                             </TableCell>
-                          </TableRow>
-                        ) : items.length === 0 ? (
-                          <TableRow>
-                            <TableCell colSpan={7} className="text-center py-10 text-slate-400">
-                              No participants found.
+                            <TableCell className="font-medium pl-10">
+                              {item.participant.fullName}
                             </TableCell>
-                          </TableRow>
-                        ) : (
-                          items.map((item) => (
-                            <TableRow
-                              key={item._id}
-                              onClick={() => toggleSelectOne(item)}
-                              className={`cursor-pointer transition-colors ${selectedIds.includes(item._id) ? "bg-blue-50/50" : ""}`}
-                            >
-                              <TableCell className="w-[50px] text-center">
-                                <input
-                                  type="checkbox"
-                                  checked={selectedIds.includes(item._id)}
-                                  onClick={(e) => e.stopPropagation()} //to stop propagation to row click which also toggles selection
-                                  onChange={() => toggleSelectOne(item)}
-                                  className="translate-y-[2px] h-4 w-4 rounded border-gray-300 focus:ring-primary cursor-pointer"
+                            <TableCell className="text-left">
+                              {resolveSnapshotName(
+                                item.companySnapshot?.name,
+                                item.participant.company?.name,
+                              )}
+                            </TableCell>
+                            <TableCell className="text-left">
+                              {resolveSnapshotName(
+                                item.industrySnapshot?.name,
+                                item.participant.industry?.name,
+                              )}
+                            </TableCell>
+                            <TableCell className="text-left">
+                              {resolveSnapshotName(
+                                item.jobTitleSnapshot?.name,
+                                item.participant.jobTitle?.name,
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span
+                                className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${getStatusStyles(item.status)}`}
+                              >
+                                <span
+                                  className={`w-1 h-1 rounded-full ${dotStyles[item.status]} ?? "bg-slate-300"`}
                                 />
-                              </TableCell>
-                              <TableCell className="font-medium pl-10">{item.participant.fullName}</TableCell>
-                              <TableCell className="text-left">
-                                {resolveSnapshotName(
-                                  item.companySnapshot?.name,
-                                  item.participant.company?.name,
-                                )}
-                              </TableCell>
-                              <TableCell className="text-left">
-                                {resolveSnapshotName(
-                                  item.industrySnapshot?.name,
-                                  item.participant.industry?.name,
-                                )}
-                              </TableCell>
-                              <TableCell className="text-left">
-                                {resolveSnapshotName(
-                                  item.jobTitleSnapshot?.name,
-                                  item.participant.jobTitle?.name,
-                                )}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <span className={`inline-flex items-center justify-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${getStatusStyles(item.status)}`}>
-                                  <span className={`w-1 h-1 rounded-full ${dotStyles[item.status]} ?? "bg-slate-300"`}/>
-                                  {formatStatus(item.status).toUpperCase()}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <span className={`inline-flex items-center justify-center rounded-full border px-3 py-1 text-[10px] font-bold ${getTicketDeliveryStyles(item.ticketDelivery?.status)}`}>
-                                  {formatTicketDeliveryStatus(item.ticketDelivery?.status).toUpperCase()}
-                                </span>
-                              </TableCell>
-                            </TableRow>
-                          ))
-                        )}
+                                {formatStatus(item.status).toUpperCase()}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <span
+                                className={`inline-flex items-center justify-center rounded-full border px-3 py-1 text-[10px] font-bold ${getTicketDeliveryStyles(item.ticketDelivery?.status)}`}
+                              >
+                                {formatTicketDeliveryStatus(
+                                  item.ticketDelivery?.status,
+                                ).toUpperCase()}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -585,26 +731,43 @@ export function Participants() {
                 {/* Pagination */}
                 <div className="flex flex-col md:flex-row items-center justify-between px-6 pt-5 bg-slate-50/30 border-t border-slate-100 gap-4">
                   <div className="flex items-center gap-2">
-                    <p className="text-[13px] font-medium text-slate-400">Rows per page</p>
+                    <p className="text-[13px] font-medium text-slate-400">
+                      Rows per page
+                    </p>
                     <Select
                       value={rowsPerPage.toString()}
-                      onValueChange={(value) => { setRowsPerPage(Number(value)); setCurrentPage(1); }}
+                      onValueChange={(value) => {
+                        setRowsPerPage(Number(value));
+                        setCurrentPage(1);
+                      }}
                     >
                       <SelectTrigger className="h-8 w-[70px] rounded-lg border-slate-200 bg-white">
                         <SelectValue placeholder={rowsPerPage} />
                       </SelectTrigger>
                       <SelectContent side="top">
                         {[5, 10, 20, 50].map((size) => (
-                          <SelectItem key={size} value={`${size}`}>{size}</SelectItem>
+                          <SelectItem key={size} value={`${size}`}>
+                            {size}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="text-[13px] font-medium text-slate-400">
-                    Showing <span className="text-[#001a4e] font-bold">{indexOfFirstItem}</span> to{" "}
-                    <span className="text-[#001a4e] font-bold">{indexOfLastItem}</span> of{" "}
-                    <span className="text-[#001a4e] font-bold">{totalResults}</span> results
+                    Showing{" "}
+                    <span className="text-[#001a4e] font-bold">
+                      {indexOfFirstItem}
+                    </span>{" "}
+                    to{" "}
+                    <span className="text-[#001a4e] font-bold">
+                      {indexOfLastItem}
+                    </span>{" "}
+                    of{" "}
+                    <span className="text-[#001a4e] font-bold">
+                      {totalResults}
+                    </span>{" "}
+                    results
                   </div>
 
                   <div className="flex items-center gap-4">
@@ -613,19 +776,27 @@ export function Participants() {
                     </div>
                     <div className="flex gap-2">
                       <Button
-                        variant="outline" 
+                        variant="outline"
                         size="sm"
-                        onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                        onClick={() =>
+                          setCurrentPage((prev) => Math.max(prev - 1, 1))
+                        }
                         disabled={currentPage === 1}
                         className="h-8 rounded-lg text-[11px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef]"
                       >
                         PREVIOUS
                       </Button>
                       <Button
-                        variant="outline" 
+                        variant="outline"
                         size="sm"
-                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages || totalPages === 0}
+                        onClick={() =>
+                          setCurrentPage((prev) =>
+                            Math.min(prev + 1, totalPages),
+                          )
+                        }
+                        disabled={
+                          currentPage === totalPages || totalPages === 0
+                        }
                         className="h-8 rounded-lg text-[11px] font-bold border-slate-200 text-[#001a4e] hover:bg-[#e8e7ef]"
                       >
                         NEXT
@@ -637,12 +808,16 @@ export function Participants() {
             </div>
 
             {/* Detail Sidebar */}
-            <div className={`transition-all duration-300 ${selectedParticipant ? "col-span-12 lg:col-span-4 xl:col-span-3 block" : "hidden lg:hidden"}`}>
+            <div
+              className={`transition-all duration-300 ${selectedParticipant ? "col-span-12 lg:col-span-4 xl:col-span-3 block" : "hidden lg:hidden"}`}
+            >
               <div className="bg-white p-6 rounded-2xl relative overflow-hidden shadow-xl shadow-slate-300 h-fit">
                 {selectedParticipant && (
                   <div className="flex flex-col gap-6">
                     <div className="flex items-center justify-between gap-3">
-                      <p className="text-[13px] font-bold text-slate-500">Participant Details</p>
+                      <p className="text-[13px] font-bold text-slate-500">
+                        Participant Details
+                      </p>
                       <Button
                         type="button"
                         variant="ghost"
@@ -656,7 +831,9 @@ export function Participants() {
                     </div>
                     {!selectedParticipantVisible ? (
                       <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
-                        Participant ini tetap terbuka untuk direview, tetapi sudah tidak muncul di tabel karena tidak cocok dengan filter saat ini.
+                        Participant ini tetap terbuka untuk direview, tetapi
+                        sudah tidak muncul di tabel karena tidak cocok dengan
+                        filter saat ini.
                       </div>
                     ) : null}
                     <div className="items-center pt-3">
@@ -669,7 +846,9 @@ export function Participants() {
                     </div>
                     <div className="flex justify-between text-left">
                       <div>
-                        <div className="text-[11px] text-muted-foreground uppercase font-bold">Company</div>
+                        <div className="text-[11px] text-muted-foreground uppercase font-bold">
+                          Company
+                        </div>
                         <div className="text-sm font-bold text-primary">
                           {resolveSnapshotName(
                             selectedParticipant.companySnapshot?.name,
@@ -678,7 +857,9 @@ export function Participants() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-[11px] text-muted-foreground uppercase font-bold">Role</div>
+                        <div className="text-[11px] text-muted-foreground uppercase font-bold">
+                          Role
+                        </div>
                         <div className="text-sm font-bold text-[#002D7A]">
                           {resolveSnapshotName(
                             selectedParticipant.jobTitleSnapshot?.name,
@@ -689,7 +870,9 @@ export function Participants() {
                     </div>
                     <div className="flex justify-between text-left">
                       <div>
-                        <div className="text-[11px] text-muted-foreground uppercase font-bold">Industry</div>
+                        <div className="text-[11px] text-muted-foreground uppercase font-bold">
+                          Industry
+                        </div>
                         <div className="text-sm font-bold text-primary">
                           {resolveSnapshotName(
                             selectedParticipant.industrySnapshot?.name,
@@ -698,7 +881,9 @@ export function Participants() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-[11px] text-muted-foreground uppercase font-bold">City</div>
+                        <div className="text-[11px] text-muted-foreground uppercase font-bold">
+                          City
+                        </div>
                         <div className="text-sm font-bold text-[#002D7A]">
                           {resolveSnapshotName(
                             selectedParticipant.citySnapshot?.name,
@@ -714,7 +899,8 @@ export function Participants() {
                             QR Ticket Delivery
                           </div>
                           <p className="mt-2 text-[12px] text-slate-500 pr-3">
-                            Approval will generate a QR ticket and queue the delivery email automatically.
+                            Approval will generate a QR ticket and queue the
+                            delivery email automatically.
                           </p>
                         </div>
                         <span
@@ -722,25 +908,37 @@ export function Participants() {
                             selectedParticipant.ticketDelivery?.status,
                           )}`}
                         >
-                          {formatTicketDeliveryStatus(selectedParticipant.ticketDelivery?.status)}
+                          {formatTicketDeliveryStatus(
+                            selectedParticipant.ticketDelivery?.status,
+                          )}
                         </span>
                       </div>
 
                       <div className="mt-4 space-y-3 text-sm text-slate-600">
                         <div className="flex items-start justify-between gap-3">
-                          <span className="font-semibold text-slate-500">Ticket code</span>
+                          <span className="font-semibold text-slate-500">
+                            Ticket code
+                          </span>
                           <span className="text-right font-mono text-[12px] text-slate-700 max-w-[108px] break-all">
-                            {selectedParticipant.ticket?.qrCode ?? "Generated after approval"}
+                            {selectedParticipant.ticket?.qrCode ??
+                              "Generated after approval"}
                           </span>
                         </div>
                         <div className="flex items-start justify-between gap-3">
-                          <span className="font-semibold text-slate-500">Attempts</span>
-                          <span>{selectedParticipant.ticketDelivery?.attempts ?? 0}</span>
+                          <span className="font-semibold text-slate-500">
+                            Attempts
+                          </span>
+                          <span>
+                            {selectedParticipant.ticketDelivery?.attempts ?? 0}
+                          </span>
                         </div>
                         <div className="flex items-start justify-between gap-3">
-                          <span className="font-semibold text-slate-500">Last issue</span>
+                          <span className="font-semibold text-slate-500">
+                            Last issue
+                          </span>
                           <span className="max-w-[108px] text-right text-[12px]">
-                            {selectedParticipant.ticketDelivery?.failureReason ?? "No delivery issue recorded"}
+                            {selectedParticipant.ticketDelivery
+                              ?.failureReason ?? "No delivery issue recorded"}
                           </span>
                         </div>
                       </div>
@@ -749,7 +947,9 @@ export function Participants() {
                       <button
                         type="button"
                         onClick={() => handleReject(selectedParticipant._id)}
-                        disabled={selectedParticipant.status !== "pending" || isLoading}
+                        disabled={
+                          selectedParticipant.status !== "pending" || isLoading
+                        }
                         className="bg-[#DDDCE3] text-foreground px-6 py-2 rounded-lg font-bold text-sm hover:shadow-xl transition-all active:scale-95 w-[100px] disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         Reject
@@ -757,7 +957,9 @@ export function Participants() {
                       <button
                         type="button"
                         onClick={() => handleApprove(selectedParticipant._id)}
-                        disabled={selectedParticipant.status !== "pending" || isLoading}
+                        disabled={
+                          selectedParticipant.status !== "pending" || isLoading
+                        }
                         className="bg-[#15439F] text-white px-6 py-2 rounded-lg font-bold text-sm hover:shadow-xl transition-all active:scale-95 w-[100px] disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         Approve

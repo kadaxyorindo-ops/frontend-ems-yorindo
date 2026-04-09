@@ -880,9 +880,9 @@ export function EventCheckInDesk() {
                                     {item.companySnapshot.name}
                                   </span>
                                 )}
-                                {item.jobTitleSnapshot?.name && (
+                                {(item.jobTitleSnapshot?.name ?? item.participant.jobTitle?.name) && (
                                   <span className="rounded-full bg-slate-100 px-3 py-1">
-                                    {item.jobTitleSnapshot.name}
+                                    {item.jobTitleSnapshot?.name ?? item.participant.jobTitle?.name}
                                   </span>
                                 )}
                                 {item.ticket?.qrCode && (
@@ -1111,9 +1111,7 @@ export function EventCheckInDesk() {
                                 {item.participant.fullName}
                               </p>
                               <p className="truncate text-xs text-slate-400">
-                                {item.jobTitleSnapshot?.name ??
-                                  item.companySnapshot?.name ??
-                                  "Participant"}
+                                {item.jobTitleSnapshot?.name ?? item.participant.jobTitle?.name ?? "Unknown"}
                               </p>
                             </div>
                           </TableCell>
