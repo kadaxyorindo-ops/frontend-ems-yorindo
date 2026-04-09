@@ -74,6 +74,8 @@ export function EventDialog({
   onOpen,
   onSuccess,
 }: EventDialogProps) {
+  const today = new Date().toISOString().split("T")[0];
+  const minDate = mode === "create" ? today : undefined;
   const isEdit = mode === "edit";
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -99,14 +101,17 @@ export function EventDialog({
   useEffect(() => {
     if (!industryOpen) return;
     function handleClickOutside(e: MouseEvent) {
-      if (industryRef.current && !industryRef.current.contains(e.target as Node)) {
+      if (
+        industryRef.current &&
+        !industryRef.current.contains(e.target as Node)
+      ) {
         setIndustryOpen(false);
         setNewIndustryName("");
         setIndustryError(null);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [industryOpen]);
 
   useEffect(() => {
@@ -312,6 +317,7 @@ export function EventDialog({
                   id="event-date"
                   name="eventDate"
                   type="date"
+                  min={minDate}
                   defaultValue={defaultData?.date}
                   required
                   className="h-10! leading-none py-0 rounded-lg border-slate-200 bg-slate-50 text-sm text-slate-700 focus-visible:ring-1 focus-visible:ring-[#1a3fa8]/40 focus-visible:border-[#1a3fa8]/50"

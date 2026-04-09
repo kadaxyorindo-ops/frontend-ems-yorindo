@@ -121,30 +121,35 @@ export function Events() {
     <DashboardLayout>
       <div className="min-h-screen flex flex-col bg-background relative overflow-hidden font-sans">
         {/* HEADER */}
-        <header className="flex flex-col p-4 md:px-10 md:pt-8 md:flex-row md:items-end justify-between">
-          <div className="flex flex-col justify-between items-start mb-6 gap-3">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[#001a4e]">
-              Event Management
-            </h1>
-          </div>
-
-          <div className="flex items-center gap-3 mb-6">
-            <div className="text-right mr-4 border-r pr-4 border-slate-200">
-              <div className="text-2xl font-bold text-[#001a4e]">
-                {stats?.totalApprovedAcrossAllEvents.toLocaleString() ?? "—"}
-              </div>
-              <div className="text-[10px] font-bold text-[#72a688] bg-[#9cd3b2]/20 px-2 py-0.5 rounded uppercase">
-                Total Participant
-              </div>
+        <header className="px-4 md:px-10 md:pt-8 mb-8">
+          <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-1.5">
+              <h1 className="text-4xl font-bold tracking-tight text-[#001a4e]">
+                Event Management
+              </h1>
+              <p className="max-w-2xl text-sm leading-6 text-slate-500">
+                Manage your events, track participants, and monitor every milestone.
+              </p>
             </div>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => handleSearch(e.target.value)}
-              placeholder="Search events..."
-              className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#1a3fa8]/50 focus:ring-1 focus:ring-[#1a3fa8]/20 placeholder:text-slate-300"
-            />
-            {canCreate && <EventDialog mode="create" onSuccess={refresh} />}
+
+            <div className="flex items-center gap-3 mb-6 ">
+              <div className="text-right mr-4 border-r pr-4 border-slate-200">
+                <div className="text-2xl font-bold text-[#001a4e]">
+                  {stats?.totalApprovedAcrossAllEvents.toLocaleString() ?? "—"}
+                </div>
+                <div className="text-[10px] font-bold text-[#72a688] bg-[#9cd3b2]/20 px-2 py-0.5 rounded uppercase">
+                  Total Participants
+                </div>
+              </div>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => handleSearch(e.target.value)}
+                placeholder="Search events..."
+                className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#1a3fa8]/50 focus:ring-1 focus:ring-[#1a3fa8]/20 placeholder:text-slate-300"
+              />
+              {canCreate && <EventDialog mode="create" onSuccess={refresh} />}
+            </div>
           </div>
         </header>
 
@@ -466,7 +471,7 @@ export function Events() {
                             </DropdownMenuContent>
                           </DropdownMenu>
 
-                          {/* KONTEN KONFIRMASI DELETE */}
+                          {/* Delete Confirmation */}
                           <AlertDialogContent className="rounded-2xl">
                             <AlertDialogHeader>
                               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
@@ -488,7 +493,7 @@ export function Events() {
                                   await hardDeleteEvent(event._id);
                                   refresh();
                                 }}
-                                variant='destructive'
+                                variant="destructive"
                                 className="bg-red-600 hover:bg-red-700 text-white rounded-lg"
                               >
                                 Delete
