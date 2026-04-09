@@ -508,7 +508,7 @@ function FilterSelect({
 
 const LOCAL_STORAGE_KEY = "pending_email_campaign";
 
-// Helper untuk mengambil data dari local storage
+// Helper to read draft data from local storage
 function getLocalDraft() {
   const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
   return saved ? JSON.parse(saved) : null;
@@ -1090,8 +1090,8 @@ export function Communication() {
       return;
     }
 
-    // Jika sampai di titik ini, artinya API berhasil menyimpan data ke server.
-    // Kita bisa menghapus draf sementara di browser karena sudah "aman" di database.
+    // At this point the API has persisted the draft/campaign successfully.
+    // The local browser draft can be cleared because the data is already saved.
     localStorage.removeItem(LOCAL_STORAGE_KEY);
 
     setFeedback({
@@ -1121,7 +1121,7 @@ export function Communication() {
   const [localDraftData, setLocalDraftData] = useState<any>(null);
 
   useEffect(() => {
-    // Jangan simpan jika sedang loading draft dari server atau sedang review
+    // Skip local autosave while loading a server draft or while in review mode.
     if (loadingDraftId || isReviewingSend) return;
 
     const timeoutId = setTimeout(() => {
@@ -1135,7 +1135,7 @@ export function Communication() {
         timestamp: new Date().toISOString(),
       };
 
-      // Hanya simpan jika ada konten yang berarti
+      // Save only when there is meaningful content.
       if (
         subject.trim() ||
         editorValue.text.trim() ||
@@ -1143,7 +1143,7 @@ export function Communication() {
       ) {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
       }
-    }, 1000); // Debounce 1 detik agar tidak terlalu sering menulis ke disk
+    }, 1000); // Debounce by 1 second to avoid frequent localStorage writes.
 
     return () => clearTimeout(timeoutId);
   }, [
@@ -1158,7 +1158,7 @@ export function Communication() {
 
   useEffect(() => {
     const savedData = getLocalDraft();
-    // Jika ada data DAN user tidak sedang diarahkan untuk memuat draft spesifik dari navigasi
+    // Show restore prompt only when local draft exists and no navigation draft is requested.
     if (savedData && !draftIdFromNavigation) {
       setLocalDraftData(savedData);
       setShowRestorePrompt(true);
@@ -1197,9 +1197,9 @@ export function Communication() {
                 Review Template & Queue Broadcast
               </h1>
               <p className="max-w-2xl text-sm leading-6 text-slate-500">
-                Template email, inbox preview, dan konfirmasi RabbitMQ sekarang
-                ada di screen terpisah supaya admin benar-benar tahu apa yang
-                akan dikirim.
+                Review the email template, inbox preview, and final confirmation
+                on a dedicated screen so admins can verify exactly what will be
+                sent.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -1254,7 +1254,7 @@ export function Communication() {
                     {selectedRecipientCount}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
-                    Recipient terpilih yang akan masuk queue.
+                    Selected recipients that will receive this campaign.
                   </p>
                 </div>
 
@@ -1268,7 +1268,7 @@ export function Communication() {
                       : "Approved-safe segment"}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
-                    Pastikan audience memang sesuai sebelum mengirim.
+                    Confirm the audience is correct before sending.
                   </p>
                 </div>
               </div>
@@ -1374,8 +1374,8 @@ export function Communication() {
                   Choose the Email Template
                 </h2>
                 <p className="text-sm leading-6 text-slate-500">
-                  Ini adalah screen review final sebelum campaign masuk ke
-                  worker RabbitMQ.
+                  This is the final review screen before the campaign is queued
+                  for delivery.
                 </p>
               </div>
 
@@ -1513,13 +1513,10 @@ export function Communication() {
               <div className="flex flex-col gap-3 border-t  border-slate-300 pt-5 sm:flex-row sm:justify-between">
                 <div className="space-y-1 text-xs leading-5 text-slate-500">
                   <p>
-                    `Save Draft` saves segment, subject, and body without
-                    sending email.
+                    Save Draft stores the current audience, subject, and message
+                    without sending emails.
                   </p>
-                  <p>
-                    `Confirm & Queue Send` make a campaign with status `queued`,
-                    then worker RabbitMQ will process the broadcast delivery.
-                  </p>
+                  <p>Confirm & Queue Send queues the campaign for delivery.</p>
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row">
@@ -2436,7 +2433,9 @@ export function Communication() {
                   className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400"
                 >
                   Subject Line
-                  <span className="text-rose-400 text-[10px] leading-none">*</span>
+                  <span className="text-rose-400 text-[10px] leading-none">
+                    *
+                  </span>
                 </Label>
                 <Input
                   ref={subjectInputRef}
@@ -2493,7 +2492,9 @@ export function Communication() {
                   className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400"
                 >
                   Message Body
-                  <span className="text-rose-400 text-[10px] leading-none">*</span>
+                  <span className="text-rose-400 text-[10px] leading-none">
+                    *
+                  </span>
                 </Label>
                 <div
                   className={
@@ -2520,8 +2521,8 @@ export function Communication() {
                   id="communication-message-body-help"
                   className="text-xs text-slate-400"
                 >
-                  The editor stores HTML for delivery and JSON for future draft
-                  editing.
+                  Use the editor to format your message while keeping drafts
+                  easy to update later.
                 </p>
                 {composerErrors.body ? (
                   <p className="text-sm text-rose-600">{composerErrors.body}</p>
