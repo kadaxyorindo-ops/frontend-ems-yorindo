@@ -120,19 +120,21 @@ export function Events() {
   return (
     <DashboardLayout>
       <div className="min-h-screen flex flex-col bg-background relative overflow-hidden font-sans">
-        {/* HEADER */}
         <header className="px-4 md:px-10 md:pt-8 mb-8">
-          <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
+            {/* Left side */}
             <div className="space-y-1.5">
               <h1 className="text-4xl font-bold tracking-tight text-[#001a4e]">
                 Event Management
               </h1>
               <p className="max-w-2xl text-sm leading-6 text-slate-500">
-                Manage your events, track participants, and monitor every milestone.
+                Manage your events, track participants, and monitor every
+                milestone.
               </p>
             </div>
 
-            <div className="flex items-center gap-3 mb-6 ">
+            {/* Right side */}
+            <div className="flex items-center gap-3">
               <div className="text-right mr-4 border-r pr-4 border-slate-200">
                 <div className="text-2xl font-bold text-[#001a4e]">
                   {stats?.totalApprovedAcrossAllEvents.toLocaleString() ?? "—"}
