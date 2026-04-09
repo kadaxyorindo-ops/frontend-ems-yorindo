@@ -1,25 +1,10 @@
-import {
-  useDeferredValue,
-  useEffect,
-  useState,
-} from "react";
-import {
-  Link,
-  useSearchParams,
-} from "react-router-dom";
-import {
-  Clock3,
-  LoaderCircle,
-  Search,
-  SendHorizontal,
-} from "lucide-react";
+import { useDeferredValue, useEffect, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Clock3, LoaderCircle, Search, SendHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DashboardLayout } from "@/layouts/DashboardLayout";
-import {
-  api,
-  apiPaths,
-} from "@/services/api";
+import { api, apiPaths } from "@/services/api";
 import {
   Table,
   TableBody,
@@ -98,7 +83,7 @@ function readStatus(value: string | null): CampaignStatus {
 
 function formatDateTime(value: string | null) {
   if (!value) {
-    return "Belum dikirim";
+    return "Not sent";
   }
 
   return new Date(value).toLocaleString("id-ID", {
@@ -139,20 +124,36 @@ function getStatusBadgeClass(status: CampaignHistoryItem["status"]) {
   }
 }
 
+const statusStyles: Record<string, string> = {
+  sent: "bg-emerald-50 text-emerald-600 border-emerald-200",
+  queued: "bg-blue-50 text-blue-600 border-blue-200",
+  processing: "bg-yellow-50 text-yellow-600 border-yellow-200",
+  draft: "bg-slate-50 text-slate-400 border-slate-200",
+  failed: "bg-red-50 text-red-600 border-red-200",
+};
+
+const dotStyles: Record<string, string> = {
+  sent: "bg-emerald-400",
+  queued: "bg-blue-400",
+  processing: "bg-yellow-400",
+  draft: "bg-slate-300",
+  failed: "bg-red-400",
+};
+
 function getDeliveryLabel(item: CampaignHistoryItem) {
   if (item.status === "draft") {
-    return "Belum masuk queue";
+    return "Not sent";
   }
 
   if (item.status === "queued") {
-    return "Menunggu worker RabbitMQ";
+    return "Waiting to send";
   }
 
   if (item.status === "processing") {
-    return "Sedang dikirim oleh worker";
+    return "Sending";
   }
 
-  return `${item.delivery.successCount} sukses · ${item.delivery.failureCount} gagal`;
+  return `${item.delivery.successCount} sent · ${item.delivery.failureCount} failed`;
 }
 
 export function CampaignHistory() {
@@ -170,33 +171,32 @@ export function CampaignHistory() {
 
   useEffect(() => {
     const nextStatus = readStatus(searchParams.get("status"));
-    const nextSearch = searchParams.get("search") ?? "";
-
-    setStatus((currentValue) =>
-      currentValue === nextStatus ? currentValue : nextStatus,
-    );
-    setSearchInput((currentValue) =>
-      currentValue === nextSearch ? currentValue : nextSearch,
-    );
+    if (nextStatus !== status) {
+      setStatus(nextStatus);
+    }
   }, [searchParams]);
 
   useEffect(() => {
-    const nextParams = new URLSearchParams();
+    const nextParams = new URLSearchParams(searchParams);
 
     if (status !== "all") {
       nextParams.set("status", status);
+    } else {
+      nextParams.delete("status");
     }
 
     const normalizedSearch = deferredSearch.trim();
-
     if (normalizedSearch) {
       nextParams.set("search", normalizedSearch);
+    } else {
+      nextParams.delete("search");
     }
 
+    // Only update if something actually changed
     if (nextParams.toString() !== searchParams.toString()) {
       setSearchParams(nextParams, { replace: true });
     }
-  }, [deferredSearch, searchParams, setSearchParams, status]);
+  }, [deferredSearch, status]); // Removed searchParams to stop the loop
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -245,17 +245,13 @@ export function CampaignHistory() {
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        <div className="flex flex-col gap-4 border-b border-dashed border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-col gap-4 border-b border-dashed border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
-              Communication Ops
-            </p>
             <h1 className="text-4xl font-bold tracking-tight text-[#001a4e]">
               Campaign History
             </h1>
             <p className="max-w-2xl text-sm leading-6 text-slate-500">
-              Monitor every draft, queue, and delivery result after the broadcast
-              leaves the composer.
+              Monitor drafts and delivery results after the broadcast is sent.
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -273,7 +269,7 @@ export function CampaignHistory() {
           </div>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-[24px] border border-slate-300 bg-slate-50 px-5 py-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
               Total
@@ -282,19 +278,19 @@ export function CampaignHistory() {
               {totalCampaigns}
             </p>
             <p className="mt-1 text-xs text-slate-500">
-              Campaign records matching the current filter.
+              Total campaigns in this view.
             </p>
           </div>
 
           <div className="rounded-[24px] border border-amber-300 bg-amber-50/70 px-5 py-4">
             <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-amber-700">
-              Active Queue
+              Sending
             </p>
             <p className="mt-2 text-3xl font-bold text-amber-900 tabular-nums">
               {queuedCount}
             </p>
             <p className="mt-1 text-xs text-amber-700/80">
-              Queued or currently being processed by RabbitMQ workers.
+              Campaigns currently being sent.
             </p>
           </div>
 
@@ -306,7 +302,7 @@ export function CampaignHistory() {
               {deliveredCount}
             </p>
             <p className="mt-1 text-xs text-emerald-700/80">
-              Campaigns that finished with full or partial delivery.
+              Campaigns sent successfully.
             </p>
           </div>
 
@@ -318,7 +314,7 @@ export function CampaignHistory() {
               {failedCount + draftCount}
             </p>
             <p className="mt-1 text-xs text-rose-700/80">
-              Failed sends plus drafts that still need manual action.
+              Failed or not yet sent.
             </p>
           </div>
         </div>
@@ -330,8 +326,8 @@ export function CampaignHistory() {
                 const isActive = status === option.value;
                 const count =
                   option.value === "all"
-                    ? history?.summary.total ?? 0
-                    : history?.summary.statusCounts[option.value] ?? 0;
+                    ? (history?.summary.total ?? 0)
+                    : (history?.summary.statusCounts[option.value] ?? 0);
 
                 return (
                   <button
@@ -345,7 +341,9 @@ export function CampaignHistory() {
                     } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1d376b]/20`}
                   >
                     {option.label}{" "}
-                    <span className={isActive ? "text-slate-200" : "text-slate-400"}>
+                    <span
+                      className={isActive ? "text-slate-200" : "text-slate-400"}
+                    >
                       ({count})
                     </span>
                   </button>
@@ -364,7 +362,7 @@ export function CampaignHistory() {
                 value={searchInput}
                 autoComplete="off"
                 placeholder="Search subject, event, creator…"
-                onChange={(event) => setSearchInput(event.target.value)}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="h-11 pl-10 bg-background border-slate-200 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
               />
             </div>
@@ -372,8 +370,7 @@ export function CampaignHistory() {
 
           {draftCount > 0 ? (
             <div className="mt-5 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              {draftCount} draft masih aktif. Draft bisa dibuka lagi dari composer
-              atau langsung dari tabel di bawah.
+              {draftCount} drafts are still active and can be reopened from the composer or directly from the table below.
             </div>
           ) : null}
 
@@ -390,20 +387,25 @@ export function CampaignHistory() {
             <Table>
               <TableHeader className="bg-slate-50">
                 <TableRow className="hover:bg-slate-50">
-                  <TableHead className="w-[100px] px-6 text-center">Status</TableHead>
-                  <TableHead className="px-4">Campaign</TableHead>
                   <TableHead className="px-4">Event</TableHead>
+                  <TableHead className="px-4">Campaign</TableHead>
                   <TableHead className="px-4">Delivery</TableHead>
-                  <TableHead className="px-4">Updated</TableHead>
+                  <TableHead className="w-[100px] px-6 text-center">
+                    Status
+                  </TableHead>
                   <TableHead className="text-center px-6">Action</TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
                 {isLoading ? (
                   <TableRow className="hover:bg-white ">
-                    <TableCell colSpan={6} className="h-48 text-center ">
+                    <TableCell colSpan={5} className="h-48 text-center ">
                       <div className="flex items-center justify-center gap-3 text-sm text-slate-500">
-                        <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        <LoaderCircle
+                          className="h-4 w-4 animate-spin"
+                          aria-hidden="true"
+                        />
                         Loading campaign history…
                       </div>
                     </TableCell>
@@ -411,21 +413,19 @@ export function CampaignHistory() {
                 ) : history?.items.length ? (
                   history.items.map((item) => (
                     <TableRow key={item.id} className="align-top">
-                      <TableCell className="min-w-[6rem] px-7 text-center">
-                        <div className="space-y-2">
-                          <span
-                            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase ${getStatusBadgeClass(
-                              item.status,
-                            )}`}
-                          >
-                            {item.status}
-                          </span>
+                      {/* Event */}
+                      <TableCell className="min-w-[12rem] px-4">
+                        <div className="space-y-1">
+                          <p className="font-medium text-slate-700">
+                            {item.event.title ?? "All events"}
+                          </p>
                           <p className="text-xs text-slate-500">
-                            {item.recipientCount} recipient
-                            {item.recipientCount === 1 ? "" : "s"}
+                            {formatEventDate(item.event.eventDate)}
                           </p>
                         </div>
                       </TableCell>
+
+                      {/* Campaign */}
                       <TableCell className="min-w-[18rem] px-4">
                         <div className="space-y-1">
                           <p className="font-semibold text-slate-800">
@@ -437,20 +437,14 @@ export function CampaignHistory() {
                           </p>
                           <p className="text-xs text-slate-400">
                             by {item.createdBy?.name ?? "Unknown user"}
-                            {item.createdBy?.email ? ` · ${item.createdBy.email}` : ""}
+                            {item.createdBy?.email
+                              ? ` · ${item.createdBy.email}`
+                              : ""}
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell className="min-w-[12rem] px-4">
-                        <div className="space-y-1">
-                          <p className="font-medium text-slate-700">
-                            {item.event.title ?? "All events"}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {formatEventDate(item.event.eventDate)}
-                          </p>
-                        </div>
-                      </TableCell>
+
+                      {/* Delivery */}
                       <TableCell className="min-w-[12rem] px-4">
                         <div className="space-y-1">
                           <p className="font-medium text-slate-700">
@@ -461,16 +455,27 @@ export function CampaignHistory() {
                           </p>
                         </div>
                       </TableCell>
-                      <TableCell className="min-w-[13rem] px-4">
-                        <div className="space-y-1">
-                          <p className="font-medium text-slate-700">
-                            {formatDateTime(item.updatedAt)}
-                          </p>
+
+                      {/* Status */}
+                      <TableCell className="min-w-[6rem] px-7 text-center">
+                        <div className="space-y-2">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${statusStyles[item.status]}`}
+                          >
+                            <span
+                              className={`w-1 h-1 rounded-full ${dotStyles[item.status] ?? "bg-slate-300"}`}
+                              aria-hidden="true"
+                            />
+                            {item.status.toUpperCase()}
+                          </span>
                           <p className="text-xs text-slate-500">
-                            Created: {formatDateTime(item.createdAt)}
+                            {item.recipientCount} recipient
+                            {item.recipientCount !== 1 ? "s" : ""}
                           </p>
                         </div>
                       </TableCell>
+
+                      {/* Action */}
                       <TableCell className="text-center min-w-[3rem] px-6">
                         {item.status === "draft" ? (
                           <Button
@@ -480,7 +485,10 @@ export function CampaignHistory() {
                             asChild
                             className="border-dashed"
                           >
-                            <Link to="/communication" state={{ draftId: item.id }}>
+                            <Link
+                              to="/communication"
+                              state={{ draftId: item.id }}
+                            >
                               Open Draft
                             </Link>
                           </Button>
@@ -500,15 +508,14 @@ export function CampaignHistory() {
                   ))
                 ) : (
                   <TableRow className="hover:bg-white">
-                    <TableCell colSpan={6} className="h-48 text-center">
+                    <TableCell colSpan={5} className="h-48 text-center">
                       <div className="space-y-3 text-sm text-slate-500">
                         <div className="inline-flex items-center gap-2 rounded-full border border-dashed border-slate-300 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-600">
                           <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
                           No campaign activity yet
                         </div>
                         <p>
-                          Kirim campaign pertama dari composer agar queue dan
-                          delivery activity muncul di sini.
+                            Send your first campaign from the composer to see queue and delivery activity here.
                         </p>
                       </div>
                     </TableCell>
