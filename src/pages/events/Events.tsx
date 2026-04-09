@@ -215,14 +215,19 @@ export function Events() {
         <div ref={tableRef} className="px-10 pb-10">
           <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm min-h-[400px]">
             <Table>
+              {/* TableHeader */}
               <TableHeader>
                 <TableRow>
-                  <TableHead className="py-4 pl-6">
+                  <TableHead className="py-4 pl-6 w-[400px] min-w-[400px]">
                     Event Name & Details
                   </TableHead>
-                  <TableHead className="py-4">Participant / Capacity</TableHead>
-                  <TableHead className="py-4">Status</TableHead>
-                  <TableHead className="py-4 pr-6 text-right">
+                  <TableHead className="py-4 w-72 min-w-[288px]">
+                    Participant / Capacity
+                  </TableHead>
+                  <TableHead className="py-4 w-36 min-w-[144px]">
+                    Status
+                  </TableHead>
+                  <TableHead className="py-4 pr-6 w-20 min-w-[80px] text-right">
                     Actions
                   </TableHead>
                 </TableRow>
@@ -248,17 +253,20 @@ export function Events() {
 
                   return (
                     <TableRow key={event._id}>
-                      <TableCell className="py-5 pl-6">
-                        <div className="font-bold text-[#001a4e] text-sm mb-1.5">
+                      {/* Event Name & Details cell */}
+                      <TableCell className="py-5 pl-6 w-[400px] min-w-[400px]">
+                        <div className="font-bold text-[#001a4e] text-sm mb-1.5 break-all whitespace-pre-wrap leading-snug">
                           {event.title}
                         </div>
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-1.5 text-slate-400 text-xs">
-                            <MapPin className="w-3 h-3" />{" "}
-                            {event.location ?? "-"}
+                            <MapPin className="w-3 h-3 flex-shrink-0" />
+                            <span className="truncate">
+                              {event.location ?? "-"}
+                            </span>
                           </div>
                           <div className="flex items-center gap-1.5 text-slate-400 text-xs">
-                            <CalendarClock className="w-3 h-3" />
+                            <CalendarClock className="w-3 h-3 flex-shrink-0" />
                             {new Date(event.eventDate).toLocaleDateString(
                               "en-US",
                               {
@@ -271,32 +279,83 @@ export function Events() {
                         </div>
                       </TableCell>
 
-                      {/* Participant / Capacity */}
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="w-24 h-1.5 bg-slate-300 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full transition-all duration-500 ${isFull ? "bg-emerald-500" : "bg-[#1a3fa8]"}`}
-                              style={{ width: `${Math.min(pct, 100)}%` }}
-                            />
-                          </div>
-                          <div className="flex flex-col">
-                            <span
-                              className={`text-[11px] font-bold ${isFull ? "text-emerald-600" : "text-slate-600"}`}
-                            >
-                              {event.approvedCount.toLocaleString()} /{" "}
-                              {event.totalCount.toLocaleString()}
+                      {/* Participant / Capacity cell */}
+                      <TableCell className="w-72 min-w-[288px]">
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-3">
+                            <div className="relative w-28 h-1.5 bg-slate-100 rounded-full overflow-hidden flex-shrink-0">
+                              <div
+                                className="absolute left-0 top-0 h-full bg-emerald-500 transition-all duration-500"
+                                style={{
+                                  width: `${Math.min(
+                                    Math.round(
+                                      ((event.checkedInCount ?? 0) /
+                                        (event.totalCount || 1)) *
+                                        100,
+                                    ),
+                                    100,
+                                  )}%`,
+                                }}
+                              />
+                              <div
+                                className="absolute top-0 h-full bg-[#1a3fa8] transition-all duration-500"
+                                style={{
+                                  left: `${Math.min(
+                                    Math.round(
+                                      ((event.checkedInCount ?? 0) /
+                                        (event.totalCount || 1)) *
+                                        100,
+                                    ),
+                                    100,
+                                  )}%`,
+                                  width: `${Math.min(
+                                    Math.round(
+                                      (event.approvedCount /
+                                        (event.totalCount || 1)) *
+                                        100,
+                                    ),
+                                    100 -
+                                      Math.round(
+                                        ((event.checkedInCount ?? 0) /
+                                          (event.totalCount || 1)) *
+                                          100,
+                                      ),
+                                  )}%`,
+                                }}
+                              />
+                            </div>
+                            <span className="text-[11px] font-bold text-slate-600 tabular-nums w-20 flex-shrink-0">
+                              {(
+                                event.approvedCount +
+                                (event.checkedInCount ?? 0)
+                              ).toLocaleString()}
+                              <span className="font-normal text-slate-400">
+                                {" / "}
+                                {event.totalCount.toLocaleString()}
+                              </span>
                             </span>
-                            <span
-                              className={`text-[10px] ${isFull ? "text-emerald-500" : "text-slate-400"}`}
-                            >
-                              {isFull ? `${pct}% approved` : `${pct}% approved`}
+                          </div>
+                          <div className="flex items-center gap-3 text-[10px] text-slate-400">
+                            <span className="flex items-center gap-1 w-28 flex-shrink-0">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" />
+                              <span className="tabular-nums">
+                                {event.checkedInCount ?? 0}
+                              </span>
+                              {" checked in"}
+                            </span>
+                            <span className="flex items-center gap-1 flex-shrink-0">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#1a3fa8] flex-shrink-0" />
+                              <span className="tabular-nums">
+                                {event.approvedCount}
+                              </span>
+                              {" approved"}
                             </span>
                           </div>
                         </div>
                       </TableCell>
 
-                      <TableCell>
+                      {/* Status cell */}
+                      <TableCell className="w-36 min-w-[144px]">
                         <span
                           className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${statusStyles[event.status]}`}
                         >
@@ -366,26 +425,26 @@ export function Events() {
 
                               {canViewRegistrations && (
                                 <DropdownMenuItem
-                                  className="font-medium cursor-pointer rounded-lg gap-2 text-slate-600"
+                                  className="font-medium cursor-pointer rounded-lg gap-2 text-black-600"
                                   onSelect={() =>
                                     navigate(
                                       `/participants?eventId=${event._id}&eventTitle=${encodeURIComponent(event.title)}`,
                                     )
                                   }
                                 >
-                                  <UserCog className="w-4 h-4 text-slate-400" />
+                                  <UserCog className="w-4 h-4 text-black-400" />
                                   Manage Participants
                                 </DropdownMenuItem>
                               )}
 
                               {canCheckIn && (
                                 <DropdownMenuItem
-                                  className="font-medium cursor-pointer rounded-lg gap-2 text-slate-600"
+                                  className="font-medium cursor-pointer rounded-lg gap-2 text-black-600"
                                   onSelect={() =>
                                     navigate(`/events/${event._id}/check-in`)
                                   }
                                 >
-                                  <QrCode className="w-4 h-4 text-slate-400" />
+                                  <QrCode className="w-4 h-4 text-black-400" />
                                   Open Check-In Desk
                                 </DropdownMenuItem>
                               )}
@@ -412,11 +471,12 @@ export function Events() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This will permanently delete{" "}
-                                <span className="font-bold text-slate-900">
-                                  "{event.title}"
-                                </span>
-                                . This action cannot be undone.
+                                This will permanently delete the following
+                                event:
+                                <div className="font-bold text-slate-900 break-words whitespace-pre-wrap my-3 p-3 bg-slate-50 border border-slate-100 rounded-lg">
+                                  {event.title}
+                                </div>
+                                This action cannot be undone.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -428,7 +488,8 @@ export function Events() {
                                   await hardDeleteEvent(event._id);
                                   refresh();
                                 }}
-                                className="bg-red-500 hover:bg-red-600 text-white rounded-lg"
+                                variant='destructive'
+                                className="bg-red-600 hover:bg-red-700 text-white rounded-lg"
                               >
                                 Delete
                               </AlertDialogAction>

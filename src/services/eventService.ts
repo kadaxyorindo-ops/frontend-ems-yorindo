@@ -11,6 +11,7 @@ export interface EventItem {
   approvedCount: number;
   pendingCount: number;
   totalCount: number;
+  checkedInCount: number;
 }
 
 export interface PaginationMeta {
