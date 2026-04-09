@@ -143,14 +143,16 @@ export function Events() {
                   Total Participants
                 </div>
               </div>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Search events..."
-                className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#1a3fa8]/50 focus:ring-1 focus:ring-[#1a3fa8]/20 placeholder:text-slate-300"
-              />
-              {canCreate && <EventDialog mode="create" onSuccess={refresh} />}
+              <div className="flex flex-col md:flex-row gap-2">
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  placeholder="Search events..."
+                  className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-[#1a3fa8]/50 focus:ring-1 focus:ring-[#1a3fa8]/20 placeholder:text-slate-300"
+                />
+                {canCreate && <EventDialog mode="create" onSuccess={refresh} />}
+              </div>
             </div>
           </div>
         </header>
