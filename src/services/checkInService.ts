@@ -23,6 +23,7 @@ export interface CheckInParticipantSummary {
   fullName: string;
   personalEmail: string | null;
   companyEmail: string | null;
+  jobTitle?: { name: string | null };
 }
 
 export interface CheckInRegistrationItem {
