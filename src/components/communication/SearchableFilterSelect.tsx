@@ -36,9 +36,7 @@ export function SearchableFilterSelect({
       )
     : options.slice(0, 5);
 
-  const hiddenCount = !searchTerm.trim()
-    ? Math.max(0, options.length - 5)
-    : 0;
+  const hiddenCount = !searchTerm.trim() ? Math.max(0, options.length - 5) : 0;
 
   return (
     <div className="space-y-1.5">
@@ -77,9 +75,7 @@ export function SearchableFilterSelect({
           </option>
         ))}
         {hiddenCount > 0 && (
-          <option disabled>
-            ... and {hiddenCount} more (type to search)
-          </option>
+          <option disabled>... and {hiddenCount} more (type to search)</option>
         )}
       </select>
     </div>

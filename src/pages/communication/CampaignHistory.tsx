@@ -354,7 +354,8 @@ export function CampaignHistory() {
 
           {draftCount > 0 ? (
             <div className="mt-5 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              {draftCount} drafts are still active and can be reopened from the composer or directly from the table below.
+              {draftCount} drafts are still active and can be reopened from the
+              composer or directly from the table below.
             </div>
           ) : null}
 
@@ -499,7 +500,8 @@ export function CampaignHistory() {
                           No campaign activity yet
                         </div>
                         <p>
-                            Send your first campaign from the composer to see queue and delivery activity here.
+                          Send your first campaign from the composer to see
+                          queue and delivery activity here.
                         </p>
                       </div>
                     </TableCell>

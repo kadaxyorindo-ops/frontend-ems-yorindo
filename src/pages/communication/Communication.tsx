@@ -848,7 +848,7 @@ export function Communication() {
     hasComposeContent && draftSignature !== lastCommittedSignature;
   const currentDraftSummary =
     drafts.find((draft) => draft.id === currentDraftId) ?? null;
-  
+
   // Event filter is now optional, admin doesn't need to select event
 
   useEffect(() => {
@@ -1778,7 +1778,7 @@ export function Communication() {
                           (company) => ({
                             value: company.id,
                             label: company.label,
-                          })
+                          }),
                         ),
                       ]}
                       onChange={(value) =>
@@ -1803,7 +1803,7 @@ export function Communication() {
                           (industry) => ({
                             value: industry.id,
                             label: industry.label,
-                          })
+                          }),
                         ),
                       ]}
                       onChange={(value) =>
@@ -1828,7 +1828,7 @@ export function Communication() {
                           (jobTitle) => ({
                             value: jobTitle.id,
                             label: jobTitle.label,
-                          })
+                          }),
                         ),
                       ]}
                       onChange={(value) =>
@@ -1849,10 +1849,12 @@ export function Communication() {
                       value={filters.cityId || ""}
                       options={[
                         { value: "all", label: "All cities" },
-                        ...(audience?.filterOptions.cities ?? []).map((city) => ({
-                          value: city.id,
-                          label: city.label,
-                        })),
+                        ...(audience?.filterOptions.cities ?? []).map(
+                          (city) => ({
+                            value: city.id,
+                            label: city.label,
+                          }),
+                        ),
                       ]}
                       onChange={(value) =>
                         updateFilter("cityId", value === "all" ? "" : value)
