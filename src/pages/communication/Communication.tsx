@@ -5,10 +5,10 @@ import {
   Mail,
   Search,
   SendHorizontal,
-  TextQuote,
   Users2,
 } from "lucide-react";
 import { TiptapEmailEditor } from "@/components/communication/TiptapEmailEditor";
+import { SearchableFilterSelect } from "@/components/communication/SearchableFilterSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -467,45 +467,10 @@ function validateComposer(params: {
   return nextErrors;
 }
 
-function FilterSelect({
-  id,
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  options: Array<{ value: string; label: string }>;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <Label
-        htmlFor={id}
-        className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400"
-      >
-        {label}
-      </Label>
-      <select
-        id={id}
-        name={id}
-        value={value}
-        autoComplete="off"
-        onChange={(event) => onChange(event.target.value)}
-        className="h-11 w-full rounded-xl border  border-slate-300 bg-white px-3 text-sm text-slate-700 transition focus-visible:border-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
+/**
+ * SearchableFilterSelect: For filters with many options (companies, industries, etc)
+ * Shows max 5 options, with search capability when more options exist
+ */
 const LOCAL_STORAGE_KEY = "pending_email_campaign";
 
 // Helper to read draft data from local storage
@@ -883,6 +848,8 @@ export function Communication() {
     hasComposeContent && draftSignature !== lastCommittedSignature;
   const currentDraftSummary =
     drafts.find((draft) => draft.id === currentDraftId) ?? null;
+
+  // Event filter is now optional, admin doesn't need to select event
 
   useEffect(() => {
     if (composerStep !== "review") {
@@ -1465,9 +1432,8 @@ export function Communication() {
               ) : null}
 
               <Tabs defaultValue="visual" className="space-y-4">
-                <TabsList className="grid grid-cols-2">
+                <TabsList>
                   <TabsTrigger value="visual">Visual Preview</TabsTrigger>
-                  <TabsTrigger value="text">Plain Text</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="visual">
@@ -1493,19 +1459,6 @@ export function Communication() {
                         prepared.
                       </div>
                     )}
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="text">
-                  <div className="rounded-[24px] border  border-slate-300 bg-slate-950 px-4 py-4">
-                    <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-100">
-                      <TextQuote className="h-4 w-4" aria-hidden="true" />
-                      Plain Text Fallback
-                    </div>
-                    <pre className="whitespace-pre-wrap text-sm leading-7 text-slate-300">
-                      {emailPreview?.text ||
-                        "The text fallback will appear here after the preview is generated."}
-                    </pre>
                   </div>
                 </TabsContent>
               </Tabs>
@@ -1689,32 +1642,27 @@ export function Communication() {
                   </p>
 
                   <div className="space-y-2">
-                    <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">
-                      Event
-                    </Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-2">
+                        Event
+                      </Label>
+                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.15em]">
+                        Optional
+                      </span>
+                    </div>
 
-                    <Select
+                    <SearchableFilterSelect
+                      id="communication-event"
+                      label=""
                       value={filters.eventId}
-                      onValueChange={(value) =>
+                      options={(audience?.events ?? []).map((event) => ({
+                        value: event.id,
+                        label: `${event.title} · ${formatEventDate(event.eventDate)}`,
+                      }))}
+                      onChange={(value) =>
                         updateFilter("eventId", value === "all" ? "" : value)
                       }
-                    >
-                      <SelectTrigger
-                        id="communication-event"
-                        className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
-                      >
-                        <SelectValue placeholder="Choose event" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                        {audience?.events.map((event) => (
-                          <SelectItem key={event.id} value={event.id}>
-                            <div className="flex flex-col">
-                              {event.title} · {formatEventDate(event.eventDate)}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
 
                   {/* Search */}
@@ -1820,27 +1768,23 @@ export function Communication() {
                       Company
                     </Label>
 
-                    <Select
-                      value={filters.companyId || "all"}
-                      onValueChange={(value) =>
+                    <SearchableFilterSelect
+                      id="communication-company"
+                      label=""
+                      value={filters.companyId || ""}
+                      options={[
+                        { value: "all", label: "All companies" },
+                        ...(audience?.filterOptions.companies ?? []).map(
+                          (company) => ({
+                            value: company.id,
+                            label: company.label,
+                          }),
+                        ),
+                      ]}
+                      onChange={(value) =>
                         updateFilter("companyId", value === "all" ? "" : value)
                       }
-                    >
-                      <SelectTrigger
-                        id="communication-company"
-                        className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
-                      >
-                        <SelectValue placeholder="All companies" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                        <SelectItem value="all">All companies</SelectItem>
-                        {audience?.filterOptions.companies.map((company) => (
-                          <SelectItem key={company.id} value={company.id}>
-                            {company.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
 
                   {/* INDUSTRY */}
@@ -1849,29 +1793,23 @@ export function Communication() {
                       Industry
                     </Label>
 
-                    <Select
-                      value={filters.industryId || "all"}
-                      onValueChange={(value) =>
+                    <SearchableFilterSelect
+                      id="communication-industry"
+                      label=""
+                      value={filters.industryId || ""}
+                      options={[
+                        { value: "all", label: "All industries" },
+                        ...(audience?.filterOptions.industries ?? []).map(
+                          (industry) => ({
+                            value: industry.id,
+                            label: industry.label,
+                          }),
+                        ),
+                      ]}
+                      onChange={(value) =>
                         updateFilter("industryId", value === "all" ? "" : value)
                       }
-                    >
-                      <SelectTrigger
-                        id="communication-industry"
-                        className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
-                      >
-                        <SelectValue placeholder="All industries" />
-                      </SelectTrigger>
-
-                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                        <SelectItem value="all">All industries</SelectItem>
-
-                        {audience?.filterOptions.industries.map((industry) => (
-                          <SelectItem key={industry.id} value={industry.id}>
-                            {industry.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
 
                   {/* JOBTITLE */}
@@ -1880,29 +1818,23 @@ export function Communication() {
                       Job title
                     </Label>
 
-                    <Select
-                      value={filters.jobTitleId || "all"}
-                      onValueChange={(value) =>
+                    <SearchableFilterSelect
+                      id="communication-job-title"
+                      label=""
+                      value={filters.jobTitleId || ""}
+                      options={[
+                        { value: "all", label: "All job titles" },
+                        ...(audience?.filterOptions.jobTitles ?? []).map(
+                          (jobTitle) => ({
+                            value: jobTitle.id,
+                            label: jobTitle.label,
+                          }),
+                        ),
+                      ]}
+                      onChange={(value) =>
                         updateFilter("jobTitleId", value === "all" ? "" : value)
                       }
-                    >
-                      <SelectTrigger
-                        id="communication-job-title"
-                        className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
-                      >
-                        <SelectValue placeholder="All job titles" />
-                      </SelectTrigger>
-
-                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                        <SelectItem value="all">All job titles</SelectItem>
-
-                        {audience?.filterOptions.jobTitles.map((jobTitle) => (
-                          <SelectItem key={jobTitle.id} value={jobTitle.id}>
-                            {jobTitle.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
 
                   {/* CITY */}
@@ -1911,29 +1843,23 @@ export function Communication() {
                       City
                     </Label>
 
-                    <Select
-                      value={filters.cityId || "all"}
-                      onValueChange={(value) =>
+                    <SearchableFilterSelect
+                      id="communication-city"
+                      label=""
+                      value={filters.cityId || ""}
+                      options={[
+                        { value: "all", label: "All cities" },
+                        ...(audience?.filterOptions.cities ?? []).map(
+                          (city) => ({
+                            value: city.id,
+                            label: city.label,
+                          }),
+                        ),
+                      ]}
+                      onChange={(value) =>
                         updateFilter("cityId", value === "all" ? "" : value)
                       }
-                    >
-                      <SelectTrigger
-                        id="communication-city"
-                        className="h-11 py-5.5 w-full bg-white border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
-                      >
-                        <SelectValue placeholder="All cities" />
-                      </SelectTrigger>
-
-                      <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                        <SelectItem value="all">All cities</SelectItem>
-
-                        {audience?.filterOptions.cities.map((city) => (
-                          <SelectItem key={city.id} value={city.id}>
-                            {city.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    />
                   </div>
 
                   {/* SOURCE CHANNEL */}

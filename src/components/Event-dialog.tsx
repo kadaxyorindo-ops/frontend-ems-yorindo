@@ -91,7 +91,7 @@ export function EventDialog({
   const [selectedStatus, setSelectedStatus] = useState<string>(
     defaultData?.status ?? "",
   );
-  const [addingIndustry, setAddingIndustry] = useState(false);
+  const [_addingIndustry, setAddingIndustry] = useState(false);
   const [newIndustryName, setNewIndustryName] = useState("");
   const [industryError, setIndustryError] = useState<string | null>(null);
   const [industryOpen, setIndustryOpen] = useState(false);

@@ -256,11 +256,6 @@ export function Events() {
                   </TableRow>
                 )}
                 {events.map((event) => {
-                  const pct = Math.round(
-                    (event.approvedCount / (event.totalCount || 1)) * 100,
-                  );
-                  const isFull = pct >= 100;
-
                   return (
                     <TableRow key={event._id}>
                       {/* Event Name & Details cell */}
