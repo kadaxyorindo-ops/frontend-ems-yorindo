@@ -119,6 +119,7 @@ export function Events() {
 
   return (
     <DashboardLayout>
+      <title>Yorindo EMS - Event Management</title>
       <div className="min-h-screen flex flex-col bg-background relative overflow-hidden font-sans">
         <header className="px-4 md:px-10 md:pt-8 mb-8">
           <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">

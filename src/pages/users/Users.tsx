@@ -145,6 +145,7 @@ export function Users() {
 
   return (
     <DashboardLayout>
+      <title>Yorindo EMS - User Management</title>
       <div className="space-y-8">
         {/* Header */}
         <div className="flex flex-col gap-4 border-b border-dashed border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">

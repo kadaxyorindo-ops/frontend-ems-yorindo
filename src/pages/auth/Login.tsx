@@ -100,6 +100,7 @@ export function Login() {
 
   return (
     <AuthLayout>
+      <title>Yorindo EMS - Login</title>
       <div className="space-y-7">
         {/* Header */}
         <div className="space-y-1">
