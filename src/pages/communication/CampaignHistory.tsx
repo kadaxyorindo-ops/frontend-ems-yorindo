@@ -244,6 +244,7 @@ export function CampaignHistory() {
 
   return (
     <DashboardLayout>
+      <title>Yorindo EMS - Campaign History</title>
       <div className="space-y-8">
         <div className="flex flex-col gap-4 border-b border-dashed border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">

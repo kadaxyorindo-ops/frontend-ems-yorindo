@@ -3,10 +3,11 @@ import { DashboardLayout } from "@/layouts/DashboardLayout";
 export function Settings() {
   return (
     <DashboardLayout>
+      <title>Yorindo EMS - Settings</title>
       <div className="space-y-6 flex flex-col h-full">
         <div className="mb-6 pb-2 border-b border-dashed border-slate-200">
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-gray-500">Configure your organizer profile and preferences.</p>
+          <h1 className="text-4xl font-bold tracking-tight text-[#001a4e]">Settings</h1>
+          <p className="max-w-2xl text-sm leading-6 text-slate-500">Configure your organizer profile and preferences.</p>
         </div>
         
         {/* Large blank square wireframe */}

@@ -437,7 +437,9 @@ export function Participants() {
   }
 
   return (
+    
     <div className="min-h-[screen] flex bg-background relative overflow-visible">
+      <title>Yorindo EMS - Participant Management</title>
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
       <div className="flex-1 flex flex-col min-w-0 w-full overflow-hidden">

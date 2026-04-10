@@ -1562,6 +1562,7 @@ export function Communication() {
 
   return (
     <DashboardLayout>
+      <title>Yorindo EMS - Communication Hub</title>
       {showRestorePrompt && (
         <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
           <div className="flex items-center justify-between">

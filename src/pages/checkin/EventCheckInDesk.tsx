@@ -474,6 +474,7 @@ export function EventCheckInDesk() {
 
   return (
     <DashboardLayout>
+      <title>Yorindo EMS - Check-In Desk</title>
       <div className="space-y-6">
         <section className="rounded-[30px] border border-slate-200 bg-gradient-to-br from-white via-[#f8faff] to-[#eef4ff] p-6 shadow-sm">
           <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
