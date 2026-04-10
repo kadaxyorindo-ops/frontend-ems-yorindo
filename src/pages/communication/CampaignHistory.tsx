@@ -107,23 +107,6 @@ function formatEventDate(value: string | null) {
   });
 }
 
-function getStatusBadgeClass(status: CampaignHistoryItem["status"]) {
-  switch (status) {
-    case "queued":
-      return "bg-amber-100 text-amber-800";
-    case "processing":
-      return "bg-sky-100 text-sky-800";
-    case "sent":
-      return "bg-emerald-100 text-emerald-800";
-    case "partial":
-      return "bg-orange-100 text-orange-800";
-    case "failed":
-      return "bg-rose-100 text-rose-800";
-    default:
-      return "bg-slate-200 text-slate-700";
-  }
-}
-
 const statusStyles: Record<string, string> = {
   sent: "bg-emerald-50 text-emerald-600 border-emerald-200",
   queued: "bg-blue-50 text-blue-600 border-blue-200",
