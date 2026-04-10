@@ -1416,7 +1416,7 @@ export function Communication() {
                   <p className="mt-2 text-sm font-semibold text-slate-800">
                     {emailPreview?.from.name ?? "Yorindo EMS"}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-slate-500 break-words">
                     {emailPreview?.from.email ?? "Loading sender…"}
                   </p>
                 </div>
@@ -1428,7 +1428,7 @@ export function Communication() {
                   <p className="mt-2 text-sm font-semibold text-slate-800">
                     {samplePreviewRecipient?.fullName ?? "No sample recipient"}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">
+                  <p className="mt-1 text-xs text-slate-500 break-words">
                     {samplePreviewRecipient?.email ??
                       "Choose at least one recipient"}
                   </p>

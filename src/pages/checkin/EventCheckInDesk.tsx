@@ -521,7 +521,7 @@ export function EventCheckInDesk() {
           <section className="min-w-0">
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 mb-6">
               <Card className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
+                <p className="h-[32px] text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
                   Ready Tickets
                 </p>
                 <p className="mt-3 text-3xl font-bold tabular-nums text-[#001a4e]">
@@ -532,7 +532,7 @@ export function EventCheckInDesk() {
                 </p>
               </Card>
               <Card className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
+                <p className="h-[32px] text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
                   Checked In
                 </p>
                 <p className="mt-3 text-3xl font-bold tabular-nums text-[#001a4e]">
@@ -543,7 +543,7 @@ export function EventCheckInDesk() {
                 </p>
               </Card>
               <Card className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
+                <p className="h-[32px] text-[11px] font-bold uppercase tracking-[0.24em] text-slate-400">
                   Remaining Today
                 </p>
                 <p className="mt-3 text-3xl font-bold tabular-nums text-[#001a4e]">
@@ -673,7 +673,7 @@ export function EventCheckInDesk() {
                     </div>
 
                     <div className="rounded-[26px] border border-slate-200 bg-[#f8fbff] p-4 shadow-sm">
-                      <div className="relative min-h-[560px] overflow-hidden rounded-[24px] border border-dashed border-[#c8d8f2] bg-[radial-gradient(circle_at_top,_rgba(15,47,120,0.08),_transparent_50%),linear-gradient(180deg,_#fbfdff_0%,_#f1f6ff_100%)]">
+                      <div className="relative min-h-[560px] overflow-hidden rounded-[24px] bg-[radial-gradient(circle_at_top,_rgba(15,47,120,0.08),_transparent_50%),linear-gradient(180deg,_#fbfdff_0%,_#f1f6ff_100%)]">
                         <div id={SCANNER_REGION_ID} className="min-h-[560px]" />
                         {scannerState !== "running" && (
                           <div className="pointer-events-none absolute inset-0 flex items-center justify-center p-6">
@@ -733,7 +733,7 @@ export function EventCheckInDesk() {
                         </div>
                       </Card>
 
-                      <Card className="rounded-[24px] border border-dashed border-[#d3dcf2] bg-[#f9fbff] p-5 shadow-sm">
+                      <Card className="rounded-[24px] border  border-[#d3dcf2] bg-[#f9fbff] p-5 shadow-sm">
                         <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#7a8fb8]">
                           Scan Tips
                         </p>
@@ -789,7 +789,7 @@ export function EventCheckInDesk() {
                         </p>
                       </div>
 
-                      <div className="rounded-[24px] border border-dashed border-[#d3dcf2] bg-[#f8fbff] p-5 shadow-sm">
+                      <div className="rounded-[24px] border border-[#d3dcf2] bg-[#f8fbff] p-5 shadow-sm">
                         <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-[#7a8fb8]">
                           Manual Notes
                         </p>
@@ -833,7 +833,7 @@ export function EventCheckInDesk() {
 
                       {!lookupLoading &&
                         effectiveLookupQuery.trim().length < 2 && (
-                          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-5 text-sm text-slate-500">
+                          <div className="mt-5 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                             Type at least 2 characters to search approved
                             attendees for this event.
                           </div>
@@ -842,7 +842,7 @@ export function EventCheckInDesk() {
                       {!lookupLoading &&
                         effectiveLookupQuery.trim().length >= 2 &&
                         lookupItems.length === 0 && (
-                          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-5 text-sm text-slate-500">
+                          <div className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-5 text-sm text-slate-500">
                             No approved attendee matched that search. Try a
                             different name, email, company, or ticket code.
                           </div>
@@ -1077,13 +1077,13 @@ export function EventCheckInDesk() {
 
             <div className="px-6 py-5">
               {recentItems.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-5 text-sm text-slate-500">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/60 px-4 py-5 text-sm text-slate-500">
                   No attendees have checked in for this event yet.
                 </div>
               ) : (
-                <div className="max-h-[460px] overflow-auto rounded-[24px] border border-slate-200">
+                <div className="max-h-[460px] overflow-auto">
                   <Table>
-                    <TableHeader className="sticky top-0 bg-slate-50/95 backdrop-blur supports-[backdrop-filter]:bg-slate-50/85">
+                    <TableHeader className="sticky top-0 z-10 bg-slate-50/95 supports-[backdrop-filter]:bg-slate-50/85">
                       <TableRow className="hover:bg-transparent">
                         <TableHead className="text-[11px] font-bold uppercase tracking-[0.22em] text-slate-400">
                           Attendee
