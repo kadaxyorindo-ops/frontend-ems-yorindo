@@ -437,19 +437,20 @@ export function Participants() {
   }
 
   return (
-    
-    <div className="min-h-[screen] flex bg-background relative overflow-visible">
+    <div className="flex h-screen bg-background overflow-hidden">
       <title>Yorindo EMS - Participant Management</title>
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-      <div className="flex-1 flex flex-col min-w-0 w-full overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 w-full h-full overflow-y-auto overflow-x-hidden">
+        <div className="sticky top-0 z-20 w-full shadow-sm">
         <Topbar onToggleSidebar={() => setIsSidebarOpen(true)} />
+      </div>
 
-        <main className="flex-1 overflow-y-auto overflow-x-hidden mb-6 pb-6">
-          <header className="px-4 md:px-10 md:pt-8 mb-8">
+        <main className="flex-1 mb-6 pb-6 pt-8">
+          <header className="px-4 md:px-20 md:pt-8 mb-8 mx-20">
             <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
               {/* Left side */}
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 max-w-160">
                 <h1 className="text-4xl font-bold tracking-tight text-[#001a4e]">
                   {eventTitle}
                 </h1>
@@ -459,113 +460,117 @@ export function Participants() {
               </div>
 
               {/* Right side */}
-              <div className="flex items-center gap-3 flex-wrap">
-                {/* Stats */}
-                <div className="flex items-center gap-4 mr-2 border-r pr-4 border-slate-200">
-                  {/* Progress bar */}
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center gap-3">
-                      <div className="relative w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
-                        {/* Checked-in (green) */}
-                        <div
-                          className="absolute left-0 top-0 h-full bg-emerald-500"
-                          style={{
-                            width: `${Math.min(
-                              Math.round(
-                                ((meta.checkedInCount ?? 0) /
-                                  (meta.totalCount || 1)) *
-                                  100,
-                              ),
-                              100,
-                            )}%`,
-                          }}
-                        />
-
-                        {/* Approved (blue) */}
-                        <div
-                          className="absolute top-0 h-full bg-[#1a3fa8]"
-                          style={{
-                            left: `${Math.min(
-                              Math.round(
-                                ((meta.checkedInCount ?? 0) /
-                                  (meta.totalCount || 1)) *
-                                  100,
-                              ),
-                              100,
-                            )}%`,
-                            width: `${Math.min(
-                              Math.round(
-                                (meta.approvedCount / (meta.totalCount || 1)) *
-                                  100,
-                              ),
-                              100 -
+              <div className="flex flex-col items-center gap-4">
+                <div className="flex flex-col md:flex-row gap-4 justify-between flex-wrap">
+                  {/* Stats */}
+                  <div className="flex items-center gap-4 mr-2 border-r pr-4 border-slate-200">
+                    {/* Progress bar */}
+                    <div className="flex flex-col gap-1.5">
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
+                          {/* Checked-in (green) */}
+                          <div
+                            className="absolute left-0 top-0 h-full bg-emerald-500"
+                            style={{
+                              width: `${Math.min(
                                 Math.round(
                                   ((meta.checkedInCount ?? 0) /
                                     (meta.totalCount || 1)) *
                                     100,
                                 ),
-                            )}%`,
-                          }}
-                        />
+                                100,
+                              )}%`,
+                            }}
+                          />
+
+                          {/* Approved (blue) */}
+                          <div
+                            className="absolute top-0 h-full bg-[#1a3fa8]"
+                            style={{
+                              left: `${Math.min(
+                                Math.round(
+                                  ((meta.checkedInCount ?? 0) /
+                                    (meta.totalCount || 1)) *
+                                    100,
+                                ),
+                                100,
+                              )}%`,
+                              width: `${Math.min(
+                                Math.round(
+                                  (meta.approvedCount / (meta.totalCount || 1)) *
+                                    100,
+                                ),
+                                100 -
+                                  Math.round(
+                                    ((meta.checkedInCount ?? 0) /
+                                      (meta.totalCount || 1)) *
+                                      100,
+                                  ),
+                              )}%`,
+                            }}
+                          />
+                        </div>
+
+                        {/* Total count */}
+                        <span className="text-sm font-semibold text-slate-700 tabular-nums">
+                          {(
+                            meta.approvedCount + (meta.checkedInCount ?? 0)
+                          ).toLocaleString()}
+                          <span className="text-slate-400 font-normal">
+                            {" / "}
+                            {meta.totalCount.toLocaleString()}
+                          </span>
+                        </span>
                       </div>
 
-                      {/* Total count */}
-                      <span className="text-sm font-semibold text-slate-700 tabular-nums">
-                        {(
-                          meta.approvedCount + (meta.checkedInCount ?? 0)
-                        ).toLocaleString()}
-                        <span className="text-slate-400 font-normal">
-                          {" / "}
-                          {meta.totalCount.toLocaleString()}
+                      {/* Breakdown */}
+                      <div className="flex items-center gap-4 text-xs text-slate-500">
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          {meta.checkedInCount ?? 0} checked in
                         </span>
-                      </span>
-                    </div>
 
-                    {/* Breakdown */}
-                    <div className="flex items-center gap-4 text-xs text-slate-500">
-                      <span className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                        {meta.checkedInCount ?? 0} checked in
-                      </span>
-
-                      <span className="flex items-center gap-1">
-                        <span className="w-2 h-2 rounded-full bg-[#1a3fa8]" />
-                        {meta.approvedCount} approved
-                      </span>
+                        <span className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-[#1a3fa8]" />
+                          {meta.approvedCount} approved
+                        </span>
+                      </div>
                     </div>
                   </div>
+
+                  {/* Actions */}
+                  <Button variant="default" asChild className="h-10">
+                    <Link to={`/events/${eventId}/check-in`}>
+                      <QrCode className="mr-2 h-4 w-4" aria-hidden="true" />
+                      Check-In Desk
+                    </Link>
+                  </Button>
                 </div>
+                
+                <div className="flex flex-row gap-4 justify-between flex-wrap">
+                  <Button
+                    variant="outline"
+                    onClick={handleBulkReject}
+                    disabled={selectedIds.length === 0 || isLoading}
+                    className="h-10 w-30"
+                  >
+                    Reject
+                  </Button>
 
-                {/* Actions */}
-                <Button variant="default" asChild className="h-10">
-                  <Link to={`/events/${eventId}/check-in`}>
-                    <QrCode className="mr-2 h-4 w-4" aria-hidden="true" />
-                    Check-In Desk
-                  </Link>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  onClick={handleBulkReject}
-                  disabled={selectedIds.length === 0 || isLoading}
-                  className="h-10"
-                >
-                  Reject
-                </Button>
-
-                <Button
-                  variant="default"
-                  onClick={handleBulkApprove}
-                  disabled={selectedIds.length === 0 || isLoading}
-                  className="h-10"
-                >
-                  Approve
-                </Button>
+                  <Button
+                    variant="default"
+                    onClick={handleBulkApprove}
+                    disabled={selectedIds.length === 0 || isLoading}
+                    className="h-10 w-30"
+                  >
+                    Approve
+                  </Button>
+                </div>
               </div>
             </div>
           </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 p-4 md:px-8 mx-10">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 p-4 md:px-20 mx-20">
             {/* Table */}
             <div
               className={`transition-all duration-300 ${selectedParticipant ? "col-span-12 lg:col-span-8 xl:col-span-9" : "col-span-12"}`}

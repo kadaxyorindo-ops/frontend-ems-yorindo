@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useRef, useState, useMemo } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import {
   LoaderCircle,
@@ -22,6 +22,21 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
+
+import { Check, ChevronsUpDown } from "lucide-react"
+import { cn } from "@/lib/utils"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 type FilterOption = {
   id: string;
@@ -1151,6 +1166,59 @@ export function Communication() {
     setShowRestorePrompt(false);
   };
 
+  // for search input inside filter
+  const [eventComboOpen, setEventComboOpen] = useState(false);
+  const eventOptions = useMemo(() => {
+    return (audience?.events ?? []).map((event) => ({
+      value: event.id,
+      label: `${event.title} · ${formatEventDate(event.eventDate)}`,
+    }));
+  }, [audience?.events]);
+
+  const [companyComboOpen, setCompanyComboOpen] = useState(false);
+  const companyOptions = useMemo(() => {
+    return [
+      { value: "all", label: "All companies" },
+      ...(audience?.filterOptions.companies ?? []).map((company) => ({
+        value: company.id,
+        label: company.label,
+      })),
+    ];
+  }, [audience?.filterOptions.companies]);
+
+  const [industryComboOpen, setIndustryComboOpen] = useState(false);
+  const industryOptions = useMemo(() => {
+    return [
+      { value: "all", label: "All industries" },
+      ...(audience?.filterOptions.industries ?? []).map((industry) => ({
+        value: industry.id,
+        label: industry.label,
+      })),
+    ];
+  }, [audience?.filterOptions.industries]);
+
+  const [jobTitleComboOpen, setJobTitleComboOpen] = useState(false);
+  const jobTitleOptions = useMemo(() => {
+    return [
+      { value: "all", label: "All job titles" },
+      ...(audience?.filterOptions.jobTitles ?? []).map((jobTitle) => ({
+        value: jobTitle.id,
+        label: jobTitle.label,
+      })),
+    ];
+  }, [audience?.filterOptions.jobTitles]);
+
+  const [cityComboOpen, setCityComboOpen] = useState(false);
+  const cityOptions = useMemo(() => {
+    return [
+      { value: "all", label: "All cities" },
+      ...(audience?.filterOptions.cities ?? []).map((city) => ({
+        value: city.id,
+        label: city.label,
+      })),
+    ];
+  }, [audience?.filterOptions.cities]);
+  
   if (isReviewingSend) {
     return (
       <DashboardLayout>
@@ -1651,49 +1719,52 @@ export function Communication() {
                       </span>
                     </div>
 
-                    <SearchableFilterSelect
-                      id="communication-event"
-                      label=""
-                      value={filters.eventId}
-                      options={(audience?.events ?? []).map((event) => ({
-                        value: event.id,
-                        label: `${event.title} · ${formatEventDate(event.eventDate)}`,
-                      }))}
-                      onChange={(value) =>
-                        updateFilter("eventId", value === "all" ? "" : value)
-                      }
-                    />
+                    <Popover open={eventComboOpen} onOpenChange={setEventComboOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="event-filter"
+                          variant="ghost"
+                          role="combobox"
+                          aria-expanded={eventComboOpen}
+                          className="w-full h-[45px] justify-between font-normal bg-white border border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
+                        >
+                          <span className="truncate">
+                            {filters.eventId
+                              ? eventOptions.find((opt) => opt.value === filters.eventId)?.label
+                              : "Select an event..."}
+                          </span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search event title..." />
+                          <CommandEmpty>No event found.</CommandEmpty>
+                          <CommandGroup className="max-h-40 overflow-y-auto">
+                            {eventOptions.map((option) => (
+                              <CommandItem
+                                key={option.value}
+                                value={option.label}
+                                onSelect={() => {
+                                  const newValue = option.value === filters.eventId ? "" : option.value;
+                                  updateFilter("eventId", newValue);
+                                  setEventComboOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    filters.eventId === option.value ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {option.label}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
-
-                  {/* Search */}
-                  {/* <div className="space-y-1.5">
-                    <Label
-                      htmlFor="communication-search"
-                      className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400"
-                    >
-                      Search
-                    </Label>
-                    
-                    <div className="relative">
-                      <Search
-                        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-                        aria-hidden="true"
-                      />
-                      <Input
-                        id="communication-search"
-                        name="search"
-                        type="text"
-                        value={searchInput}
-                        autoComplete="off"
-                        placeholder="Search name, email, company…"
-                        onChange={(event) => {
-                          setSearchInput(event.target.value);
-                          if (feedback) setFeedback(null);
-                        }}
-                        className="h-11 bg-white pl-10 border-slate-300 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
-                      />
-                    </div>
-                  </div> */}
 
                   <div className="space-y-2">
                     <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400">
@@ -1768,23 +1839,52 @@ export function Communication() {
                       Company
                     </Label>
 
-                    <SearchableFilterSelect
-                      id="communication-company"
-                      label=""
-                      value={filters.companyId || ""}
-                      options={[
-                        { value: "all", label: "All companies" },
-                        ...(audience?.filterOptions.companies ?? []).map(
-                          (company) => ({
-                            value: company.id,
-                            label: company.label,
-                          }),
-                        ),
-                      ]}
-                      onChange={(value) =>
-                        updateFilter("companyId", value === "all" ? "" : value)
-                      }
-                    />
+                    <Popover open={companyComboOpen} onOpenChange={setCompanyComboOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="communication-company"
+                          variant="ghost"
+                          role="combobox"
+                          aria-expanded={companyComboOpen}
+                          className="w-full h-[45px] rounded-xl justify-between font-normal bg-white border border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
+                        >
+                          <span className="truncate">
+                            {filters.companyId
+                              ? companyOptions.find((opt) => opt.value === filters.companyId)?.label
+                              : "All companies"}
+                          </span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search company..." />
+                          <CommandEmpty>No company found.</CommandEmpty>
+                          <CommandGroup className="max-h-40 overflow-y-auto">
+                            {companyOptions.map((option) => (
+                              <CommandItem
+                                key={option.value}
+                                value={option.label}
+                                onSelect={() => {
+                                  // If "all" is selected, we set it to empty string per your original logic
+                                  const newValue = option.value === "all" ? "" : option.value;
+                                  updateFilter("companyId", newValue);
+                                  setCompanyComboOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    (filters.companyId || "all") === option.value ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {option.label}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   {/* INDUSTRY */}
@@ -1793,23 +1893,51 @@ export function Communication() {
                       Industry
                     </Label>
 
-                    <SearchableFilterSelect
-                      id="communication-industry"
-                      label=""
-                      value={filters.industryId || ""}
-                      options={[
-                        { value: "all", label: "All industries" },
-                        ...(audience?.filterOptions.industries ?? []).map(
-                          (industry) => ({
-                            value: industry.id,
-                            label: industry.label,
-                          }),
-                        ),
-                      ]}
-                      onChange={(value) =>
-                        updateFilter("industryId", value === "all" ? "" : value)
-                      }
-                    />
+                    <Popover open={industryComboOpen} onOpenChange={setIndustryComboOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="communication-industry"
+                          variant="ghost"
+                          role="combobox"
+                          aria-expanded={industryComboOpen}
+                          className="w-full justify-between font-normal h-[45px] bg-white border border-slate-300 rounded-xl focus:ring-1 focus:ring-indigo-400"
+                        >
+                          <span className="truncate">
+                            {filters.industryId
+                              ? industryOptions.find((opt) => opt.value === filters.industryId)?.label
+                              : "All industries"}
+                          </span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search industry..." />
+                          <CommandEmpty>No industry found.</CommandEmpty>
+                          <CommandGroup className="max-h-60 overflow-y-auto">
+                            {industryOptions.map((option) => (
+                              <CommandItem
+                                key={option.value}
+                                value={option.label}
+                                onSelect={() => {
+                                  const newValue = option.value === "all" ? "" : option.value;
+                                  updateFilter("industryId", newValue);
+                                  setIndustryComboOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    (filters.industryId || "all") === option.value ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {option.label}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   {/* JOBTITLE */}
@@ -1818,23 +1946,51 @@ export function Communication() {
                       Job title
                     </Label>
 
-                    <SearchableFilterSelect
-                      id="communication-job-title"
-                      label=""
-                      value={filters.jobTitleId || ""}
-                      options={[
-                        { value: "all", label: "All job titles" },
-                        ...(audience?.filterOptions.jobTitles ?? []).map(
-                          (jobTitle) => ({
-                            value: jobTitle.id,
-                            label: jobTitle.label,
-                          }),
-                        ),
-                      ]}
-                      onChange={(value) =>
-                        updateFilter("jobTitleId", value === "all" ? "" : value)
-                      }
-                    />
+                    <Popover open={jobTitleComboOpen} onOpenChange={setJobTitleComboOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="communication-job-title"
+                          variant="ghost"
+                          role="combobox"
+                          aria-expanded={jobTitleComboOpen}
+                          className="w-full justify-between font-normal h-[45px] bg-white rounded-xl border border-slate-300 focus:ring-1 focus:ring-indigo-400"
+                        >
+                          <span className="truncate">
+                            {filters.jobTitleId
+                              ? jobTitleOptions.find((opt) => opt.value === filters.jobTitleId)?.label
+                              : "All job titles"}
+                          </span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search job title..." />
+                          <CommandEmpty>No job title found.</CommandEmpty>
+                          <CommandGroup className="max-h-40 overflow-y-auto">
+                            {jobTitleOptions.map((option) => (
+                              <CommandItem
+                                key={option.value}
+                                value={option.label}
+                                onSelect={() => {
+                                  const newValue = option.value === "all" ? "" : option.value;
+                                  updateFilter("jobTitleId", newValue);
+                                  setJobTitleComboOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    (filters.jobTitleId || "all") === option.value ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {option.label}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   {/* CITY */}
@@ -1843,23 +1999,51 @@ export function Communication() {
                       City
                     </Label>
 
-                    <SearchableFilterSelect
-                      id="communication-city"
-                      label=""
-                      value={filters.cityId || ""}
-                      options={[
-                        { value: "all", label: "All cities" },
-                        ...(audience?.filterOptions.cities ?? []).map(
-                          (city) => ({
-                            value: city.id,
-                            label: city.label,
-                          }),
-                        ),
-                      ]}
-                      onChange={(value) =>
-                        updateFilter("cityId", value === "all" ? "" : value)
-                      }
-                    />
+                    <Popover open={cityComboOpen} onOpenChange={setCityComboOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          id="communication-city"
+                          variant="ghost"
+                          role="combobox"
+                          aria-expanded={cityComboOpen}
+                          className="w-full justify-between font-normal h-[45px] bg-white border border-slate-300 focus:ring-1 focus:ring-indigo-400 rounded-xl"
+                        >
+                          <span className="truncate">
+                            {filters.cityId
+                              ? cityOptions.find((opt) => opt.value === filters.cityId)?.label
+                              : "All cities"}
+                          </span>
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search city..." />
+                          <CommandEmpty>No city found.</CommandEmpty>
+                          <CommandGroup className="max-h-40 overflow-y-auto">
+                            {cityOptions.map((option) => (
+                              <CommandItem
+                                key={option.value}
+                                value={option.label}
+                                onSelect={() => {
+                                  const newValue = option.value === "all" ? "" : option.value;
+                                  updateFilter("cityId", newValue);
+                                  setCityComboOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    (filters.cityId || "all") === option.value ? "opacity-100" : "opacity-0"
+                                  )}
+                                />
+                                {option.label}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   {/* SOURCE CHANNEL */}
