@@ -172,14 +172,14 @@ function App() {
             </PermissionRoute>
           }
         />
-        <Route
+        {/* <Route
           path="/settings"
           element={
             <ProtectedRoute>
               <Settings />
             </ProtectedRoute>
           }
-        />
+        /> */}
 
         {/* Catch-all route for undefined paths */}
         <Route path="*" element={<NotFound />} />
