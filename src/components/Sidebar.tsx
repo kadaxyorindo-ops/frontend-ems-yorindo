@@ -119,7 +119,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           )}
 
           {/* Settings */}
-          <Link
+          {/* <Link
             to="/settings"
             onClick={onClose}
             className={`h-12 font-semibold flex items-center px-4 font-mono text-sm transition-colors ${
@@ -130,7 +130,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           >
             <Settings className={`mr-3 h-5 w-5 ${isActive('/settings') ? 'text-[#002a85]' : ''}`} />
             Settings
-          </Link>
+          </Link> */}
         </nav>
       </aside>
     </>
