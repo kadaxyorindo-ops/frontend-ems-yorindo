@@ -5,6 +5,7 @@ import {
   Mail,
   Search,
   SendHorizontal,
+  Sparkles,
   Users2,
   X,
 } from "lucide-react";
@@ -92,6 +93,12 @@ type CampaignResponse = {
       reason: string;
     }>;
   };
+};
+
+type GenerateEmailContentResponse = {
+  subject: string;
+  previewText: string;
+  bodyHtml: string;
 };
 
 type EmailEditorValue = {
@@ -560,6 +567,8 @@ export function Communication() {
   const [recipientRenderLimit, setRecipientRenderLimit] = useState(120);
   const [composerErrors, setComposerErrors] = useState<ComposerErrors>({});
   const [lastCommittedSignature, setLastCommittedSignature] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
   const deferredSearch = useDeferredValue(searchInput);
   const latestRequestRef = useRef(0);
   const previewRequestRef = useRef(0);
@@ -1125,6 +1134,64 @@ export function Communication() {
     setPreviewError("");
     setLeftPanelTab("review");
     setComposerStep("review");
+  };
+
+  const handleAiGenerate = async () => {
+    if (!filters.eventId) {
+      setFeedback({
+        tone: "error",
+        message: "Please select an event before generating AI content.",
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    setFeedback(null);
+
+    const result = await api.post<GenerateEmailContentResponse>(
+      `${apiPaths.communications}/generate`,
+      {
+        eventId: filters.eventId,
+        currentSubject: subject || undefined,
+        currentPreviewText: previewText || undefined,
+        currentBodyText: editorValue.text || undefined,
+        templateId,
+        customPrompt: aiPrompt.trim() || undefined,
+      },
+    );
+
+    setIsGenerating(false);
+
+    if (result.error || !result.data) {
+      setFeedback({
+        tone: "error",
+        message: result.error ?? "Failed to generate email content.",
+      });
+      return;
+    }
+
+    const { subject: genSubject, previewText: genPreview, bodyHtml } =
+      result.data;
+
+    if (genSubject) {
+      setSubject(genSubject);
+    }
+    if (genPreview) {
+      setPreviewText(genPreview);
+    }
+    if (bodyHtml) {
+      setEditorValue({
+        html: bodyHtml,
+        json: null,
+        text: bodyHtml.replace(/<[^>]*>/g, ""),
+      });
+    }
+
+    setComposerErrors({});
+    setFeedback({
+      tone: "success",
+      message: "Subject, preview text, and body generated successfully.",
+    });
   };
 
   const handleSubmitCampaign = async (mode: "draft" | "send") => {
@@ -2771,6 +2838,58 @@ export function Communication() {
                 ) : null}
               </div>
 
+              <div className="space-y-3 rounded-xl border border-dashed border-indigo-200 bg-indigo-50/30 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <Label
+                    htmlFor="communication-ai-prompt"
+                    className="text-[11px] font-bold uppercase tracking-[0.2em] text-indigo-500"
+                  >
+                    <span className="inline-flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      AI Email Generator
+                    </span>
+                  </Label>
+                  {aiPrompt.trim() ? (
+                    <button
+                      type="button"
+                      onClick={() => setAiPrompt("")}
+                      className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      Clear
+                    </button>
+                  ) : null}
+                </div>
+                <textarea
+                  id="communication-ai-prompt"
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  maxLength={500}
+                  rows={2}
+                  disabled={isGenerating}
+                  placeholder="Optional — provide instructions for AI, e.g.: &quot;Create an invitation copy that emphasizes the networking session and highlights speakers from BSSN&quot;"
+                  className="w-full resize-none rounded-lg border border-indigo-200 bg-white px-4 py-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400 transition-all disabled:opacity-60"
+                />
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[11px] text-slate-400">
+                    AI will fill in Subject, Preview Text, and Body based on the event context.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={isGenerating || !filters.eventId}
+                    onClick={() => void handleAiGenerate()}
+                    className="shrink-0 gap-1.5 bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    {isGenerating ? (
+                      <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                    {isGenerating ? "Generating…" : "Generate Email"}
+                  </Button>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label
                   htmlFor="communication-subject"
@@ -2807,14 +2926,12 @@ export function Communication() {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between gap-3">
-                  <Label
-                    htmlFor="communication-preview-text"
-                    className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400"
-                  >
-                    Inbox Preview Text
-                  </Label>
-                </div>
+                <Label
+                  htmlFor="communication-preview-text"
+                  className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400"
+                >
+                  Inbox Preview Text
+                </Label>
                 <Input
                   id="communication-preview-text"
                   name="previewText"
@@ -2861,13 +2978,60 @@ export function Communication() {
                     descriptionId="communication-message-body-help"
                   />
                 </div>
-                <p
+                <div
                   id="communication-message-body-help"
-                  className="text-xs text-slate-400"
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 space-y-2"
                 >
-                  Use the editor to format your message while keeping drafts
-                  easy to update later.
-                </p>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                    Available Placeholders
+                  </p>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Use these variables in your email — they will be
+                    automatically replaced with each recipient's actual data
+                    when sent.
+                  </p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-xs">
+                    <span className="inline-flex items-baseline gap-1.5">
+                      <code className="rounded bg-indigo-50 px-1.5 py-0.5 font-mono text-[11px] text-indigo-600 select-all">
+                        {"{{recipientName}}"}
+                      </code>
+                      <span className="text-slate-400">Recipient name</span>
+                    </span>
+                    <span className="inline-flex items-baseline gap-1.5">
+                      <code className="rounded bg-indigo-50 px-1.5 py-0.5 font-mono text-[11px] text-indigo-600 select-all">
+                        {"{{recipientEmail}}"}
+                      </code>
+                      <span className="text-slate-400">Recipient email</span>
+                    </span>
+                    <span className="inline-flex items-baseline gap-1.5">
+                      <code className="rounded bg-indigo-50 px-1.5 py-0.5 font-mono text-[11px] text-indigo-600 select-all">
+                        {"{{eventTitle}}"}
+                      </code>
+                      <span className="text-slate-400">Event title</span>
+                    </span>
+                    <span className="inline-flex items-baseline gap-1.5">
+                      <code className="rounded bg-indigo-50 px-1.5 py-0.5 font-mono text-[11px] text-indigo-600 select-all">
+                        {"{{eventDate}}"}
+                      </code>
+                      <span className="text-slate-400">Event date</span>
+                    </span>
+                    <span className="inline-flex items-baseline gap-1.5">
+                      <code className="rounded bg-indigo-50 px-1.5 py-0.5 font-mono text-[11px] text-indigo-600 select-all">
+                        {"{{eventLocation}}"}
+                      </code>
+                      <span className="text-slate-400">Event location</span>
+                    </span>
+                    <span className="inline-flex items-baseline gap-1.5">
+                      <code className="rounded bg-indigo-50 px-1.5 py-0.5 font-mono text-[11px] text-indigo-600 select-all">
+                        {"{{eventIndustry}}"}
+                      </code>
+                      <span className="text-slate-400">Event industry</span>
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 italic">
+                    Example: "Hello {"{{recipientName}}"}, we invite you to {"{{eventTitle}}"} on {"{{eventDate}}"} at {"{{eventLocation}}"}."
+                  </p>
+                </div>
                 {composerErrors.body ? (
                   <p className="text-sm text-rose-600">{composerErrors.body}</p>
                 ) : null}
