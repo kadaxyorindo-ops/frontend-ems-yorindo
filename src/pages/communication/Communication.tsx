@@ -1521,15 +1521,16 @@ export function Communication() {
                   Final Preview
                 </p>
                 <h2 className="text-pretty text-2xl font-bold text-[#1d376b]">
-                  Choose the Email Template
+                  Inbox Preview for Recipients
                 </h2>
                 <p className="text-sm leading-6 text-slate-500">
                   This is the final review screen before the campaign is queued
                   for delivery.
                 </p>
               </div>
-
-              <div className="grid gap-3 xl:grid-cols-3">
+              
+              {/* email template */}
+              {/* <div className="grid gap-3 xl:grid-cols-3">
                 {EMAIL_TEMPLATE_OPTIONS.map((option) => {
                   const isActive = templateId === option.value;
 
@@ -1556,7 +1557,7 @@ export function Communication() {
                     </button>
                   );
                 })}
-              </div>
+              </div> */}
 
               <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-4">
                 <div className="rounded-2xl border border-slate-300 bg-slate-50 px-4 py-4">
