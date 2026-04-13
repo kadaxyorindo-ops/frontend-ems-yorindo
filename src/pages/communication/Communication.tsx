@@ -6,9 +6,9 @@ import {
   Search,
   SendHorizontal,
   Users2,
+  X,
 } from "lucide-react";
 import { TiptapEmailEditor } from "@/components/communication/TiptapEmailEditor";
-import { SearchableFilterSelect } from "@/components/communication/SearchableFilterSelect";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,20 +23,20 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Check, ChevronsUpDown } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Command,
   CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
-} from "@/components/ui/command"
+} from "@/components/ui/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover"
+} from "@/components/ui/popover";
 
 type FilterOption = {
   id: string;
@@ -170,6 +170,7 @@ const EMAIL_TEMPLATE_OPTIONS = [
 
 const STATUS_OPTIONS = [
   { value: "all", label: "All Registered" },
+  { value: "all_participants", label: "All Participants" },
   { value: "approved", label: "Approved" },
   { value: "pending", label: "Pending" },
   { value: "rejected", label: "Rejected" },
@@ -222,7 +223,7 @@ type FeedbackState = {
 };
 
 type ComposerErrors = Partial<
-  Record<"recipients" | "subject" | "body", string>
+  Record<"event" | "recipients" | "subject" | "body", string>
 >;
 type ComposerStep = "compose" | "review";
 type LeftPanelTab = "segment" | "recipients" | "review";
@@ -310,7 +311,7 @@ function getInitials(name: string) {
 }
 
 function formatEventDate(value: string) {
-  return new Date(value).toLocaleDateString("id-ID", {
+  return new Date(value).toLocaleDateString("en-US", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -332,11 +333,15 @@ function summarizeActiveFilters(
 ) {
   const badges: string[] = [];
 
-  if (filters.status !== "all") {
+  if (filters.status !== "all" && filters.status !== "all_participants") {
     badges.push(
       STATUS_OPTIONS.find((option) => option.value === filters.status)?.label ??
         filters.status,
     );
+  }
+
+  if (filters.status === "all_participants") {
+    badges.push("All Participants");
   }
 
   if (filters.participantType !== "all") {
@@ -399,7 +404,7 @@ function summarizeActiveFilters(
 }
 
 function formatDraftUpdatedAt(value: string) {
-  return new Date(value).toLocaleString("id-ID", {
+  return new Date(value).toLocaleString("en-US", {
     day: "2-digit",
     month: "short",
     hour: "2-digit",
@@ -440,6 +445,15 @@ function createFiltersStateFromDraft(
   };
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function buildDraftSignature(params: {
   filters: AudienceFiltersState;
   search: string;
@@ -461,11 +475,16 @@ function buildDraftSignature(params: {
 }
 
 function validateComposer(params: {
+  eventId: string;
   recipientCount: number;
   subject: string;
   bodyText: string;
 }) {
   const nextErrors: ComposerErrors = {};
+
+  if (!params.eventId.trim()) {
+    nextErrors.event = "Select event first for broadcast context.";
+  }
 
   if (params.recipientCount === 0) {
     nextErrors.recipients = "Select at least one recipient before sending.";
@@ -538,6 +557,7 @@ export function Communication() {
   const [submissionMode, setSubmissionMode] = useState<"draft" | "send" | null>(
     null,
   );
+  const [recipientRenderLimit, setRecipientRenderLimit] = useState(120);
   const [composerErrors, setComposerErrors] = useState<ComposerErrors>({});
   const [lastCommittedSignature, setLastCommittedSignature] = useState("");
   const deferredSearch = useDeferredValue(searchInput);
@@ -548,6 +568,10 @@ export function Communication() {
   const bodyFieldRef = useRef<HTMLDivElement | null>(null);
   const loadedDraftFromNavigationRef = useRef<string | null>(null);
   const normalizedSearchInput = searchInput.trim();
+  const normalizedDeferredSearch = deferredSearch.trim();
+  const isAudienceFilterDebouncing =
+    normalizedSearchInput !== normalizedDeferredSearch;
+  const showFilteringIndicator = isAudienceFilterDebouncing || isLoading;
   const draftIdFromNavigation =
     location.state &&
     typeof location.state === "object" &&
@@ -787,17 +811,6 @@ export function Communication() {
   }, [deferredSearch, filters]);
 
   useEffect(() => {
-    if (filters.eventId || !audience?.events.length) {
-      return;
-    }
-
-    setFilters((currentValue) => ({
-      ...currentValue,
-      eventId: currentValue.eventId || audience.events[0]!.id,
-    }));
-  }, [audience?.events, filters.eventId]);
-
-  useEffect(() => {
     const visibleRecipientIds =
       audience?.recipients.map((recipient) => recipient.registrationId) ?? [];
 
@@ -823,6 +836,9 @@ export function Communication() {
   }, [audience?.recipients]);
 
   const visibleRecipients = audience?.recipients ?? [];
+  const renderedRecipients = visibleRecipients.slice(0, recipientRenderLimit);
+  const hasMoreRecipients =
+    renderedRecipients.length < visibleRecipients.length;
   const selectedRecipientIdSet = new Set(selectedRegistrationIds);
   const selectedRecipients = visibleRecipients.filter((recipient) =>
     selectedRecipientIdSet.has(recipient.registrationId),
@@ -832,19 +848,43 @@ export function Communication() {
   const samplePreviewRecipient = selectedRecipients[0] ?? null;
   const samplePreviewRegistrationId =
     samplePreviewRecipient?.registrationId ?? "";
+  const previewEventId =
+    filters.eventId || samplePreviewRecipient?.eventId || null;
   const currentEvent =
     audience?.events.find((event) => event.id === filters.eventId) ?? null;
+  const previewEventTitle =
+    currentEvent?.title ?? emailPreview?.event.title ?? "All Events";
+  const browserPreviewHtml = useMemo(() => {
+    if (!emailPreview?.html) {
+      return "";
+    }
+
+    let nextHtml = emailPreview.html;
+    const logoUrl = `${window.location.origin}/yorindo-logo.png`;
+    nextHtml = nextHtml.replaceAll("cid:yorindo-logo", logoUrl);
+
+    const backendEventTitle = emailPreview.event.title ?? "All Events";
+    if (previewEventTitle && backendEventTitle !== previewEventTitle) {
+      nextHtml = nextHtml.replaceAll(
+        `>${escapeHtml(backendEventTitle)}<`,
+        `>${escapeHtml(previewEventTitle)}<`,
+      );
+      nextHtml = nextHtml.replaceAll(backendEventTitle, previewEventTitle);
+    }
+
+    return nextHtml;
+  }, [emailPreview?.html, emailPreview?.event.title, previewEventTitle]);
   const activeFilterBadges = summarizeActiveFilters(
     filters,
     audience,
     normalizedSearchInput,
   );
-  const allVisibleSelected =
-    visibleRecipients.length > 0 &&
-    visibleRecipients.length === selectedRecipients.length;
-  const selectedNonApprovedCount = selectedRecipients.filter(
-    (recipient) => recipient.status !== "approved",
+  const selectedNonApprovedCount = selectedRecipients.filter((recipient) =>
+    filters.status === "all_participants"
+      ? false
+      : recipient.status !== "approved",
   ).length;
+  const visibleStatusOptions = STATUS_OPTIONS;
   const hasComposeContent =
     Boolean(subject.trim()) ||
     Boolean(previewText.trim()) ||
@@ -864,7 +904,20 @@ export function Communication() {
   const currentDraftSummary =
     drafts.find((draft) => draft.id === currentDraftId) ?? null;
 
-  // Event filter is now optional, admin doesn't need to select event
+  useEffect(() => {
+    setRecipientRenderLimit(120);
+  }, [deferredSearch, filters]);
+
+  useEffect(() => {
+    if (filters.eventId || !audience?.events.length) {
+      return;
+    }
+
+    setFilters((currentValue) => ({
+      ...currentValue,
+      eventId: currentValue.eventId || audience.events[0]!.id,
+    }));
+  }, [audience?.events, filters.eventId]);
 
   useEffect(() => {
     if (composerStep !== "review") {
@@ -897,7 +950,7 @@ export function Communication() {
 
     void api
       .post<EmailPreviewResponse>(`${apiPaths.communications}/preview`, {
-        eventId: filters.eventId || null,
+        eventId: previewEventId,
         templateId,
         previewText,
         subject,
@@ -923,9 +976,9 @@ export function Communication() {
   }, [
     editorValue.html,
     editorValue.text,
-    filters.eventId,
     isReviewingSend,
     previewText,
+    previewEventId,
     samplePreviewRegistrationId,
     subject,
     templateId,
@@ -948,6 +1001,20 @@ export function Communication() {
     };
   }, [hasUnsavedChanges]);
 
+  useEffect(() => {
+    if (!feedback) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setFeedback(null);
+    }, 5000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [feedback]);
+
   const updateFilter = <K extends keyof AudienceFiltersState>(
     key: K,
     value: AudienceFiltersState[K],
@@ -956,6 +1023,21 @@ export function Communication() {
       ...currentValue,
       [key]: value,
     }));
+    setFeedback(null);
+  };
+
+  const handleResetSegmentFilters = () => {
+    setFilters((currentValue) => ({
+      ...currentValue,
+      status: "all",
+      participantType: "all",
+      companyId: "",
+      industryId: "",
+      jobTitleId: "",
+      cityId: "",
+      sourceChannelCode: "",
+    }));
+    setSearchInput("");
     setFeedback(null);
   };
 
@@ -985,14 +1067,27 @@ export function Communication() {
     }));
     setFeedback(null);
     setSelectedRegistrationIds(
-      allVisibleSelected
-        ? []
-        : visibleRecipients.map((recipient) => recipient.registrationId),
+      visibleRecipients.map((recipient) => recipient.registrationId),
     );
+  };
+
+  const handleClearAllSelected = () => {
+    if (!selectedRegistrationIds.length) {
+      return;
+    }
+
+    hasUserAdjustedSelectionRef.current = true;
+    setComposerErrors((currentValue) => ({
+      ...currentValue,
+      recipients: undefined,
+    }));
+    setFeedback(null);
+    setSelectedRegistrationIds([]);
   };
 
   const handleOpenReview = () => {
     const nextErrors = validateComposer({
+      eventId: filters.eventId,
       recipientCount: selectedRegistrationIds.length,
       subject,
       bodyText: editorValue.text,
@@ -1003,8 +1098,12 @@ export function Communication() {
     if (Object.keys(nextErrors).length > 0) {
       setFeedback({
         tone: "error",
-        message: "Complete the recipients, subject, and message body first.",
+        message: "Complete event, recipients, subject, and message body first.",
       });
+
+      if (nextErrors.event) {
+        setLeftPanelTab("segment");
+      }
 
       if (nextErrors.subject) {
         subjectInputRef.current?.focus();
@@ -1078,7 +1177,10 @@ export function Communication() {
 
     setFeedback({
       tone: "success",
-      message: result.message,
+      message:
+        mode === "send"
+          ? "Your broadcast email is in queue. Delivery continues in the background."
+          : "Draft saved successfully.",
     });
 
     setLastCommittedSignature(signatureAtSubmit);
@@ -1158,7 +1260,7 @@ export function Communication() {
     setSelectedRegistrationIds(localDraftData.selectedRegistrationIds);
 
     setShowRestorePrompt(false);
-    localStorage.removeItem(LOCAL_STORAGE_KEY); // Hapus setelah direstore
+    localStorage.removeItem(LOCAL_STORAGE_KEY); // Remove after restore
   };
 
   const handleDiscardLocalDraft = () => {
@@ -1218,10 +1320,37 @@ export function Communication() {
       })),
     ];
   }, [audience?.filterOptions.cities]);
-  
+
+  const feedbackToast = feedback ? (
+    <div className="fixed right-4 top-4 z-50 w-[min(92vw,460px)]">
+      <div
+        role="status"
+        aria-live="polite"
+        className={`rounded-2xl border px-4 py-3 text-sm shadow-lg backdrop-blur-sm ${
+          feedback.tone === "success"
+            ? "border-emerald-300 bg-emerald-50/95 text-emerald-800"
+            : "border-rose-300 bg-rose-50/95 text-rose-700"
+        }`}
+      >
+        <div className="flex items-start gap-3">
+          <p className="flex-1 leading-6">{feedback.message}</p>
+          <button
+            type="button"
+            aria-label="Dismiss notification"
+            onClick={() => setFeedback(null)}
+            className="rounded-md p-1 text-current/70 transition hover:bg-black/5 hover:text-current"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   if (isReviewingSend) {
     return (
       <DashboardLayout>
+        {feedbackToast}
         <div className="space-y-8">
           <div className="flex flex-col gap-4 border-b  border-slate-200 pb-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-2">
@@ -1263,20 +1392,6 @@ export function Communication() {
               </Button>
             </div>
           </div>
-
-          {feedback ? (
-            <div
-              role="status"
-              aria-live="polite"
-              className={`rounded-2xl border px-4 py-3 text-sm ${
-                feedback.tone === "success"
-                  ? " border-emerald-300 bg-emerald-50 text-emerald-700"
-                  : " border-rose-300 bg-rose-50 text-rose-600"
-              }`}
-            >
-              {feedback.message}
-            </div>
-          ) : null}
 
           <div className="grid gap-6 xl:grid-cols-[minmax(320px,360px)_minmax(0,1fr)]">
             <section className="space-y-5 rounded-[28px] border  border-slate-300 bg-slate-50/80 p-5 sm:p-6">
@@ -1517,7 +1632,7 @@ export function Communication() {
                     ) : emailPreview ? (
                       <iframe
                         title="Email inbox preview"
-                        srcDoc={emailPreview.html}
+                        srcDoc={browserPreviewHtml}
                         sandbox=""
                         className="h-[40rem] w-full bg-white"
                       />
@@ -1583,6 +1698,7 @@ export function Communication() {
 
   return (
     <DashboardLayout>
+      {feedbackToast}
       <title>Yorindo EMS - Communication Hub</title>
       {showRestorePrompt && (
         <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
@@ -1704,10 +1820,22 @@ export function Communication() {
                 </TabsList>
 
                 <TabsContent value="segment" className="space-y-4">
-                  <p className="text-xs leading-5 text-slate-500">
-                    Adjust segment filters here. Open the `Recipients` tab when
-                    you want to focus on who will actually receive the email.
-                  </p>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs leading-5 text-slate-500">
+                      Adjust segment filters here. Open the `Recipients` tab
+                      when you want to focus on who will actually receive the
+                      email.
+                    </p>
+                    <Button
+                      type="button"
+                      variant="link"
+                      size="sm"
+                      onClick={handleResetSegmentFilters}
+                      className="h-auto p-0 text-slate-500"
+                    >
+                      Reset Filters
+                    </Button>
+                  </div>
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -1715,11 +1843,14 @@ export function Communication() {
                         Event
                       </Label>
                       <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-[0.15em]">
-                        Optional
+                        Required
                       </span>
                     </div>
 
-                    <Popover open={eventComboOpen} onOpenChange={setEventComboOpen}>
+                    <Popover
+                      open={eventComboOpen}
+                      onOpenChange={setEventComboOpen}
+                    >
                       <PopoverTrigger asChild>
                         <Button
                           id="event-filter"
@@ -1730,13 +1861,18 @@ export function Communication() {
                         >
                           <span className="truncate">
                             {filters.eventId
-                              ? eventOptions.find((opt) => opt.value === filters.eventId)?.label
+                              ? eventOptions.find(
+                                  (opt) => opt.value === filters.eventId,
+                                )?.label
                               : "Select an event..."}
                           </span>
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <PopoverContent
+                        className="w-[--radix-popover-trigger-width] p-0"
+                        align="start"
+                      >
                         <Command>
                           <CommandInput placeholder="Search event title..." />
                           <CommandEmpty>No event found.</CommandEmpty>
@@ -1746,15 +1882,21 @@ export function Communication() {
                                 key={option.value}
                                 value={option.label}
                                 onSelect={() => {
-                                  const newValue = option.value === filters.eventId ? "" : option.value;
+                                  const newValue = option.value;
                                   updateFilter("eventId", newValue);
+                                  setComposerErrors((currentValue) => ({
+                                    ...currentValue,
+                                    event: undefined,
+                                  }));
                                   setEventComboOpen(false);
                                 }}
                               >
                                 <Check
                                   className={cn(
                                     "mr-2 h-4 w-4",
-                                    filters.eventId === option.value ? "opacity-100" : "opacity-0"
+                                    filters.eventId === option.value
+                                      ? "opacity-100"
+                                      : "opacity-0",
                                   )}
                                 />
                                 {option.label}
@@ -1764,6 +1906,11 @@ export function Communication() {
                         </Command>
                       </PopoverContent>
                     </Popover>
+                    {composerErrors.event ? (
+                      <p className="text-sm text-rose-600">
+                        {composerErrors.event}
+                      </p>
+                    ) : null}
                   </div>
 
                   <div className="space-y-2">
@@ -1771,7 +1918,7 @@ export function Communication() {
                       Registration Status
                     </p>
                     <div className="grid grid-cols-2 gap-2">
-                      {STATUS_OPTIONS.map((status) => {
+                      {visibleStatusOptions.map((status) => {
                         const isActive = filters.status === status.value;
                         const count =
                           audience?.summary.statusCounts[status.value] ?? 0;
@@ -1800,6 +1947,11 @@ export function Communication() {
                         );
                       })}
                     </div>
+                    <p className="text-xs text-slate-500">
+                      {filters.status === "all_participants"
+                        ? "All Participants uses the global participant database (not limited to event registrations)."
+                        : "Registered statuses are scoped to the selected event."}
+                    </p>
                   </div>
 
                   {/* participant type */}
@@ -1839,7 +1991,10 @@ export function Communication() {
                       Company
                     </Label>
 
-                    <Popover open={companyComboOpen} onOpenChange={setCompanyComboOpen}>
+                    <Popover
+                      open={companyComboOpen}
+                      onOpenChange={setCompanyComboOpen}
+                    >
                       <PopoverTrigger asChild>
                         <Button
                           id="communication-company"
@@ -1850,13 +2005,18 @@ export function Communication() {
                         >
                           <span className="truncate">
                             {filters.companyId
-                              ? companyOptions.find((opt) => opt.value === filters.companyId)?.label
+                              ? companyOptions.find(
+                                  (opt) => opt.value === filters.companyId,
+                                )?.label
                               : "All companies"}
                           </span>
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <PopoverContent
+                        className="w-[--radix-popover-trigger-width] p-0"
+                        align="start"
+                      >
                         <Command>
                           <CommandInput placeholder="Search company..." />
                           <CommandEmpty>No company found.</CommandEmpty>
@@ -1867,7 +2027,8 @@ export function Communication() {
                                 value={option.label}
                                 onSelect={() => {
                                   // If "all" is selected, we set it to empty string per your original logic
-                                  const newValue = option.value === "all" ? "" : option.value;
+                                  const newValue =
+                                    option.value === "all" ? "" : option.value;
                                   updateFilter("companyId", newValue);
                                   setCompanyComboOpen(false);
                                 }}
@@ -1875,7 +2036,10 @@ export function Communication() {
                                 <Check
                                   className={cn(
                                     "mr-2 h-4 w-4",
-                                    (filters.companyId || "all") === option.value ? "opacity-100" : "opacity-0"
+                                    (filters.companyId || "all") ===
+                                      option.value
+                                      ? "opacity-100"
+                                      : "opacity-0",
                                   )}
                                 />
                                 {option.label}
@@ -1893,7 +2057,10 @@ export function Communication() {
                       Industry
                     </Label>
 
-                    <Popover open={industryComboOpen} onOpenChange={setIndustryComboOpen}>
+                    <Popover
+                      open={industryComboOpen}
+                      onOpenChange={setIndustryComboOpen}
+                    >
                       <PopoverTrigger asChild>
                         <Button
                           id="communication-industry"
@@ -1904,13 +2071,18 @@ export function Communication() {
                         >
                           <span className="truncate">
                             {filters.industryId
-                              ? industryOptions.find((opt) => opt.value === filters.industryId)?.label
+                              ? industryOptions.find(
+                                  (opt) => opt.value === filters.industryId,
+                                )?.label
                               : "All industries"}
                           </span>
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <PopoverContent
+                        className="w-[--radix-popover-trigger-width] p-0"
+                        align="start"
+                      >
                         <Command>
                           <CommandInput placeholder="Search industry..." />
                           <CommandEmpty>No industry found.</CommandEmpty>
@@ -1920,7 +2092,8 @@ export function Communication() {
                                 key={option.value}
                                 value={option.label}
                                 onSelect={() => {
-                                  const newValue = option.value === "all" ? "" : option.value;
+                                  const newValue =
+                                    option.value === "all" ? "" : option.value;
                                   updateFilter("industryId", newValue);
                                   setIndustryComboOpen(false);
                                 }}
@@ -1928,7 +2101,10 @@ export function Communication() {
                                 <Check
                                   className={cn(
                                     "mr-2 h-4 w-4",
-                                    (filters.industryId || "all") === option.value ? "opacity-100" : "opacity-0"
+                                    (filters.industryId || "all") ===
+                                      option.value
+                                      ? "opacity-100"
+                                      : "opacity-0",
                                   )}
                                 />
                                 {option.label}
@@ -1946,7 +2122,10 @@ export function Communication() {
                       Job title
                     </Label>
 
-                    <Popover open={jobTitleComboOpen} onOpenChange={setJobTitleComboOpen}>
+                    <Popover
+                      open={jobTitleComboOpen}
+                      onOpenChange={setJobTitleComboOpen}
+                    >
                       <PopoverTrigger asChild>
                         <Button
                           id="communication-job-title"
@@ -1957,13 +2136,18 @@ export function Communication() {
                         >
                           <span className="truncate">
                             {filters.jobTitleId
-                              ? jobTitleOptions.find((opt) => opt.value === filters.jobTitleId)?.label
+                              ? jobTitleOptions.find(
+                                  (opt) => opt.value === filters.jobTitleId,
+                                )?.label
                               : "All job titles"}
                           </span>
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <PopoverContent
+                        className="w-[--radix-popover-trigger-width] p-0"
+                        align="start"
+                      >
                         <Command>
                           <CommandInput placeholder="Search job title..." />
                           <CommandEmpty>No job title found.</CommandEmpty>
@@ -1973,7 +2157,8 @@ export function Communication() {
                                 key={option.value}
                                 value={option.label}
                                 onSelect={() => {
-                                  const newValue = option.value === "all" ? "" : option.value;
+                                  const newValue =
+                                    option.value === "all" ? "" : option.value;
                                   updateFilter("jobTitleId", newValue);
                                   setJobTitleComboOpen(false);
                                 }}
@@ -1981,7 +2166,10 @@ export function Communication() {
                                 <Check
                                   className={cn(
                                     "mr-2 h-4 w-4",
-                                    (filters.jobTitleId || "all") === option.value ? "opacity-100" : "opacity-0"
+                                    (filters.jobTitleId || "all") ===
+                                      option.value
+                                      ? "opacity-100"
+                                      : "opacity-0",
                                   )}
                                 />
                                 {option.label}
@@ -1999,7 +2187,10 @@ export function Communication() {
                       City
                     </Label>
 
-                    <Popover open={cityComboOpen} onOpenChange={setCityComboOpen}>
+                    <Popover
+                      open={cityComboOpen}
+                      onOpenChange={setCityComboOpen}
+                    >
                       <PopoverTrigger asChild>
                         <Button
                           id="communication-city"
@@ -2010,13 +2201,18 @@ export function Communication() {
                         >
                           <span className="truncate">
                             {filters.cityId
-                              ? cityOptions.find((opt) => opt.value === filters.cityId)?.label
+                              ? cityOptions.find(
+                                  (opt) => opt.value === filters.cityId,
+                                )?.label
                               : "All cities"}
                           </span>
                           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
+                      <PopoverContent
+                        className="w-[--radix-popover-trigger-width] p-0"
+                        align="start"
+                      >
                         <Command>
                           <CommandInput placeholder="Search city..." />
                           <CommandEmpty>No city found.</CommandEmpty>
@@ -2026,7 +2222,8 @@ export function Communication() {
                                 key={option.value}
                                 value={option.label}
                                 onSelect={() => {
-                                  const newValue = option.value === "all" ? "" : option.value;
+                                  const newValue =
+                                    option.value === "all" ? "" : option.value;
                                   updateFilter("cityId", newValue);
                                   setCityComboOpen(false);
                                 }}
@@ -2034,7 +2231,9 @@ export function Communication() {
                                 <Check
                                   className={cn(
                                     "mr-2 h-4 w-4",
-                                    (filters.cityId || "all") === option.value ? "opacity-100" : "opacity-0"
+                                    (filters.cityId || "all") === option.value
+                                      ? "opacity-100"
+                                      : "opacity-0",
                                   )}
                                 />
                                 {option.label}
@@ -2107,30 +2306,57 @@ export function Communication() {
                           setSearchInput(event.target.value);
                           if (feedback) setFeedback(null);
                         }}
-                        className="h-11 bg-white pl-10 border-slate-300 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
+                        className="h-11 bg-white pl-10 pr-10 border-slate-300 rounded-xl focus-visible:ring-1 focus-visible:ring-indigo-400 transition-all"
                       />
+                      {searchInput.trim() ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Clear recipient search"
+                          onClick={() => setSearchInput("")}
+                          className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                        >
+                          <X className="h-4 w-4" aria-hidden="true" />
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-semibold text-slate-700">
+                      <p className="flex items-center gap-2 text-sm font-semibold text-slate-700">
                         Visible Audience
+                        {showFilteringIndicator ? (
+                          <span className="inline-flex items-center rounded-full border border-slate-300 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                            Filtering…
+                          </span>
+                        ) : null}
                       </p>
                       <p className="text-xs text-slate-500">
                         Review and adjust the final recipient list here.
                       </p>
                     </div>
-                    <Button
-                      type="button"
-                      variant="link"
-                      size="sm"
-                      onClick={handleToggleAllVisible}
-                      className="h-auto p-0 text-[#1d376b]"
-                    >
-                      {allVisibleSelected
-                        ? "Clear Selection"
-                        : "Select Visible"}
-                    </Button>
+                    <div className="flex items-center gap-3">
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        onClick={handleToggleAllVisible}
+                        className="h-auto p-0 text-[#1d376b]"
+                      >
+                        Select Visible
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="link"
+                        size="sm"
+                        onClick={handleClearAllSelected}
+                        disabled={!selectedRegistrationIds.length}
+                        className="h-auto p-0 text-slate-500 disabled:text-slate-300"
+                      >
+                        Unselect All
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="space-y-3 rounded-[24px] border  border-slate-300 bg-white/60 p-3">
@@ -2147,7 +2373,7 @@ export function Communication() {
                           {loadError}
                         </div>
                       ) : visibleRecipients.length ? (
-                        visibleRecipients.map((recipient) => {
+                        renderedRecipients.map((recipient) => {
                           const isChecked = selectedRecipientIdSet.has(
                             recipient.registrationId,
                           );
@@ -2200,6 +2426,27 @@ export function Communication() {
                         </div>
                       )}
                     </div>
+                    {hasMoreRecipients ? (
+                      <div className="flex items-center justify-between border-t border-slate-200 pt-2">
+                        <p className="text-xs text-slate-500">
+                          Showing {renderedRecipients.length} of{" "}
+                          {visibleRecipients.length} recipients.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="sm"
+                          onClick={() =>
+                            setRecipientRenderLimit(
+                              (currentValue) => currentValue + 120,
+                            )
+                          }
+                          className="h-auto p-0 text-[#1d376b]"
+                        >
+                          Load More
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
                 </TabsContent>
 
@@ -2471,20 +2718,6 @@ export function Communication() {
                   </p>
                 </div>
               </div>
-
-              {feedback ? (
-                <div
-                  role="status"
-                  aria-live="polite"
-                  className={`rounded-2xl border px-4 py-3 text-sm ${
-                    feedback.tone === "success"
-                      ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                      : "border-rose-300 bg-rose-50 text-rose-600"
-                  }`}
-                >
-                  {feedback.message}
-                </div>
-              ) : null}
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between gap-3">
