@@ -260,7 +260,7 @@ export function Events() {
                     <TableRow key={event._id}>
                       {/* Event Name & Details cell */}
                       <TableCell className="py-5 pl-6 w-[400px] min-w-[400px]">
-                        <div className="font-bold text-[#001a4e] text-sm mb-1.5 break-all whitespace-pre-wrap leading-snug">
+                        <div className="font-bold text-[#001a4e] text-sm mb-1.5 break-words whitespace-pre-wrap leading-snug">
                           {event.title}
                         </div>
                         <div className="flex flex-col gap-1">
