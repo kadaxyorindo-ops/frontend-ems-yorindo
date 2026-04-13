@@ -87,7 +87,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           )}
 
           {/* Surveys & Analytics */}
-          {canViewSurveys && (
+          {/* {canViewSurveys && (
             <Link
               to="/surveys"
               onClick={onClose}
@@ -100,7 +100,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <BarChart2 className={`mr-3 h-5 w-5 ${isActive('/surveys') ? 'text-[#002a85]' : ''}`} />
               Surveys & Analytics
             </Link>
-          )}
+          )} */}
 
           {/* Users */}
           {user?.role === "super_admin" && (

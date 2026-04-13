@@ -447,8 +447,8 @@ export function Participants() {
       </div>
 
         <main className="flex-1 mb-6 pb-6 pt-8">
-          <header className="px-4 md:px-20 md:pt-8 mb-8 mx-20">
-            <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
+          <header className="px-4 md:px-20 md:pt-8 mb-8 mx-10">
+            <div className="flex flex-col gap-6 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
               {/* Left side */}
               <div className="space-y-1.5 max-w-160">
                 <h1 className="text-4xl font-bold tracking-tight text-[#001a4e]">
@@ -461,7 +461,7 @@ export function Participants() {
 
               {/* Right side */}
               <div className="flex flex-col items-center gap-4">
-                <div className="flex flex-col md:flex-row gap-4 justify-between flex-wrap">
+                <div className="flex flex-col md:flex-row gap-4 justify-between ">
                   {/* Stats */}
                   <div className="flex items-center gap-4 mr-2 border-r pr-4 border-slate-200">
                     {/* Progress bar */}
@@ -525,12 +525,12 @@ export function Participants() {
 
                       {/* Breakdown */}
                       <div className="flex items-center gap-4 text-xs text-slate-500">
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-1 w-25">
                           <span className="w-2 h-2 rounded-full bg-emerald-500" />
                           {meta.checkedInCount ?? 0} checked in
                         </span>
 
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-1 w-25">
                           <span className="w-2 h-2 rounded-full bg-[#1a3fa8]" />
                           {meta.approvedCount} approved
                         </span>
@@ -570,10 +570,10 @@ export function Participants() {
             </div>
           </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 p-4 md:px-20 mx-20">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3 p-4 md:px-10 mx-10">
             {/* Table */}
             <div
-              className={`transition-all duration-300 ${selectedParticipant ? "col-span-12 lg:col-span-8 xl:col-span-9" : "col-span-12"}`}
+              className={`transition-all duration-300 ${selectedParticipant ? "col-span-12 xl:col-span-8" : "col-span-12"}`}
             >
               <div className="bg-white p-6 rounded-2xl">
                 {actionError || actionFeedback ? (
@@ -816,9 +816,9 @@ export function Participants() {
 
             {/* Detail Sidebar */}
             <div
-              className={`transition-all duration-300 ${selectedParticipant ? "col-span-12 lg:col-span-4 xl:col-span-3 block" : "hidden lg:hidden"}`}
+              className={`transition-all duration-300 ${selectedParticipant ? "col-span-12 xl:col-span-4 block" : "hidden lg:hidden"}`}
             >
-              <div className="bg-white p-6 rounded-2xl relative overflow-hidden shadow-xl shadow-slate-300 h-fit">
+              <div className="bg-white p-6 rounded-2xl relative overflow-hidden shadow-xl shadow-slate-300 h-fit max-w-[400px] min-w-[350px]">
                 {selectedParticipant && (
                   <div className="flex flex-col gap-6">
                     <div className="flex items-center justify-between gap-3">
@@ -939,7 +939,7 @@ export function Participants() {
                             {selectedParticipant.ticketDelivery?.attempts ?? 0}
                           </span>
                         </div>
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start justify-between gap-3 break-words">
                           <span className="font-semibold text-slate-500">
                             Last issue
                           </span>

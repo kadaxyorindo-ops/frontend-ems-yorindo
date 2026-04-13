@@ -367,9 +367,21 @@ export function Users() {
 
           {/* Pagination */}
           {!isLoading && total > 0 && (
-            <div className="mt-5 flex items-center justify-between text-sm text-slate-500">
+            <div className="mt-5 flex items-center justify-between text-sm text-slate-500 font-medium">
               <span>
-                Showing {startItem}–{endItem} of {total} users
+                Showing{" "}
+                    <span className="text-[#001a4e] font-bold">
+                      {startItem}
+                    </span>{" "} 
+                –{" "}
+                    <span className="text-[#001a4e] font-bold">
+                      {endItem}
+                    </span>{" "}
+                of {" "}
+                    <span className="text-[#001a4e] font-bold">
+                      {total}
+                    </span>{" "}
+                users
               </span>
               <div className="flex gap-2">
                 <Button
