@@ -86,7 +86,7 @@ function formatDateTime(value: string | null) {
     return "Not sent";
   }
 
-  return new Date(value).toLocaleString("id-ID", {
+  return new Date(value).toLocaleString("en-US", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -97,10 +97,10 @@ function formatDateTime(value: string | null) {
 
 function formatEventDate(value: string | null) {
   if (!value) {
-    return "Tanpa tanggal event";
+    return "No event date";
   }
 
-  return new Date(value).toLocaleDateString("id-ID", {
+  return new Date(value).toLocaleDateString("en-US", {
     day: "2-digit",
     month: "short",
     year: "numeric",
