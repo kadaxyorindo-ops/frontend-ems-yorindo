@@ -3004,33 +3004,9 @@ export function Communication() {
                       </code>
                       <span className="text-slate-400">Recipient email</span>
                     </span>
-                    <span className="inline-flex items-baseline gap-1.5">
-                      <code className="rounded bg-indigo-50 px-1.5 py-0.5 font-mono text-[11px] text-indigo-600 select-all">
-                        {"{{eventTitle}}"}
-                      </code>
-                      <span className="text-slate-400">Event title</span>
-                    </span>
-                    <span className="inline-flex items-baseline gap-1.5">
-                      <code className="rounded bg-indigo-50 px-1.5 py-0.5 font-mono text-[11px] text-indigo-600 select-all">
-                        {"{{eventDate}}"}
-                      </code>
-                      <span className="text-slate-400">Event date</span>
-                    </span>
-                    <span className="inline-flex items-baseline gap-1.5">
-                      <code className="rounded bg-indigo-50 px-1.5 py-0.5 font-mono text-[11px] text-indigo-600 select-all">
-                        {"{{eventLocation}}"}
-                      </code>
-                      <span className="text-slate-400">Event location</span>
-                    </span>
-                    <span className="inline-flex items-baseline gap-1.5">
-                      <code className="rounded bg-indigo-50 px-1.5 py-0.5 font-mono text-[11px] text-indigo-600 select-all">
-                        {"{{eventIndustry}}"}
-                      </code>
-                      <span className="text-slate-400">Event industry</span>
-                    </span>
                   </div>
                   <p className="text-[11px] text-slate-400 italic">
-                    Example: "Hello {"{{recipientName}}"}, we invite you to {"{{eventTitle}}"} on {"{{eventDate}}"} at {"{{eventLocation}}"}."
+                    Example: "Hello {"{{recipientName}}"}, your registration has been confirmed. Please check your email at {"{{recipientEmail}}"} for updates."
                   </p>
                 </div>
                 {composerErrors.body ? (
