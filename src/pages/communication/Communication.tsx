@@ -2839,7 +2839,7 @@ export function Communication() {
                 ) : null}
               </div>
 
-              <div className="space-y-3 rounded-xl border border-dashed border-indigo-200 bg-indigo-50/30 p-4">
+              <div className="space-y-3 rounded-xl border border-indigo-200 bg-indigo-50/30 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <Label
                     htmlFor="communication-ai-prompt"
